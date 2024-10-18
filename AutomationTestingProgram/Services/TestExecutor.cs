@@ -9,7 +9,7 @@ public class TestExecutor
     private readonly AzureDevOpsReporter _reporter;
     private readonly int _testCaseId;
     private readonly Dictionary<string, IWebAction> _actions;
-    private readonly bool _reportToDevops = true;
+    private readonly bool _reportToDevops = false;
     private readonly bool _recordTrace = false;
     private readonly bool _recordVideo = false;
 

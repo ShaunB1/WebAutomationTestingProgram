@@ -1,7 +1,7 @@
 pool:
   name: 'qa-framework-dev'
   demands:
-    - Agent.Name -equals shaun
+    - AgentName -equals shaun
 
 jobs:
   - job: ExecutePowerShell

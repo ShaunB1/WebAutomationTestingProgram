@@ -1,0 +1,16 @@
+pool:
+  name: 'qa-framework-dev'
+  demands:
+    - Agent.Name -equals shaun
+
+jobs:
+  - job: ExecutePowerShell
+    displayName: 'Run PowerShell Script on Agent "shaun"'
+    steps:
+      - task: PowerShell@2
+        inputs:
+          targetType: 'inline'
+          script: |
+            $filePath = "C:\Users\BautisSh\Downloads\EarlyON_Regression.xlsx"
+            $uri = "http://localhost:5223/api/test/run"
+            curl.exe -X POST -F "file=@$filePath" $uri

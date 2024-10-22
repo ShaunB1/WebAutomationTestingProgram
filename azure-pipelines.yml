@@ -13,4 +13,4 @@ jobs:
           script: |
             $filePath = "C:\Users\BautisSh\Downloads\EarlyON_Regression.xlsx"
             $uri = "http://localhost:5223/api/test/run"
-            curl.exe -X POST -F "file=@$filePath" $uri
+            curl.exe -s -X POST -F "file=@$filePath" $uri

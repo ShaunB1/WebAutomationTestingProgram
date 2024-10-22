@@ -1,12 +1,13 @@
+using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
-
+using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
 
 namespace AutomationTestingProgram.Services;
 
 public class HandleTestPlan : AzureReporter
 {
-    public HandleTestPlan(string uri, string pat, string projectName) : base(uri, pat, projectName) {}
-
+    public HandleTestPlan() : base() {}
+    
     public async Task<TestPlan> GetOrCreateTestPlanAsync(string testPlanName)
     {
         var allTestPlans = new List<TestPlan>();
@@ -35,6 +36,45 @@ public class HandleTestPlan : AzureReporter
         
         Console.WriteLine($"Created new test plan {createdPlan.Name}");
         return createdPlan;
+    }
+
+    public async Task<int> GetTestPlanIdByNameAsync(string testPlanName)
+    {
+        var allTestPlans = new List<TestPlan>();
+        string continuationToken = null;
+
+        do
+        {
+            var testPlanList = await _planClient.GetTestPlansAsync(_projectName, continuationToken: continuationToken, includePlanDetails: true);
+
+            if (testPlanList.Any())
+            {
+                allTestPlans.AddRange(testPlanList);
+            }
+            
+            continuationToken = testPlanList.ContinuationToken;
+        } while (!string.IsNullOrEmpty(continuationToken));
+        
+        var matchingPlan = allTestPlans.FirstOrDefault(p => p.Name.Equals(testPlanName, StringComparison.OrdinalIgnoreCase));
+
+        if (matchingPlan != null)
+        {
+            Console.WriteLine($"Found matching test plan '{testPlanName}'");
+            return matchingPlan.Id;
+        }
+        else
+        {
+            Console.WriteLine($"No matching test plan found for test plan '{testPlanName}'");
+            return -1;
+        }
+    }
+
+    public async Task<(TestPlan, Microsoft.TeamFoundation.TestManagement.WebApi. TestSuite)> InitializeTestPlanAsync(string testPlanName)
+    {
+        var suiteHandler = new HandleTestSuite();
+        var testPlan = await GetOrCreateTestPlanAsync(testPlanName);
+        var fileSuite = await suiteHandler.TestSuiteSetupAsync(testPlan.Id, "App Name", "Release", "Test File");
+        return (testPlan, fileSuite);
     }
 
     public async Task DeleteTestPlan(string testPlanName)

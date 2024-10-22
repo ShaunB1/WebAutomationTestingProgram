@@ -1,5 +1,6 @@
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
+using TestCase = Microsoft.TeamFoundation.Test.WebApi.TestCase;
 using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
 using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
 
@@ -8,7 +9,7 @@ namespace AutomationTestingProgram.Services;
 
 public class HandleTestSuite : AzureReporter
 {
-    public HandleTestSuite(string uri, string pat, string projectName) : base(uri, pat, projectName) {}
+    public HandleTestSuite() : base() {}
     
     public async Task<Microsoft.TeamFoundation.TestManagement.WebApi.TestSuite> TestSuiteSetupAsync(int planId, string appName, string releaseNumber, string fileName)
     {
@@ -17,7 +18,7 @@ public class HandleTestSuite : AzureReporter
             var rootSuite = await GetOrCreateRootSuiteAsync(planId);
             var dateSuite = await GetOrCreateTestSuiteAsync(planId, $"yyyy-mm-dd TEST 12.3 {releaseNumber} Code Freeze Date yyyy-mm-dd", rootSuite.Id);
             var appSuite = await GetOrCreateTestSuiteAsync(planId, $"{appName} 2023-24", dateSuite.Id);
-            var buildSuite = await GetOrCreateTestSuiteAsync(planId, "buildNumber", appSuite.Id);
+            var buildSuite = await GetOrCreateTestSuiteAsync(planId, fileName, appSuite.Id);
             
             Console.WriteLine("Successfully set up test suites.");
             return buildSuite;
@@ -28,7 +29,7 @@ public class HandleTestSuite : AzureReporter
             throw;
         }
     }
-
+    
     public async Task<Microsoft.TeamFoundation.TestManagement.WebApi.TestSuite> GetOrCreateTestSuiteAsync(int planId, string testSuiteName, int parentSuiteId)
     {
         var suiteCreateModel = new SuiteCreateModel(
@@ -69,40 +70,19 @@ public class HandleTestSuite : AzureReporter
         return newRootSuite;
     }
 
-    public async Task AddTestCaseToTestSuiteAsync(int suiteId, int testCaseId, TestPlan testPlan)
+    public async Task AddTestCaseToTestSuite(int testPlanId, int testSuiteId, int testCaseId)
     {
-        var configurations = await _planClient.GetTestConfigurationsAsync(_projectName);
-        var configuration = configurations.First();
-
-        if (configuration == null)
-        {
-            throw new Exception($"No configuration found for {_projectName}");
-        }
-
-        var configurationList = new List<Configuration>
-        {
-            new Configuration { ConfigurationId = configuration.Id }
-        };
-
         var parameters = new List<SuiteTestCaseCreateUpdateParameters>
         {
             new SuiteTestCaseCreateUpdateParameters
             {
-                PointAssignments = configurationList,
-                workItem = new Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.WorkItem
+                workItem = new WorkItem
                 {
                     Id = testCaseId
-                },
+                }
             }
         };
-
-        await _planClient.AddTestCasesToSuiteAsync(
-            parameters,
-            _projectName,
-            testPlan.Id,
-            suiteId
-        );
         
-        Console.WriteLine($"Added test case for {suiteId}");
+        await _planClient.AddTestCasesToSuiteAsync(parameters, _projectName, testPlanId, testSuiteId);
     }
 }

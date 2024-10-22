@@ -16,7 +16,7 @@ public class AzureReporter
     protected readonly TestPlanHttpClient _planClient;
     protected readonly TestManagementHttpClient _managementClient;
 
-    public AzureReporter(string uri, string pat, string projectName)
+    public AzureReporter(string uri=@"https://dev.azure.com/csc-ddsb/", string pat="q4cmr4iwi6mrv6ji2w6lvnjdii4462j565bohzkccqxf73i7yd7a", string projectName="AutomationAndAccessibility")
     {
         _uri = uri;
         _pat = pat;
@@ -24,7 +24,6 @@ public class AzureReporter
         
         var credentials = new VssBasicCredential(string.Empty, _pat);
         _connection = new VssConnection(new Uri(_uri), credentials);
-        Console.WriteLine($"Connected to {_uri}");
         
         _witClient = _connection.GetClient<WorkItemTrackingHttpClient>();
         _planClient = _connection.GetClient<TestPlanHttpClient>();

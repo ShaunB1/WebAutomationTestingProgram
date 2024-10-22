@@ -13,6 +13,7 @@
       <PackageReference Include="Microsoft.TeamFoundationServer.ExtendedClient" Version="19.225.1" />
       <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="System.Net.Http" Version="4.3.4" />
     </ItemGroup>
 
     <ItemGroup>

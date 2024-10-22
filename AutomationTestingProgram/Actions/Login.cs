@@ -19,6 +19,7 @@ public class Login : IWebAction
             await passwordInput.FillAsync(password);
             await nextButton.ClickAsync();
             await signInButton.ClickAsync();
+            
             return true;
         }
         catch (Exception ex)

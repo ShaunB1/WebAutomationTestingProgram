@@ -1,18 +1,12 @@
-using System.Net.Http.Headers;
 using System.Text;
-using DocumentFormat.OpenXml.Drawing.Charts;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
 using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.Operations;
-using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using Operation = Microsoft.VisualStudio.Services.WebApi.Patch.Operation;
 

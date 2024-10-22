@@ -7,12 +7,21 @@ builder.Services.Configure<AzureDevOpsSettings>(builder.Configuration.GetSection
 
 var app = builder.Build(); // represents configured web app
 
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy("AllowFrontend",
+//         policy => policy.WithOrigins("http://localhost:5173")
+//             .AllowAnyMethod()
+//             .AllowAnyHeader());
+// });
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts(); // (HTTP Strict Transport Security) browsers interact with server only over HTTPS
 }
 
+app.UseCors("AllowFrontend");
 app.UseHttpsRedirection(); // client and server comms encrypted
 app.UseStaticFiles(); // can request static assets for frontend
 app.MapFallbackToFile("index.html"); // fallback to index.html for SPA routes

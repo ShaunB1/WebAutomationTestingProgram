@@ -9,10 +9,16 @@ using Microsoft.Playwright;
 public class TestController : ControllerBase
 {
     private readonly AzureDevOpsSettings _azureDevOpsSettings;
+    private readonly HandleTestPlan _planHandler;
+    private readonly HandleTestCase _caseHandler;
+    private readonly bool _reportToDevops;
 
     public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings)
     {
         _azureDevOpsSettings = azureDevOpsSettings.Value;
+        _planHandler = new HandleTestPlan();
+        _caseHandler = new HandleTestCase();
+        _reportToDevops = false;
     }
     
     [HttpPost("run")]
@@ -27,24 +33,23 @@ public class TestController : ControllerBase
             Headless = false,
             Channel = "chrome"
         });
-
-        var reporter = new AzureDevOpsReporter(
-            _azureDevOpsSettings.Url,
-            _azureDevOpsSettings.Pat,
-            _azureDevOpsSettings.ProjectName
-        );
-
-        await reporter.DeleteTestPlan("Test Environment");
-        await reporter.DeleteTestCasesAsync("Shaun Bautista");
-        Console.Write("DELETED TEST CASES");
-        var executor = new TestExecutor(browser, reporter);
+        
+        var executor = new TestExecutor(browser);
 
         try
         {
-            var environment = "Test Environment";
+            var environment = "EarlyON";
             var fileName = Path.GetFileNameWithoutExtension(excelFilePath);
-            
-            await executor.ExecuteTestCasesAsync(testSteps, environment, fileName);
+            var reportHandler = new HandleReporting();
+
+            if (_reportToDevops)
+            {
+                await reportHandler.ReportToDevOps(browser, testSteps, environment, fileName);                
+            }
+            else
+            {
+                await executor.ExecuteTestCasesAsync(browser, testSteps, environment, fileName);
+            }
             
             return Ok("Tests executed successfully.");
         }

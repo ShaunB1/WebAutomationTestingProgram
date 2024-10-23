@@ -12,20 +12,29 @@ public class TestController : ControllerBase
     private readonly HandleTestPlan _planHandler;
     private readonly HandleTestCase _caseHandler;
     private readonly bool _reportToDevops;
+    private readonly ILogger<TestController> _logger;
+    private readonly WebSocketLogBroadcaster _broadcaster;
 
-    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings)
+    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
     {
         _azureDevOpsSettings = azureDevOpsSettings.Value;
         _planHandler = new HandleTestPlan();
         _caseHandler = new HandleTestCase();
         _reportToDevops = false;
+        _logger = logger;
+        _broadcaster = broadcaster;
     }
     
     [HttpPost("run")]
-    public async Task<IActionResult> RunTests([FromBody] string excelFilePath)
+    public async Task<IActionResult> RunTests(IFormFile file)
     {
+        Console.WriteLine("Received test request");
+        Response.ContentType = "text/event-stream";
+        Response.Headers.Add("Cache-Control", "no-cache");
+        Response.Headers.Add("Connection", "keep-alive");
+        
         var excelReader = new ExcelReader();
-        var testSteps = excelReader.ReadTestSteps(excelFilePath);
+        var testSteps = excelReader.ReadTestSteps(file);
         
         using var playwright = await Playwright.CreateAsync();
         await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
@@ -34,21 +43,21 @@ public class TestController : ControllerBase
             Channel = "chrome"
         });
         
-        var executor = new TestExecutor(browser);
+        var executor = new TestExecutor(_logger, _broadcaster);
 
         try
         {
             var environment = "EarlyON";
-            var fileName = Path.GetFileNameWithoutExtension(excelFilePath);
-            var reportHandler = new HandleReporting();
+            var fileName = Path.GetFileNameWithoutExtension(file.Name);
+            var reportHandler = new HandleReporting(_logger, _broadcaster);
 
             if (_reportToDevops)
             {
-                await reportHandler.ReportToDevOps(browser, testSteps, environment, fileName);                
+                await reportHandler.ReportToDevOps(browser, testSteps, environment, fileName, Response);                
             }
             else
             {
-                await executor.ExecuteTestCasesAsync(browser, testSteps, environment, fileName);
+                await executor.ExecuteTestCasesAsync(browser, testSteps, environment, fileName, Response);
             }
             
             return Ok("Tests executed successfully.");
@@ -56,7 +65,7 @@ public class TestController : ControllerBase
         catch (Exception e)
         {
             Console.WriteLine(e);
-            return StatusCode(500, "An error occured during test execution.");
+            return StatusCode(500, new { Error = e.Message });
         }
     }
 }

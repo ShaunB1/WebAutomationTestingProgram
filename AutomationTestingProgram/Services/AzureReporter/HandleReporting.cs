@@ -14,8 +14,10 @@ public class HandleReporting
     private readonly HandleTestCase _testCaseHandler;
     private readonly HandleTestPoint _testPointHandler;
     private readonly HandleTestResult _testResultHandler;
+    private readonly ILogger<TestController> _logger;
+    private readonly WebSocketLogBroadcaster _broadcaster;
     
-    public HandleReporting()
+    public HandleReporting(ILogger<TestController> logger, WebSocketLogBroadcaster broadCaster)
     {
         _testPlanHandler = new HandleTestPlan();
         _testRunHandler = new HandleTestRun();
@@ -23,9 +25,11 @@ public class HandleReporting
         _testCaseHandler = new HandleTestCase();
         _testPointHandler = new HandleTestPoint();
         _testResultHandler = new HandleTestResult();
+        _logger = logger;
+        _broadcaster = broadCaster;
     }
     
-    public async Task ReportToDevOps(IBrowser browser, List<TestStep> testSteps, string environment, string fileName)
+    public async Task ReportToDevOps(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
     {
         var testPlanName = fileName;
         var testPlanId = await _testPlanHandler.GetTestPlanIdByNameAsync(testPlanName);
@@ -55,8 +59,10 @@ public class HandleReporting
             testCaseNames.Add(testCase.Key);
         }
         
-        Console.WriteLine($"Created {testCaseIds.Count} work items for {testCaseNames.Count} test cases.");
-
+        _logger.LogInformation($"Created {testCaseIds.Count} work items for {testCaseNames.Count} test cases.");
+        await _broadcaster.BroadcastLogAsync(
+            $"Created {testCaseIds.Count} work items for {testCaseNames.Count} test cases.");
+        
         foreach (var testCaseId in testCaseIds)
         {
             // add test case to test suite
@@ -67,24 +73,28 @@ public class HandleReporting
             testPoints.Add(testPoint);
         }
         
-        Console.WriteLine($"Added {testCaseNames.Count} test cases to test suite '{testSuite.Id}'.");
+        _logger.LogInformation($"Added {testCaseNames.Count} test cases to test suite '{testSuite.Id}'.");
+        await _broadcaster.BroadcastLogAsync($"Added {testCaseNames.Count} test cases to test suite '{testSuite.Id}'.");
 
         // add test steps to test case
         foreach (var (testCaseGroup, index) in testCases.Select((group, index) => (group, index)))
         {
             await _testCaseHandler.AddTestStepsToTestCaseAsync(testCaseIds[index], testCaseGroup.ToList());
-            Console.WriteLine($"Added {testCaseGroup.ToList().Count} test steps to test case '{testCaseGroup.Key}'");
+            _logger.LogInformation($"Added {testCaseGroup.ToList().Count} test steps to test case '{testCaseGroup.Key}'");
+            await _broadcaster.BroadcastLogAsync(
+                $"Added {testCaseGroup.ToList().Count} test steps to test case '{testCaseGroup.Key}'");
         }
         
         // create test run
         var testRun = await _testRunHandler.CreateTestRunAsync(testPlan.Id, testSuite.Id, environment, fileName);
-        Console.WriteLine($"Created Test Run '{testRun.Id}'");
+        _logger.LogInformation($"Created Test Run '{testRun.Id}'");
+        await _broadcaster.BroadcastLogAsync($"Created Test Run '{testRun.Id}'");
 
         // execute test steps
         var context = await browser.NewContextAsync();
         var page = await context.NewPageAsync();
         var testResults = new List<TestCaseResultParams>();
-        var testExecutor = new TestExecutor(browser);
+        var testExecutor = new TestExecutor(_logger, _broadcaster);
         
         foreach (var (testCase, index) in testCases.Select((tc, index) => (tc, index)))
         {
@@ -94,7 +104,7 @@ public class HandleReporting
             testResultObj.startedDate = DateTime.UtcNow;
 
             var testPoint = await _testPointHandler.GetTestPointFromTestCaseIdAsync(testPlan.Id, testSuite.Id, testCaseIds[index]);
-            var (testCaseResult, failedTests, stackTrace) = await testExecutor.ExecuteTestStepsAsync(page, testCase.ToList());
+            var (testCaseResult, failedTests, stackTrace) = await testExecutor.ExecuteTestStepsAsync(page, testCase.ToList(), response);
             
             testResultObj.testPointId = testPoint.Id;
             testResultObj.completedDate = DateTime.UtcNow;
@@ -106,14 +116,20 @@ public class HandleReporting
             
             testResults.Add(testResultObj);
             failedTests.Clear();
+            
+            _logger.LogInformation($"Test case '{testCase.Key}' execution completed with outcome: {testCaseResult}");
+            await _broadcaster.BroadcastLogAsync(
+                $"Test case '{testCase.Key}' execution completed with outcome: {testCaseResult}");
         }
 
         // add test result to test run
         await _testResultHandler.UpdateTestResultsAsync(testResults, testRun.Id);
-        Console.WriteLine($"Updated test results in test run.");
+        _logger.LogInformation($"Updated test results in test run.");
+        await _broadcaster.BroadcastLogAsync($"Updated test results in test run.");
         
         // complete test run
         await _testRunHandler.SetTestRunStateAsync(testRun.Id);
-        Console.WriteLine($"Completed test run {testRun.Id}");
+        _logger.LogInformation($"Completed test run {testRun.Id}");
+        await _broadcaster.BroadcastLogAsync($"Completed test run {testRun.Id}");
     }
 }

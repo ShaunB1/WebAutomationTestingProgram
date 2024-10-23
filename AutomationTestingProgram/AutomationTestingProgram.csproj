@@ -17,7 +17,23 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="client\src\assets\" />
+      <Folder Include="client\src\Components\" />
+      <Folder Include="client\src\Pages\" />
       <Folder Include="TestData\" />
+      <Folder Include="wwwroot\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\Home\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Home\Privacy.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\Error.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\_Layout.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\_ValidationScriptsPartial.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\_ViewImports.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\_ViewStart.cshtml" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-DiwrgTda.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-yI1nDLPB.js" />
     </ItemGroup>
 
 </Project>

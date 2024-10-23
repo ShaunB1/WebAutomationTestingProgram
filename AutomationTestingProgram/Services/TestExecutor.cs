@@ -8,16 +8,18 @@ using Microsoft.TeamFoundation.TestManagement.WebApi;
 
 public class TestExecutor
 {
-    private readonly IBrowser _browser;
     private readonly int _testCaseId;
     private readonly Dictionary<string, IWebAction> _actions;
-    private readonly bool _reportToDevops = true;
+    private readonly bool _reportToDevops = false;
     private readonly bool _recordTrace = false;
     private readonly bool _recordVideo = false;
+    private readonly ILogger<TestController> _logger;
+    private readonly WebSocketLogBroadcaster _broadcaster;
 
-    public TestExecutor(IBrowser browser)
+    public TestExecutor(ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
     {
-        _browser = browser;
+        _logger = logger;
+        _broadcaster = broadcaster;
         _actions = new Dictionary<string, IWebAction>
         {
             { "clickwebelement", new ClickWebElement() },
@@ -32,7 +34,7 @@ public class TestExecutor
         
     }
 
-    public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName)
+    public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
     {
         var testCases = testSteps.GroupBy(s => s.TestCaseName);
         
@@ -40,15 +42,14 @@ public class TestExecutor
         var context = await browser.NewContextAsync();
         var page = await context.NewPageAsync();
         var testResults = new List<TestCaseResultParams>();
-        var testExecutor = new TestExecutor(browser);
         
         foreach (var (testCase, index) in testCases.Select((tc, index) => (tc, index)))
         {
-            var (testCaseResult, failedTests, stackTrace) = await testExecutor.ExecuteTestStepsAsync(page, testCase.ToList());
+            var (testCaseResult, failedTests, stackTrace) = await ExecuteTestStepsAsync(page, testCase.ToList(), response);
         }
     }
     
-    public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page, List<TestStep> testSteps, int maxAttempts = 2)
+    public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page, List<TestStep> testSteps, HttpResponse response, int maxAttempts = 2)
     {
         var stepsFailed = new List<(int, string)>();
         var failCount = 0;
@@ -64,13 +65,16 @@ public class TestExecutor
                     step.Comment = "{COMMENT}";
                     step.StartedDate = DateTime.UtcNow;
                 
-                    Console.WriteLine($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
+                    // _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
+                    await _broadcaster.BroadcastLogAsync(
+                        $"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
                 
                     bool success = await RetryActionAsync(async () =>
                     {
                         await Task.Delay(TimeSpan.FromSeconds(step.LocalTimeout));
                         var res = await action.ExecuteAsync(page, step);
-                        Console.WriteLine($"TEST RESULT: {res}");
+                        // _logger.LogInformation($"TEST RESULT: {res}");
+                        await _broadcaster.BroadcastLogAsync($"TEST RESULT: {res}");
                         return res;
                     }, maxAttempts);
                 
@@ -78,7 +82,8 @@ public class TestExecutor
                 
                     if (!success)
                     {
-                        Console.WriteLine($"FAILED: {step.Object}");
+                        // _logger.LogInformation($"FAILED: {step.Object}");
+                        await _broadcaster.BroadcastLogAsync($"FAILED: {step.Object}");
                         step.Outcome = "Failed";
                         stepsFailed.Add((step.SequenceIndex, step.TestDescription));
                         failCount++;
@@ -93,8 +98,8 @@ public class TestExecutor
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-
+                // _logger.LogInformation(e.ToString());
+                await _broadcaster.BroadcastLogAsync(e.ToString());
                 var indexedStackTrace = new List<(int, string)>();
                 
                 // return ("Failed", stepsFailed, new List<(int, string)>(index+1, e.StackTrace?.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)));
@@ -115,7 +120,8 @@ public class TestExecutor
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Attempt {attempt} failed with error: {e.Message}");
+                    // _logger.LogInformation($"Attempt {attempt} failed with error: {e.Message}");
+                    await _broadcaster.BroadcastLogAsync($"Attempt {attempt} failed with error: {e.Message}");
                     await Task.Delay(1000);
                 }
             }

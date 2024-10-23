@@ -13,4 +13,41 @@ jobs:
           script: |
             $filePath = "C:\Users\BautisSh\Downloads\EarlyON_Regression.xlsx"
             $uri = "http://localhost:5223/api/test/run"
-            curl.exe -s -X POST -F "file=@$filePath" $uri
+            $wsUri = "ws://localhost:5223/ws/logs"  # Adjust the port and endpoint as needed
+
+            # Function to connect to WebSocket and receive logs
+            function Connect-WebSocket {
+                param(
+                    [string]$uri
+                )
+
+                $client = New-Object System.Net.WebSockets.ClientWebSocket
+
+                try {
+                    $client.ConnectAsync([Uri]$uri, [Threading.CancellationToken]::None) | Out-Null
+                    Write-Output "Connected to WebSocket at $uri"
+
+                    $buffer = New-Object byte[] 1024
+
+                    while ($client.State -eq [System.Net.WebSockets.WebSocketState]::Open) {
+                        $result = $client.ReceiveAsync([ArraySegment[byte]]$buffer, [Threading.CancellationToken]::None).Result
+                        if ($result.Count -gt 0) {
+                            $message = [System.Text.Encoding]::UTF8.GetString($buffer, 0, $result.Count)
+                            Write-Output $message
+                        }
+                    }
+                } catch {
+                    Write-Output "Failed to connect to WebSocket: $_"
+                } finally {
+                    $client.Dispose()
+                }
+            }
+
+            Write-Output "Starting test run by uploading file to $uri..."
+            $response = curl.exe -s -X POST -F "file=@$filePath" $uri
+
+            Write-Output "Response from API: $response"
+
+            Write-Output "Connecting to WebSocket to receive logs..."
+            Connect-WebSocket -uri $wsUri
+

@@ -4,58 +4,51 @@ pool:
     - AgentName -equals shaun
 
 jobs:
-  - job: ExecuteJob1
-    displayName: 'Run PowerShell Script on Agent "shaun"'
-    strategy:
-      parallel: 3
+  - job: ExecuteSingleJob
+    displayName: 'Run PowerShell Scripts in Parallel Within a Single Agent'
     steps:
       - task: PowerShell@2
-        displayName: "Execute Job 1"
+        displayName: "Run Parallel Scripts"
         inputs:
           targetType: 'inline'
           script: |
-            $client = [System.Net.WebSockets.ClientWebSocket]::new()
-            $uri = [System.Uri]::new("http://localhost:5223/api/test/run")
-            $wsUri = [System.Uri]::new("ws://localhost:5223/ws/logs")
+            $job1 = Start-Job -ScriptBlock {
+              # Task 1: Script for Job 1
+              $uri = "http://localhost:5223/api/test/run"
+              $wsUri = "ws://localhost:5223/ws/logs"
+              $filePath = "C:\Users\BautisSh\Downloads\EarlyON_Regression.xlsx"
 
-            try {
-              $connectTask = $client.ConnectAsync($wsUri, [Threading.CancellationToken]::None)
+              $client = [System.Net.WebSockets.ClientWebSocket]::new()
+              $connectTask = $client.ConnectAsync([System.Uri]::new($wsUri), [Threading.CancellationToken]::None)
               $connectTask.Wait()
-              $buffer = New-Object byte[] 4096
-              
-              if ($client.State -eq [System.Net.WebSockets.WebSocketState]::Open) {
-                Write-Host "Connected to WebSocket server."
-              }
-              
-              Start-Job -ScriptBlock {
-                param($uri)
-                $response = curl.exe -s -X POST -F 'file=@C:\Users\BautisSh\Downloads\EarlyON_Regression.xlsx' $uri
-              } -ArgumentList $uri
-              
-              Write-Host "Passed response"
-              
-              while ($client.State -eq [System.Net.WebSockets.WebSocketState]::Open) {
-                $result = $client.ReceiveAsync([ArraySegment[byte]]$buffer, [Threading.CancellationToken]::None).Result
-                
-                if ($result.Count -gt 0) {
-                  $message = [System.Text.Encoding]::UTF8.GetString($buffer, 0, $result.Count)
-                  Write-Output $message
-                }
-                
-                    if ($result.MessageType -eq [System.Net.WebSockets.WebSocketMessageType]::Close) {
-                        Write-Host "WebSocket connection closing..."
-                        break
-                    }
-              }
-              
-              Write-Host "WebSocket closed"
-            } catch {
-              
-            } finally {
-                if ($client.State -eq [System.Net.WebSockets.WebSocketState]::Open) {
-                    $client.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, "Closing", [Threading.CancellationToken]::None).Wait()
-                }
-                $client.Dispose()
-                Write-Host "WebSocket connection closed."
+              # Your existing connection and messaging logic for Task 1
             }
 
+            $job2 = Start-Job -ScriptBlock {
+              # Task 2: Script for Job 2
+              $uri = "http://localhost:5224/api/test/run"
+              $wsUri = "ws://localhost:5224/ws/logs"
+              $filePath = "C:\Users\BautisSh\Downloads\EarlyON_Regression.xlsx"
+
+              $client = [System.Net.WebSockets.ClientWebSocket]::new()
+              $connectTask = $client.ConnectAsync([System.Uri]::new($wsUri), [Threading.CancellationToken]::None)
+              $connectTask.Wait()
+              # Your existing connection and messaging logic for Task 2
+            }
+
+            $job3 = Start-Job -ScriptBlock {
+              # Task 3: Script for Job 3
+              $uri = "http://localhost:5225/api/test/run"
+              $wsUri = "ws://localhost:5225/ws/logs"
+              $filePath = "C:\Users\BautisSh\Downloads\EarlyON_Regression.xlsx"
+
+              $client = [System.Net.WebSockets.ClientWebSocket]::new()
+              $connectTask = $client.ConnectAsync([System.Uri]::new($wsUri), [Threading.CancellationToken]::None)
+              $connectTask.Wait()
+              # Your existing connection and messaging logic for Task 3
+            }
+
+            # Wait for all jobs to complete
+            $job1 | Wait-Job
+            $job2 | Wait-Job
+            $job3 | Wait-Job

@@ -1,22 +1,21 @@
-using System.Text.RegularExpressions;
-using Microsoft.Azure.Pipelines.WebApi;
+﻿using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Newtonsoft.Json;
 
 namespace AutomationTestingProgram.Actions;
 
-public class PopulateWebElement : IWebAction
+public class UploadFile : IWebAction
 {
     public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
     {
         var locator = step.Object;
-        var state = step.Value.ToLower();
+        var filePath = step.Value;
         var element = step.Comments == "html id" 
             ? page.Locator($"#{locator}") 
             : step.Comments == "innertext" 
                 ? page.Locator($"text={locator}") 
                 : page.Locator(locator);
-        
+
         try
         {
             Match match = Regex.Match(step.Value, @"^{(\d+)}$");
@@ -27,23 +26,21 @@ public class PopulateWebElement : IWebAction
                 var content = match.Groups[1].Value;
                 var index = int.Parse(content);
                 var datasets = JsonConvert.DeserializeObject<List<List<string>>>(step.Data);
+                
                 datapoint = datasets?[iteration][index];
-            }
-
-            if (match.Success && iteration != -1)
-            {
-                await element.FillAsync(datapoint);
+                
+                await element.SetInputFilesAsync(datapoint);
             }
             else
             {
-                await element.FillAsync(step.Value);                
+                await element.SetInputFilesAsync(filePath);                
             }
             
             return true;
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            Console.WriteLine($"Failed to populate text box {step.Object} with {step.Value}: {ex.Message}");
+            Console.WriteLine(e);
             return false;
         }
     }

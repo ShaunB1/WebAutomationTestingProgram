@@ -9,18 +9,18 @@
     <ItemGroup>
       <PackageReference Include="ClosedXML" Version="0.104.1" />
       <PackageReference Include="Microsoft.Playwright" Version="1.47.0" />
+      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.6" />
       <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.225.1" />
       <PackageReference Include="Microsoft.TeamFoundationServer.ExtendedClient" Version="19.225.1" />
       <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="Oracle.ManagedDataAccess" Version="23.6.0" />
       <PackageReference Include="System.Net.Http" Version="4.3.4" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="client\src\assets\" />
-      <Folder Include="client\src\Components\" />
+      <Folder Include="client\src\Components\Table\" />
       <Folder Include="client\src\Pages\" />
-      <Folder Include="TestData\" />
       <Folder Include="wwwroot\" />
     </ItemGroup>
 
@@ -34,6 +34,28 @@
       <_ContentIncludedByDefault Remove="Views\_ViewStart.cshtml" />
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-DiwrgTda.css" />
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-yI1nDLPB.js" />
+      <_ContentIncludedByDefault Remove="ATP_GUI\build\renderer\components\EnvNavContainer\environment_list.json" />
+      <_ContentIncludedByDefault Remove="ATP_GUI\nodemon.json" />
+      <_ContentIncludedByDefault Remove="ATP_GUI\package-lock.json" />
+      <_ContentIncludedByDefault Remove="ATP_GUI\package.json" />
+      <_ContentIncludedByDefault Remove="ATP_GUI\src\renderer\components\EnvNavContainer\environment_list.json" />
+      <_ContentIncludedByDefault Remove="ATP_GUI\tsconfig.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="TestData\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="TestData\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Remove="TestData\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="TestData\**" />
     </ItemGroup>
 
 </Project>

@@ -4,7 +4,7 @@ namespace AutomationTestingProgram.Actions;
 
 public class VerifyWebElementAvailability : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
     {
         var locator = step.Object;
         var state = step.Value.ToLower();

@@ -14,6 +14,7 @@ public class TestStep
     public string Collection  { get; set; }
     public string TestStepType { get; set; }
     public int GoToStep { get; set; }
+    public string Data { get; set; }
     
     public string Outcome { get; set; }
     public DateTime StartedDate { get; set; }

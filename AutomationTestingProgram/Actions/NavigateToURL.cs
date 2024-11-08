@@ -4,7 +4,7 @@ namespace AutomationTestingProgram.Actions;
 
 public class NavigateToURL : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
     {
         try
         {

@@ -104,7 +104,7 @@ public class HandleReporting
             testResultObj.startedDate = DateTime.UtcNow;
 
             var testPoint = await _testPointHandler.GetTestPointFromTestCaseIdAsync(testPlan.Id, testSuite.Id, testCaseIds[index]);
-            var (testCaseResult, failedTests, stackTrace) = await testExecutor.ExecuteTestStepsAsync(page, testCase.ToList(), response);
+            var (testCaseResult, failedTests, stackTrace) = await testExecutor.ExecuteTestStepsAsync(page, testCase.ToList(), response, 3);
             
             testResultObj.testPointId = testPoint.Id;
             testResultObj.completedDate = DateTime.UtcNow;

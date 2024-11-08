@@ -61,6 +61,37 @@ app.Use(async (HttpContext context, Func<Task> next) =>
             broadcaster.RemoveClient(webSocket);
         }
     }
+    else if (context.Request.Path == "/ws/desktop" && context.WebSockets.IsWebSocketRequest)
+    {
+        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+        Console.WriteLine("Electron WebSocket connected.");
+
+        try
+        {
+            var buffer = new byte[1024 * 4];
+
+            while (webSocket.State == WebSocketState.Open)
+            {
+                var res = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+                if (res.MessageType == WebSocketMessageType.Text || res.MessageType == WebSocketMessageType.Binary)
+                {
+                    var responseMsg = Encoding.UTF8.GetBytes("Message received by ASP.NET server.");
+                    await webSocket.SendAsync(new ArraySegment<byte>(responseMsg), WebSocketMessageType.Text, true, CancellationToken.None);
+                }
+                
+                if (res.MessageType == WebSocketMessageType.Close)
+                {
+                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by client.", CancellationToken.None);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
     else
     {
         await next();

@@ -1,19 +1,43 @@
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
+using Newtonsoft.Json;
 
 namespace AutomationTestingProgram.Actions;
 
 public class SelectDDL : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
     {
         var locator = step.Object;
         var option = step.Value;
         var element = page.Locator(locator);
-        Console.WriteLine($"EXISTS: {element}");
+
+        Match match = Regex.Match(step.Value, @"^{(\d+)}$");
+        var datapoint = string.Empty;
+
+        if (match.Success)
+        {
+            var content = match.Groups[1].Value;
+            var index = int.Parse(content);
+            var datasets = JsonConvert.DeserializeObject<List<List<string>>>(step.Data);
+            datapoint = datasets?[iteration][index];
+        }
+        else
+        {
+            datapoint = option;
+        }
+        
         try
         {
-            Console.WriteLine($"OPTION: {option}");
-            var res = await element.SelectOptionAsync(new SelectOptionValue { Label = option });
+            IReadOnlyList<string>? res = null;
+            if (match.Success && iteration != -1)
+            {
+                res = await element.SelectOptionAsync(new SelectOptionValue { Label = datapoint});
+            }
+            else
+            {
+                res = await element.SelectOptionAsync(new SelectOptionValue { Label = option });   
+            }
 
             if (res == null || res.Count == 0)
             {

@@ -25,7 +25,7 @@ public class CustomConsoleLogger : ILogger
     {
         // Custom log formatting
         var logMessage = new StringBuilder();
-        logMessage.AppendFormat("{0:HH:mm:ss} ", DateTime.Now);  // Timestamp
+        logMessage.AppendFormat("{0:HH:mm:ss.fff} ", DateTime.Now);  // Timestamp
                                                                 
         string logLevelText = logLevel.ToString().ToUpper(); // LogLevel
         string coloredLogLevelText = logLevelText;

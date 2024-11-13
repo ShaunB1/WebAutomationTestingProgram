@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.InkML;
+﻿using DocumentFormat.OpenXml.ExtendedProperties;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Server.HttpSys;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.Services.Common;
@@ -10,19 +11,24 @@ namespace AutomationTestingProgram.Actions
     public class ContextManager
     {
 
-        private IBrowser Browser;
-        private SemaphoreSlim ContextSemaphore;
-        private ConcurrentQueue<Func<Task<IBrowserContext>>> ContextQueue;
-        private int RunningContextCount;
+        private readonly IBrowser Browser;
+        private readonly SemaphoreSlim ContextSemaphore;
+        private readonly ConcurrentQueue<Func<Task<IBrowserContext>>> ContextQueue;        
         private readonly ILogger<ContextManager> Logger;
+        private readonly ILoggerFactory _loggerFactory;
+        private int RunningContextCount;
 
-        public ContextManager(IBrowser browser, ILogger<ContextManager> logger)
+        private int ContextID;
+
+        public ContextManager(IBrowser browser, ILogger<ContextManager> logger, ILoggerFactory loggerFactory)
         {
             this.Browser = browser;
             this.ContextSemaphore = new SemaphoreSlim(10); // Limit of 10 concurrences contexts.
             this.ContextQueue = new ConcurrentQueue<Func<Task<IBrowserContext>>>();
             this.RunningContextCount = 0;
             this.Logger = logger;
+            _loggerFactory = loggerFactory;
+            this.ContextID = 0;
         }
 
         public async Task<IBrowserContext> CreateNewContextAsync()
@@ -65,7 +71,7 @@ namespace AutomationTestingProgram.Actions
             }
             catch (Exception e)
             {
-                Logger.LogInformation($"Context execution failed: {e.Message}");
+                Logger.LogError($"Context execution failed: {e.Message}");
             }
 
             return context;
@@ -74,28 +80,16 @@ namespace AutomationTestingProgram.Actions
         private async Task ExecuteContextAsync(IBrowserContext context)
         {
             try
-            {
-                IPage page = await context.NewPageAsync();
-                await page.GotoAsync("https://www.google.com");
-                await Task.Delay(10000);
-                await page.GotoAsync("https://example.com");
-                await Task.Delay(10000);
-                await page.GotoAsync("https://www.bing.com");
-                await Task.Delay(10000);
-                await page.GotoAsync("https://www.yahoo.com");
-                await Task.Delay(10000);
-                await page.GotoAsync("https://www.wikipedia.org");
-                await Task.Delay(10000);
-                await page.GotoAsync("https://www.reddit.com");
-                await Task.Delay(10000);
-                await page.GotoAsync("https://www.microsoft.com");
-                await Task.Delay(10000);
-                await page.GotoAsync("https://www.apple.com");
-                await Task.Delay(10000);
-                await page.GotoAsync("https://www.amazon.com");
-                await Task.Delay(10000);
-                await page.GotoAsync("https://www.netflix.com");
-                await Task.Delay(10000);
+            { // Use the id here, send it to page manager
+                var pageLogger = _loggerFactory.CreateLogger<PageManager>();
+                PageManager pageManager = new PageManager(context, ContextID, pageLogger);
+                var task1 = pageManager.CreateNewPrimaryPageAsync();
+                var task2 = pageManager.CreateNewPrimaryPageAsync();
+                var task3 = pageManager.CreateNewPrimaryPageAsync();
+                var task4 = pageManager.CreateNewPrimaryPageAsync();
+                var task5 = pageManager.CreateNewPrimaryPageAsync();
+
+                await Task.WhenAll(task1, task2, task3, task4, task5);
             }
             catch (Exception e)
             {
@@ -110,6 +104,7 @@ namespace AutomationTestingProgram.Actions
         private void IncrementContextCount()
         {
             Interlocked.Increment(ref RunningContextCount);
+            Interlocked.Increment(ref ContextID);
             Logger.LogInformation($"Executing Context -- Contexts Running: '{RunningContextCount}' | Queued: '{ContextQueue.Count}'");
         }
 
@@ -125,7 +120,7 @@ namespace AutomationTestingProgram.Actions
             {
                 Task.Run(nextTask);
             }
-            else
+            else if (ContextQueue.Count > 0)
             {
                 Logger.LogInformation($"Queuing Context -- Contexts Running: '{RunningContextCount}' | Queued: '{ContextQueue.Count}'");
             }

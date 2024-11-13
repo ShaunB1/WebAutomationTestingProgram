@@ -70,7 +70,7 @@ public class TestController : ControllerBase
                     if (_contextManager == null)
                     {
                         var contextLogger = _loggerFactory.CreateLogger<ContextManager>();
-                        _contextManager = new ContextManager(Browser, contextLogger);
+                        _contextManager = new ContextManager(Browser, contextLogger, _loggerFactory);
                     }
                 }
             }

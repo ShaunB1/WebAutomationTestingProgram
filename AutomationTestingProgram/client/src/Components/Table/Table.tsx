@@ -3,23 +3,7 @@ import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
-
-interface RowData {
-    testcasename: string;
-    testdesc: string;
-    stepnum: string;
-    action: string;
-    object: string;
-    value: string;
-    comments: string;
-    release: string;
-    attempts: string;
-    timeout: string;
-    control: string;
-    collection: string;
-    steptype: string;
-    goto: string;
-}
+import { RowData } from "../../interfaces";
 
 interface TableProps {
     rowData: RowData[];

@@ -1,0 +1,31 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.import-container {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 5px;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.import-container label {
+    font-size: medium;
+}
+
+#value-inputs input, #newrow-container input {
+    margin: 0px 3px;
+}
+
+#newrow-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}

@@ -1,11 +1,7 @@
-using System.ComponentModel;
-using System.Diagnostics;
 using AutomationTestingProgram.Services;
 using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Models;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Playwright;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Newtonsoft.Json;
 
 public class TestExecutor
@@ -47,15 +43,20 @@ public class TestExecutor
 
     public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
     {
-        var testCases = testSteps.GroupBy(s => s.TestCaseName);
-        
         // execute test steps
         var context = await browser.NewContextAsync();
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1920, 1080);
         var testResults = new List<TestCaseResultParams>();
+        var testCases = testSteps.Where(s => s.Control != "#").GroupBy(s => s.TestCaseName);
+        var cycleGroups = testSteps.Where(s => s.Cycle != string.Empty).GroupBy(s => s.Cycle);
+        var nonCycleGroups = testSteps.Where(s => s.Cycle == string.Empty).GroupBy(s => s.TestCaseName);
         
-        foreach (var (testCase, index) in testCases.Select((tc, index) => (tc, index)))
+        var cycleDatasets = JsonConvert.DeserializeObject<List<List<string>>>(testCases.First().First().CycleData);
+        var cycleIterations = cycleDatasets?.Count ?? -1;
+        var cycleIteration = 0;
+
+        foreach (var testCase in nonCycleGroups)
         {
             Console.WriteLine($"Executing Test Case: {testCase.Key}");
             var firstStep = testCase.First();
@@ -69,34 +70,109 @@ public class TestExecutor
                 page = await context.NewPageAsync();
                 await page.SetViewportSizeAsync(1920, 1080);
             }
-
-            if (firstStep.ActionOnObject == "exitcondition")
+        
+            if (firstStep.ActionOnObject.ToLower().Replace(" ", "") == "exitcondition")
             {
                 if (_actions.TryGetValue(firstStep.ActionOnObject.ToLower().Replace(" ", ""), out var action))
                 {
                     var res = await action.ExecuteAsync(page, firstStep, -1);
                     while (!res)
                     {
-                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, -1);
+                        Task.Delay(TimeSpan.FromSeconds(15)).Wait();
                         res = await action.ExecuteAsync(page, firstStep, -1);
                         Console.WriteLine($"EXIT CONDITION: {res}");
+        
+                        if (!res)
+                        {
+                            await ExecuteTestStepsAsync(page, testCase.ToList(), response, -1);
+                        }
                     }
                 }
-
+        
+                Console.WriteLine($"Moving to the next test case...");
                 continue;
             }
-
+        
             if (datasets == null)
             {
                 await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration=-1);
             }
-            
+
             while (iterations > 0)
             {
                 Console.WriteLine($"Iteration: {iterations}");
                 await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration);
                 iterations -= 1;
                 iteration += 1;
+            }   
+        }
+        
+        foreach (var cycleGroup in cycleGroups)
+        {
+            while (cycleIterations > 0)
+            {
+                testCases = cycleGroup.GroupBy(s => s.TestCaseName);
+                foreach (var testCase in testCases)
+                {
+                    
+                    Console.WriteLine($"Executing Test Case: {testCase.Key}");
+                    var firstStep = testCase.First();
+                    var datasets = JsonConvert.DeserializeObject<List<List<string>>>(firstStep.Data);
+                    var iterations = datasets?.Count ?? -1;
+                    
+                    var iteration = 0;
+                    
+                
+                    if (page.IsClosed)
+                    {
+                        await context.ClearCookiesAsync();
+                        page = await context.NewPageAsync();
+                        await page.SetViewportSizeAsync(1920, 1080);
+                    }
+            
+                    if (firstStep.ActionOnObject.ToLower().Replace(" ", "") == "exitcondition")
+                    {
+                        if (_actions.TryGetValue(firstStep.ActionOnObject.ToLower().Replace(" ", ""), out var action))
+                        {
+                            var res = await action.ExecuteAsync(page, firstStep, -1);
+                            while (!res)
+                            {
+                                Task.Delay(TimeSpan.FromSeconds(15)).Wait();
+                                res = await action.ExecuteAsync(page, firstStep, -1);
+                                Console.WriteLine($"EXIT CONDITION: {res}");
+            
+                                if (!res)
+                                {
+                                    await ExecuteTestStepsAsync(page, testCase.ToList(), response, -1);
+                                }
+                            }
+                        }
+            
+                        Console.WriteLine($"Moving to the next test case...");
+                        continue;
+                    }
+            
+                    if (datasets == null && cycleDatasets == null)
+                    {
+                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration=-1);
+                    }
+
+                    if (cycleDatasets != null)
+                    {
+                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, cycleIteration);
+                    }
+                
+                    while (iterations > 0)
+                    {
+                        Console.WriteLine($"Iteration: {iterations}");
+                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration);
+                        iterations -= 1;
+                        iteration += 1;
+                    }
+                }
+                
+                cycleIterations -= 1;
+                cycleIteration += 1;
             }
         }
     }
@@ -118,11 +194,11 @@ public class TestExecutor
                     step.Comment = "{COMMENT}";
                     step.StartedDate = DateTime.UtcNow;
                 
-                    _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
+                    _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}, {step.Value}");
                     await _broadcaster.BroadcastLogAsync(
                         $"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
-                    
-                    bool success = await RetryActionAsync(async () =>
+
+                    var success = await RetryActionAsync(async () =>
                     {
                         var stepDelay = 0;
                         var timeout = 30000;

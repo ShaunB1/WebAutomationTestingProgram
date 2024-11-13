@@ -24,24 +24,10 @@ public class CheckAllRadioButtons : IWebAction
                     {
                         continue;
                     }
-                    
-                    var groupRadioButtons = await page.QuerySelectorAllAsync($"input[type='radio'][name='{groupName}']");
-                    var isAnyChecked = false;
-
-                    foreach (var button in groupRadioButtons)
-                    {
-                        if (await button.IsEnabledAsync())
-                        {
-                            isAnyChecked = true;
-                            break;
-                        }
-                    }
-
-                    if (!isAnyChecked)
-                    {
-                        await radioButton.CheckAsync();
-                        selectedGroups.Add(groupName);
-                    }
+            
+                    await radioButton.CheckAsync();
+            
+                    selectedGroups.Add(groupName);
                 }
             }
 

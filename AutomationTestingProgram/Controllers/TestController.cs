@@ -1,9 +1,11 @@
+using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
+using System.Runtime.CompilerServices;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -14,22 +16,109 @@ public class TestController : ControllerBase
     private readonly HandleTestCase _caseHandler;
     private readonly bool _reportToDevops;
     private readonly ILogger<TestController> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly WebSocketLogBroadcaster _broadcaster;
 
-    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
+    private static IBrowser _browser;
+    private static readonly object BrowserLock = new object();
+    private static ContextManager _contextManager;
+    private static readonly object ContextLock = new object();
+
+    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, ILoggerFactory loggerFactory, WebSocketLogBroadcaster broadcaster)
     {
         _azureDevOpsSettings = azureDevOpsSettings.Value;
         _planHandler = new HandleTestPlan();
         _caseHandler = new HandleTestCase();
         _reportToDevops = false;
         _logger = logger;
+        _loggerFactory = loggerFactory;
         _broadcaster = broadcaster;
     }
-    
-    [HttpPost("run")]
-    public async Task<IActionResult> RunTests(IFormFile file)
+
+    private IBrowser Browser
     {
-        Console.WriteLine("Received test request");
+        get
+        {
+            if (_browser == null)
+            {
+                lock (BrowserLock)
+                {
+                    if (_browser == null)
+                    {
+                        var playwright = Playwright.CreateAsync().GetAwaiter().GetResult();
+                        _browser = playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+                        {
+                            Headless = false,
+                            Channel = "chrome"
+                        }).GetAwaiter().GetResult();
+                    }
+                }
+            }
+
+            return _browser;
+        }
+    }
+
+    private ContextManager Manager
+    {
+        get
+        {
+            if (_contextManager == null)
+            {
+                lock(ContextLock)
+                {
+                    if (_contextManager == null)
+                    {
+                        var contextLogger = _loggerFactory.CreateLogger<ContextManager>();
+                        _contextManager = new ContextManager(Browser, contextLogger);
+                    }
+                }
+            }
+
+            return _contextManager;
+        }
+    }
+    
+    [HttpPost("run")] // IFormFile file
+    public async Task<IActionResult> RunTests()
+    {
+        try
+        {
+            Manager.CreateNewContextAsync();
+            return Ok("Tests execution started.");
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new { Error = e.Message });
+        }
+
+        /*using var playwright = await Playwright.CreateAsync();
+        await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+        {
+            Headless = false,
+            Channel = "chrome"
+        });
+
+        ContextManager manager = new ContextManager(browser);
+
+        try
+        {
+            var createContextsTasks = new[]
+            {
+                manager.CreateNewContextAsync(),
+                manager.CreateNewContextAsync()
+            };
+
+            // Wait for all context creation tasks to complete
+            await Task.WhenAll(createContextsTasks);
+
+            return Ok("Tests executed successfully.");
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new { Error = e.Message });
+        }*/
+        /*Console.WriteLine("Received test request");
         Response.ContentType = "text/event-stream";
         Response.Headers.Add("Cache-Control", "no-cache");
         Response.Headers.Add("Connection", "keep-alive");
@@ -67,7 +156,7 @@ public class TestController : ControllerBase
         {
             Console.WriteLine(e);
             return StatusCode(500, new { Error = e.Message });
-        }
+        }*/
     }
 
     public IActionResult SaveTestSteps([FromForm] List<TestStep> testSteps)

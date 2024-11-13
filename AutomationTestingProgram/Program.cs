@@ -6,7 +6,7 @@ using AutomationTestingProgram.Services;
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
+builder.Logging.AddProvider(new CustomConsoleLoggerProvider());
 
 builder.Services.Configure<AzureDevOpsSettings>(builder.Configuration.GetSection("AzureDevops"));
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();

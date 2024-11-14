@@ -39,7 +39,6 @@ namespace AutomationTestingProgram.Actions
 
             Func<Task<IPage>> createPage = async () =>
             {
-                await ActivePageSemaphore.WaitAsync();
                 try
                 {
                     IPage page = await CreateAndRunPageAsync();
@@ -52,14 +51,14 @@ namespace AutomationTestingProgram.Actions
                 finally
                 {
                     ActivePageSemaphore.Release();
-                    ProcessNextPage();
+                    await ProcessNextPage();
                 }
 
-                return pageCreationTask.Task.Result;
+                return await pageCreationTask.Task;
             };
 
             PageRequestQueue.Enqueue(createPage);
-            ProcessNextPage();
+            await ProcessNextPage();
             return await pageCreationTask.Task;
         }
 
@@ -107,7 +106,7 @@ namespace AutomationTestingProgram.Actions
             }
             catch (Exception e)
             {
-
+                Logger.LogError($"Page execution failed: {e.Message}");
             }
             finally
             {
@@ -129,19 +128,16 @@ namespace AutomationTestingProgram.Actions
             Logger.LogInformation($"Context '{ContextID}' : Removing Active Page -- Count: '{ActivePageCount}' | Queue: '{PageRequestQueue.Count}' | Total # of pages: '{PageCount}'");
         }
 
-        private void ProcessNextPage()
+        private async Task ProcessNextPage()
         {
-            if (ActivePageSemaphore.CurrentCount > 0 && PageRequestQueue.TryDequeue(out var nextTask))
+            if (await ActivePageSemaphore.WaitAsync(0) && PageRequestQueue.TryDequeue(out var nextTask))
             {
-                Task.Run(nextTask);
+                Task.Run(nextTask); // DO NOT AWAIT
             } 
             else if (PageRequestQueue.Count > 0)
             {
                 Logger.LogInformation($"Context '{ContextID}' : Queuing Active Page -- Count: '{ActivePageCount}' | Queue: '{PageRequestQueue.Count}' | Total # of pages: '{PageCount}'");
             }
         }
-
-
-
     }
 }

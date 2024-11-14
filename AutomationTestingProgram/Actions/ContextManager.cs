@@ -37,7 +37,6 @@ namespace AutomationTestingProgram.Actions
 
             Func<Task<IBrowserContext>> createContext = async () =>
             {
-                await ContextSemaphore.WaitAsync();
                 try
                 {
                     IBrowserContext context = await CreateAndRunContextAsync();                    
@@ -50,13 +49,13 @@ namespace AutomationTestingProgram.Actions
                 finally
                 {
                     ContextSemaphore.Release();
-                    ProcessNextContext();
+                    await ProcessNextContext();
                 }
-                return contextTask.Task.Result;
+                return await contextTask.Task;
             };
 
             ContextQueue.Enqueue(createContext);
-            ProcessNextContext();
+            await ProcessNextContext();
             return await contextTask.Task;
         }
 
@@ -83,17 +82,20 @@ namespace AutomationTestingProgram.Actions
             { // Use the id here, send it to page manager
                 var pageLogger = _loggerFactory.CreateLogger<PageManager>();
                 PageManager pageManager = new PageManager(context, ContextID, pageLogger);
-                var task1 = pageManager.CreateNewPrimaryPageAsync();
-                var task2 = pageManager.CreateNewPrimaryPageAsync();
-                var task3 = pageManager.CreateNewPrimaryPageAsync();
-                var task4 = pageManager.CreateNewPrimaryPageAsync();
-                var task5 = pageManager.CreateNewPrimaryPageAsync();
+                var tasks = new[]
+                {
+                    pageManager.CreateNewPrimaryPageAsync(),
+                    pageManager.CreateNewPrimaryPageAsync(),
+                    pageManager.CreateNewPrimaryPageAsync(),
+                    pageManager.CreateNewPrimaryPageAsync(),
+                    pageManager.CreateNewPrimaryPageAsync()
+                };
 
-                await Task.WhenAll(task1, task2, task3, task4, task5);
+                await Task.WhenAll(tasks);
             }
             catch (Exception e)
             {
-                
+                Logger.LogError($"Context execution failed: {e.Message}");
             }
             finally
             {
@@ -114,11 +116,11 @@ namespace AutomationTestingProgram.Actions
             Logger.LogInformation($"Terminating Context -- Contexts Running: '{RunningContextCount}' | Queued: '{ContextQueue.Count}'");
         }
 
-        private void ProcessNextContext()
+        private async Task ProcessNextContext()
         {
-            if (ContextSemaphore.CurrentCount > 0 && ContextQueue.TryDequeue(out var nextTask))
+            if (await ContextSemaphore.WaitAsync(0) && ContextQueue.TryDequeue(out var nextTask))
             {
-                Task.Run(nextTask);
+                Task.Run(nextTask); // DO NOT AWAIT
             }
             else if (ContextQueue.Count > 0)
             {

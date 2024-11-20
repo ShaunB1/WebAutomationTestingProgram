@@ -25,12 +25,23 @@ public class TestController : ControllerBase
         _logger = logger;
         _broadcaster = broadcaster;
     }
+
+    [HttpPost("test")]
+    public IActionResult TestPost()
+    {
+        return Ok("POST request successful.");
+    }
     
     [HttpPost("run")]
     public async Task<IActionResult> RunTests(IFormFile file)
     {
+        if (file == null)
+        {
+            return BadRequest("No file received.");
+        }
+        
         Console.WriteLine("Received test request");
-        Response.ContentType = "text/event-stream";
+        // Response.ContentType = "text/event-stream";
         Response.Headers.Add("Cache-Control", "no-cache");
         Response.Headers.Add("Connection", "keep-alive");
         
@@ -38,6 +49,7 @@ public class TestController : ControllerBase
         var testSteps = excelReader.ReadTestSteps(file);
         
         using var playwright = await Playwright.CreateAsync();
+            
         await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
             Headless = false,
@@ -45,13 +57,13 @@ public class TestController : ControllerBase
         });
         
         var executor = new TestExecutor(_logger, _broadcaster);
-
+        
         try
         {
             var environment = "EarlyON";
             var fileName = Path.GetFileNameWithoutExtension(file.Name);
             var reportHandler = new HandleReporting(_logger, _broadcaster);
-
+        
             if (_reportToDevops)
             {
                 await reportHandler.ReportToDevOps(browser, testSteps, environment, fileName, Response);                

@@ -38,7 +38,6 @@ public class TestExecutor
             { "checkallboxes", new CheckAllBoxes() },
             { "fillalltextboxes", new FillAllTextBoxes() },
         };
-        
     }
 
     public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)

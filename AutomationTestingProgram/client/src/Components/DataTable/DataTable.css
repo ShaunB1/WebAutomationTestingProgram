@@ -1,10 +1,7 @@
 /* DataTable.css */
 
 .table-container {
-    margin-top: 20px;
-    border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #ddd; /* Border around the entire table */
 }
 
 .table-head-cell {

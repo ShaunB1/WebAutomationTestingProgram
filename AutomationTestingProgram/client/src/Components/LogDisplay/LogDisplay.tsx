@@ -6,14 +6,23 @@ const LogDisplay = () => {
     const logContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const socket = new WebSocket('ws://localhost:5223/ws/logs');
-
+        const socket = new WebSocket(`ws://${import.meta.env.VITE_HOST}/ws/logs`);
+        console.log(`VITE_HOST: ${import.meta.env.VITE_HOST}`);
+        
+        socket.onopen = (event) => {
+            console.log("Connected to WebSocket server");
+        }
+        
         socket.onmessage = (event) => {
             setLogs((prevLogs) => [...prevLogs, event.data as string]);
         }
 
         socket.onerror = (error) => {
             console.error("WebSocket error:", error);
+        }
+
+        socket.onclose = (event) => {
+            console.log("Disconnected from WebSocket server");
         }
 
         return () => {

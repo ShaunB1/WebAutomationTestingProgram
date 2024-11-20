@@ -1,0 +1,9 @@
+body {
+    padding: 0;
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.content-container {
+    padding: 30px;
+}

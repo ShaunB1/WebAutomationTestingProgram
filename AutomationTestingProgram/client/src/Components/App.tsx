@@ -1,40 +1,29 @@
 import Home from "../Pages/Home.tsx";
-import Table from "./Table/Table.tsx";
+import NavBar from "./NavBar/NavBar.tsx";
+import EnvsPage from "../Pages/EnvsPage.tsx";
+import RecorderPage from "../Pages/RecorderPage.tsx";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import "./App.css";
+import DataTable from "./DataTable/DataTable.tsx";
+import LogDisplay from "./LogDisplay/LogDisplay.tsx";
 
 function App() {
-    const defaultColDef = {
-        editable: true,
-    }
-
-    const rowData = [
-        { testcasename: "Test", testdesc: "Test", stepnum: "Test", action: "Test", object: "Test", value: "Test", comments: "Test", release: "Test", attempts: "Test", timeout: "Test", control: "Test", collection: "Test", steptype: "Test", goto: "Test"},
-    ];
-
-    // Define the column definitions
-    const columnDefs = [
-        { field: "testcasename", headerName: "TESTCASENAME" },
-        { field: "testdesc", headerName: "TESTDESCRIPTION" },
-        { field: "stepnum", headerName: "STEPNUM" },
-        { field: "action", headerName: "ACTIONONOBJECT"},
-        { field: "object", headerName: "OBJECT" },
-        { field: "value", headerName: "VALUE"},
-        { field: "comments", headerName: "COMMENTS"},
-        { field: "release", headerName: "RELEASE"},
-        { field: "attempts", headerName: "LOCAL_ATTEMPTS"},
-        { field: "timeout", headerName: "LOCAL_TIMEOUT"},
-        { field: "control", headerName: "CONTROL"},
-        { field: "collection", headerName: "COLLECTION"},
-        { field: "steptype", headerName: "TESTSTEPTYPE" },
-        { field: "goto", headerName: "GOTOSTEP"},
-        {
-
-        }
-    ];
-
     return (
         <>
-            <Home />
-            <Table rowData={rowData} columnDefs={columnDefs} defaultColDef={defaultColDef} />
+            <BrowserRouter>
+                <div className="main-container">
+                    <NavBar />
+                    <div className="content-container">
+                        <Routes>
+                            <Route path="/">
+                                <Route index element={<Home />} />
+                                <Route path="environments" element={<EnvsPage />} />
+                                <Route path="testRecorder" element={<RecorderPage />} />
+                            </Route>
+                        </Routes>
+                    </div>
+                </div>
+            </BrowserRouter>
         </>
     );
 }

@@ -20,7 +20,7 @@ public class ChooseAllDDL : IWebAction
                 if (isVisible && isEnabled)
                 {
                     var selectValue = await selectElement.InputValueAsync();
-                    if (!string.IsNullOrEmpty(selectValue))
+                    if (string.IsNullOrEmpty(selectValue))
                     {
                         var options = await selectElement.QuerySelectorAllAsync("option");
                 

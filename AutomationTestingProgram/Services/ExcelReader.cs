@@ -44,7 +44,9 @@ public class ExcelReader
                 Collection = row.Cell(12).TryGetValue(out string collection) ? collection : string.Empty,
                 TestStepType = row.Cell(13).TryGetValue(out string testStepType) ? testStepType : string.Empty,
                 GoToStep = row.Cell(14).TryGetValue(out int goToStep) ? goToStep : 0,
-                Data = row.Cell(15).TryGetValue(out string data) ? data : string.Empty,
+                Cycle = row.Cell(15).TryGetValue(out string cycle) ? cycle : string.Empty,
+                Data = row.Cell(16).TryGetValue(out string data) ? data : string.Empty,
+                CycleData = row.Cell(17).TryGetValue(out string cycleData) ? cycleData : string.Empty,
             }));
         }
         

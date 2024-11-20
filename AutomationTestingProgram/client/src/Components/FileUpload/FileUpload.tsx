@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {Box, Button, Stack, Typography} from "@mui/material";
 
 
 const FileUpload = () => {
@@ -41,11 +42,35 @@ const FileUpload = () => {
 
     return (
         <>
-            <h1>Upload Excel File</h1>
-            <form onSubmit={handleSubmit}>
-                <input type="file" accept={".xlsx, .xls"} onChange={handleFileChange} />
-                <button type="submit">Upload</button>
-            </form>
+            <Box>
+                <Typography variant="h4" color="textSecondary" gutterBottom>
+                    Upload Excel File
+                </Typography>
+                <Box component="form" onSubmit={handleSubmit} display="flex" flexDirection={"column"} alignItems="center">
+                    <Stack direction={"row"} alignItems={"center"} spacing={2}>
+                        <Button variant={"contained"} color={"primary"} component={"label"}>
+                            Choose File
+                            <input
+                                type='file'
+                                accept={".xlsx, .xls"}
+                                hidden
+                                onChange={handleFileChange}
+                            />
+                        </Button>
+                        <Typography variant={"body2"} color={"textSecondary"}>
+                            {file ? file.name : "No file chosen"}
+                        </Typography>
+                    </Stack>
+                    <Button
+                        variant="contained"
+                        color={"secondary"}
+                        type={"submit"}
+                        sx={{ mt: 2 }}
+                    >
+                        Upload
+                    </Button>
+                </Box>
+            </Box>
         </>
     );
 }

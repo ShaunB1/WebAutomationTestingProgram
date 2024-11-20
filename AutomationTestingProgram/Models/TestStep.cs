@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Logging;
+
 public class TestStep
 {
-    public string TestCaseName { get; set; }
+    public virtual string TestCaseName { get; set; }
     public string TestDescription { get; set; }
     public int StepNum { get; set; }
     public string ActionOnObject { get; set; }
@@ -17,7 +19,6 @@ public class TestStep
     public string Data { get; set; }
     public string Cycle { get; set; }
     public string CycleData { get; set; }
-    
     public string Outcome { get; set; }
     public DateTime StartedDate { get; set; }
     public DateTime CompletedDate { get; set; }
@@ -25,4 +26,5 @@ public class TestStep
     public string ErrorMessage { get; set; }
     public string StackTrace { get; set; }
     public int SequenceIndex { get; set; }
+ 
 }

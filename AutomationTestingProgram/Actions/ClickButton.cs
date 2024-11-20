@@ -38,3 +38,32 @@ namespace AutomationTestingProgram.Actions
         }
     }
 }
+
+
+/*using Microsoft.Playwright;
+using System;
+using System.Threading.Tasks;
+
+namespace AutomationTestingProgram.Actions
+{
+    public class ClickButton : IWebAction
+    {
+        // The action name for ClickButton
+        public string Name { get; set; } = "ClickButton"; // Update this to reflect the class name
+
+        private readonly ClickWebElement _clickWebElementAction;
+
+        public ClickButton()
+        {
+            // Create instance of ClickWebElement
+            _clickWebElementAction = new ClickWebElement();
+        }
+
+        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
+        {
+            // Forward the execution to ClickWebElement
+            return await _clickWebElementAction.ExecuteAsync(page, step, iteration);
+        }
+    }
+}
+*/

@@ -21,7 +21,10 @@ public class TestExecutor
         _actions = new Dictionary<string, IWebAction>
         {
             { "clickwebelement", new ClickWebElement() },
+            { "clickbutton", new ClickButton() },
+            { "clicklink", new ClickLink() },
             { "populatewebelement", new PopulateWebElement() },
+            { "populatetextbox", new PopulateTextBox() },
             { "navigatetourl", new NavigateToURL() },
             { "verifywebelementavailability", new VerifyWebElementAvailability() },
             { "checkbox", new CheckBox() },

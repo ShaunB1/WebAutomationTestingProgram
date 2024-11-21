@@ -24,6 +24,7 @@ public class AzureKeyVaultService
 
     public string GetKvSecret(string secretName)
     {
+        Console.WriteLine("Attempting to read Key Vault secret key for " + secretName);
         try
         {
             using (var httpClient = new HttpClient(new HttpClientHandler()))
@@ -42,8 +43,8 @@ public class AzureKeyVaultService
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
+            return $"Error retrieving secret: {ex.Message} {ex.StackTrace}";
         }
-        return null;
     }
 
     private SecretClient GetAzureClient(SecretClientOptions clientOptions)
@@ -56,12 +57,11 @@ public class AzureKeyVaultService
         try
         {
             client = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential(), clientOptions);
+            return client;
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Exception raised when trying to retrieve secret key from Azure: " + ex.Message);
-            return null;
+            throw new Exception($"Error connecting to Azure Key Vault: {ex.Message}", ex);
         }
-        return client;
     }
 }

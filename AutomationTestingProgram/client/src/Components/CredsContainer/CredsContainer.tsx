@@ -4,6 +4,10 @@ import { ColDef } from "ag-grid-community";
 import TextField from '@mui/material/TextField';
 import { Button, CircularProgress } from "@mui/material";
 
+interface ErrorResponse {
+    error: string;
+  }
+
 function CredsContainer() {
     const [rowData, setRowData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -45,7 +49,9 @@ function CredsContainer() {
             setLoading(false);
             if (!response.ok) {
                 setError(true);
-                throw new Error(`${response.status}`);
+                const errorData = await response.json() as ErrorResponse;
+                console.log(errorData);
+                throw new Error(`${errorData.error}`);
             }
             const result = await response.json();
             setError(false);

@@ -1,90 +1,109 @@
-import React from "react";
-import CredsTable from "../CredsTable/CredsTable";
+import React, { useEffect, useRef, useState } from "react";
+import { AgGridReact } from 'ag-grid-react';
+import { ColDef } from "ag-grid-community";
+import TextField from '@mui/material/TextField';
+import { Button, CircularProgress } from "@mui/material";
 
-interface CredsContainerProps {
-    onSecretName: (secretName: string) => void;
-    onSecretValue: (secretValue: string) => void;
-}
+function CredsContainer() {
+    const [rowData, setRowData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const gridRef: any = useRef();
 
-function CredsContainer({ onSecretValue, onSecretName }: CredsContainerProps) {
-    const [searchUser, setSearchUser] = React.useState("");
-    const [newUser, setNewUser] = React.useState("");
-    const [secretName, setSecretName] = React.useState("");
-    const [secretValue, setSecretValue] = React.useState("");
-
-    async function handleFormSubmit(e: any) {
-        e.preventDefault();
-        if (searchUser !== "") {
-            //const res = window.electronAPI.getUser(searchUser);
-            setSearchUser("");
-        }
-    }
-
-    async function handleFindUserSecret() {
-        try {
-            const formattedEmail = secretName
-                .replace(/_/g, "---")
-                .replace(/@/g, "--")
-                .replace(/\./g, "-");
-
-            //const result = await window.electronAPI.getSecret(formattedEmail);
-            //setSecretValue(result);
-
-            onSecretName(secretName);
-            //onSecretValue(result);
-
-            setSecretName("");
-        } catch (e) {
-            throw e;
-        }
-    }
-
-    function handleUserSecretChange(e: any) {
-        setSecretName(e.target.value);
-    }
-
-    function handleInputChange(e: any) {
-        setSearchUser(e.target.value);
-    }
-
-    function handleNewUserChange(e: any) {
-        setNewUser(e.target.value);
-    }
-
-    async function handleAddUser() {
-        if (newUser.trim() !== "") {
+    useEffect(() => {
+        const fetchRows = async () => {
             try {
-                //const result = await window.electronAPI.addUser(newUser);
-                //console.log("User added: ", result);
-                setNewUser("");
-            } catch (e) {
-                console.error("Error adding user: ", e);
+                setLoading(true);
+                const response = await fetch("api/environments/keychainAccounts", {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                setLoading(false);
+                if (!response.ok) {
+                    throw new Error(`${response.status}`);
+                }
+                const result = await response.json();
+                setRowData(result);
+            } catch (err) {
+                console.log(err);
             }
-        } else {
-            console.log("Please enter a user name");
+        };
+
+        fetchRows();
+    }, []);
+
+    const handleClick = async (email: string, setValue: (value: string) => void, setLoading: (value: boolean) => void, setError: (value: boolean) => void) => {
+        try {
+            setLoading(true);
+            const response = await fetch(`api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            setLoading(false);
+            if (!response.ok) {
+                setError(true);
+                throw new Error(`${response.status}`);
+            }
+            const result = await response.json();
+            setError(false);
+            setValue(result.secretKey);
+        } catch (err) {
+            console.log(err);
         }
     }
+
+    const SecretKeyCellRenderer = (params: any) => {
+        const [value, setValue] = useState<string | null>(null);
+        const [loading, setLoading] = useState<boolean>(false);
+        const [error, setError] = useState<boolean>(false);
+
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            {loading ? (
+                <CircularProgress size={24} />
+            ) : value ? (
+                <>{value}</>
+            ) : (
+                <Button
+                    variant="contained"
+                    onClick={() => handleClick(params.data.email, setValue, setLoading, setError)}
+                >
+                    {error ? 'Retry' : 'Get'}
+                </Button>
+            )}
+        </div>
+    };
+
+    const columnDefs: ColDef[] = [
+        { field: "email", headerName: "Email", width: 150, filter: true, suppressHeaderFilterButton: true },
+        { field: "role", headerName: "Role", width: 150 },
+        { field: "organization", headerName: "Organization", width: 150 },
+        {
+            field: "secretKey", headerName: "Get Secret Key", width: 150,
+            cellRenderer: SecretKeyCellRenderer, cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
+        }
+    ];
+
+    const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        gridRef.current?.api.setFilterModel({
+            email: {
+                filterType: 'text',
+                type: 'contains',
+                filter: event.target.value,
+            }
+        })
+        gridRef.current?.api.onFilterChanged();
+    };
 
     return (
         <>
-            <input type={"text"} placeholder={"Add User..."} value={newUser} onChange={handleNewUserChange} />
-            <button onClick={handleAddUser}>Add User</button>
-            <input type="text" placeholder={"Find User Secret..."} value={secretName} onChange={handleUserSecretChange} />
-            <button onClick={handleFindUserSecret}>Find Secret</button>
-            <form onSubmit={handleFormSubmit}>
-                <input type={"search"} placeholder={"Search..."} value={searchUser} onChange={handleInputChange} />
-                <button type={"submit"}>Search</button>
-            </form>
-            <CredsTable />
-            {/*<h2>OUI</h2>*/}
-            {/*<ul>*/}
-            {/*    <li>oui_min_a@ontarioemail.ca</li>*/}
-            {/*    <li>oui_min_c@ontarioemail.ca</li>*/}
-            {/*    <li>oui_min_u@ontarioemail.ca</li>*/}
-            {/*    <li>oui_office_a@ontarioemail.ca</li>*/}
-            {/*    <li>oui_office_c@ontarioemail.ca</li>*/}
-            {/*    <li>oui_s@ontarioemail.ca</li>*/}
-            {/*</ul>*/}
+            <TextField id="outlined-basic" label="Search for account" variant="outlined" onChange={handleFilterChange} />
+
+            <div className="ag-theme-quartz" style={{ width: 650, height: 500, marginTop: 10 }}  >
+                <AgGridReact loading={loading} rowData={rowData} columnDefs={columnDefs} rowHeight={50} ref={gridRef} enableCellTextSelection={true} ></AgGridReact>
+            </div>
         </>
     );
 }

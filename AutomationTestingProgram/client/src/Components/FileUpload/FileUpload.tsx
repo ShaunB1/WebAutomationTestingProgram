@@ -65,7 +65,7 @@ const FileUpload = () => {
                         variant="contained"
                         color={"secondary"}
                         type={"submit"}
-                        sx={{ mt: 2 }}
+                        sx={{ mt: 2, mb: 2 }}
                     >
                         Upload
                     </Button>

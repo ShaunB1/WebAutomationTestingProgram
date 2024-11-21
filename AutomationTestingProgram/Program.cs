@@ -19,7 +19,9 @@ builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 31457280;
 });
+builder.Services.Configure<AzureKeyVaultSettings>(builder.Configuration.GetSection("AzureKeyVault"));
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();
+builder.Services.AddScoped<AzureKeyVaultService>();
 builder.Services.AddControllers();
 
 var app = builder.Build(); // represents configured web app

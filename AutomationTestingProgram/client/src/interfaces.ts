@@ -40,3 +40,10 @@ export interface RowData {
     steptype: string;
     goto: string;
 }
+
+export interface EnvRowData {
+    environment: string,
+    ops_bps: string,
+    aad: string,
+    db_name: string,
+}

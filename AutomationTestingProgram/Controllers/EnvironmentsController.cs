@@ -12,10 +12,12 @@ using System.Text.Json;
 public class EnvironmentsController : ControllerBase
 {
     private readonly AzureKeyVaultService _azureKeyVaultService;
+    private readonly KeychainFileSettings _keychainFileSettings;
     private readonly IWebHostEnvironment _env;
-    public EnvironmentsController(AzureKeyVaultService azureKeyVaultService, IWebHostEnvironment env)
+    public EnvironmentsController(AzureKeyVaultService azureKeyVaultService, IOptions<KeychainFileSettings> keychainFileSettings, IWebHostEnvironment env)
     {
         _azureKeyVaultService = azureKeyVaultService;
+        _keychainFileSettings = keychainFileSettings.Value;
         _env = env;
     }
 
@@ -23,7 +25,8 @@ public class EnvironmentsController : ControllerBase
     public async Task<IActionResult> GetKeychainAccounts()
     {
         string contentRootPath = _env.ContentRootPath;
-        string filepath = Path.Combine(contentRootPath, "resources", "KeychainAccounts2023.xls");
+        string keychainFilePath = _keychainFileSettings.KeychainFilePath;
+        string filepath =  keychainFilePath.Replace("%PROJECT_ROOT%", contentRootPath);
 
         var keychainRows = new List<object>();
         try

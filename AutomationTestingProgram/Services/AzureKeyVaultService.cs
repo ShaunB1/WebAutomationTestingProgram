@@ -11,15 +11,17 @@ namespace AutomationTestingProgram.Services;
 public class AzureKeyVaultService
 {
     private readonly AzureKeyVaultSettings _azureKeyVaultSettings;
-    private string vault;
-    private string clientId;
-    private string tenantId;
+    private string _vault;
+    private string _clientId;
+    private string _tenantId;
+    private string _clientSecret;
     public AzureKeyVaultService(IOptions<AzureKeyVaultSettings> azureKeyVaultSettings)
     {
         _azureKeyVaultSettings = azureKeyVaultSettings.Value;
-        vault = _azureKeyVaultSettings.CredentialVault;
-        clientId = _azureKeyVaultSettings.KeyVaultClientId;
-        tenantId = _azureKeyVaultSettings.KeyVaultTenantId;
+        _vault = _azureKeyVaultSettings.CredentialVault;
+        _clientId = _azureKeyVaultSettings.KeyVaultClientId;
+        _tenantId = _azureKeyVaultSettings.KeyVaultTenantId;
+        _clientSecret = _azureKeyVaultSettings.KeyVaultClientSecret;
     }
 
     public string GetKvSecret(string secretName)
@@ -56,7 +58,7 @@ public class AzureKeyVaultService
 
         try
         {
-            client = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential(), clientOptions);
+            client = new SecretClient(new Uri(keyVaultUrl), new ClientSecretCredential(_tenantId, _clientId, _clientSecret), clientOptions);
             return client;
         }
         catch (Exception ex)

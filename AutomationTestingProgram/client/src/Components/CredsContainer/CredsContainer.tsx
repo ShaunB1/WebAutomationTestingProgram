@@ -25,6 +25,8 @@ function CredsContainer() {
                 });
                 setLoading(false);
                 if (!response.ok) {
+                    const errorData = await response.json() as ErrorResponse;
+                    console.log(errorData);
                     throw new Error(`${response.status}`);
                 }
                 const result = await response.json();

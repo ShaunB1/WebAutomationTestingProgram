@@ -1,8 +1,9 @@
-﻿namespace AutomationTestingProgram.Actions
+﻿namespace AutomationTestingProgram.Backend
 {
     /// <summary>
     /// All accepted commands for test steps.
     /// COMMANDs apply to one test step only.
+    /// Accepted in either CONTROL or OBJECTS
     /// </summary>
     public enum COMMAND
     {
@@ -152,6 +153,7 @@
             { "loop", COMMAND.REPEAT },
             { "ignore", COMMAND.IGNORE },
             { "skip", COMMAND.IGNORE },
+            { "#", COMMAND.IGNORE },
             { "expectpass", COMMAND.EXPECTPASS },
             { "pass", COMMAND.EXPECTPASS },
             { "expectfail", COMMAND.EXPECTFAIL },

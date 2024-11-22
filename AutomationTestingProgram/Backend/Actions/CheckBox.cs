@@ -1,7 +1,7 @@
 using DocumentFormat.OpenXml.Packaging;
 using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Actions;
+namespace AutomationTestingProgram.Backend.Actions;
 
 public class CheckBox : IWebAction
 {
@@ -9,10 +9,10 @@ public class CheckBox : IWebAction
     {
         var locator = step.Object;
         var state = step.Value.ToLower();
-        var element = step.Comments == "html id" 
-            ? page.Locator($"#{locator}") 
-            : step.Comments == "innertext" 
-                ? page.Locator($"text={locator}") 
+        var element = step.Comments == "html id"
+            ? page.Locator($"#{locator}")
+            : step.Comments == "innertext"
+                ? page.Locator($"text={locator}")
                 : page.Locator(locator);
 
         var isChecked = await element.IsCheckedAsync();

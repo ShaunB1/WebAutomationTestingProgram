@@ -1,7 +1,7 @@
 ﻿using Microsoft.Playwright;
 using Microsoft.TeamFoundation.Framework.Common;
 
-namespace AutomationTestingProgram.Actions
+namespace AutomationTestingProgram.Backend
 {
     /// <summary>
     /// The Driver class for Playwright. This is defined per Browser Context.

@@ -1,4 +1,4 @@
-﻿namespace AutomationTestingProgram.Actions
+﻿namespace AutomationTestingProgram.Backend
 {
     public enum Locator
     {

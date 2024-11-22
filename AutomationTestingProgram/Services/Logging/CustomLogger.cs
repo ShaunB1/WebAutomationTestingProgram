@@ -1,14 +1,17 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AutomationTestingProgram.Services.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Text;
 
-public class CustomConsoleLogger : ILogger
+public class CustomLogger : ILogger
 {
     private readonly string _categoryName;
+    private readonly string _logFilePath;
 
-    public CustomConsoleLogger(string categoryName)
+    public CustomLogger(string categoryName, string logFilePath)
     {
         _categoryName = categoryName;
+        _logFilePath = logFilePath;
     }
 
     public IDisposable BeginScope<TState>(TState state)
@@ -23,11 +26,10 @@ public class CustomConsoleLogger : ILogger
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        // Custom log formatting
         var logMessage = new StringBuilder();
-        logMessage.AppendFormat("{0:HH:mm:ss.fff} ", DateTime.Now);  // Timestamp
+        logMessage.AppendFormat("{0:HH:mm:ss.fff} ", DateTime.Now);
                                                                 
-        string logLevelText = logLevel.ToString().ToUpper(); // LogLevel
+        string logLevelText = logLevel.ToString().ToUpper();
         string coloredLogLevelText = logLevelText;
 
         switch (logLevel)
@@ -53,16 +55,25 @@ public class CustomConsoleLogger : ILogger
                 break;
         }
 
-        logMessage.AppendFormat("[{0}] ", coloredLogLevelText);  // Log level
-        logMessage.AppendLine(formatter(state, exception));  // Log message
+        logMessage.AppendFormat("[{0}] ", coloredLogLevelText);
+        logMessage.AppendLine(formatter(state, exception));
 
         if (exception != null)
         {
-            logMessage.AppendLine(exception.ToString());  // Exception stack trace
+            logMessage.AppendLine(exception.ToString());
         }
 
-        // Output log to the console
-        Console.Write(logMessage.ToString());
+
+        if (_logFilePath.Equals("Console") || _logFilePath.Equals(LogManager.GetRunFolderPath()))
+        {
+            Console.WriteLine(logMessage.ToString());
+            LogManager.LogAsync(LogManager.GetRunFolderPath(), logMessage.ToString()).Wait();
+        }
+        else
+        {
+            LogManager.LogAsync(_logFilePath, logMessage.ToString()).Wait();
+        }
+
     }
 }
 

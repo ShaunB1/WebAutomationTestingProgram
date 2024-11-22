@@ -1,6 +1,6 @@
 ﻿using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Actions;
+namespace AutomationTestingProgram.Backend.Actions;
 
 public class CheckAllRadioButtons : IWebAction
 {
@@ -24,7 +24,7 @@ public class CheckAllRadioButtons : IWebAction
                     {
                         continue;
                     }
-                    
+
                     var groupRadioButtons = await page.QuerySelectorAllAsync($"input[type='radio'][name='{groupName}']");
                     var isAnyChecked = false;
 

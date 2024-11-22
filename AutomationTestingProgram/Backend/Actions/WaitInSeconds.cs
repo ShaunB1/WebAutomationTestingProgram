@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Actions;
+namespace AutomationTestingProgram.Backend.Actions;
 
 public class WaitInSeconds : IWebAction
 {
@@ -16,7 +16,7 @@ public class WaitInSeconds : IWebAction
             stopwatch.Stop();
             Console.WriteLine($"DELAY EXPECTED: {delayInt}, DELAY ACTUAL: {stopwatch.Elapsed}");
         }
-        
+
         return true;
     }
 }

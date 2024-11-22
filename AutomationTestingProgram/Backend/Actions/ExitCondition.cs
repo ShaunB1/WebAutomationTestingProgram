@@ -1,6 +1,6 @@
 ﻿using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Actions;
+namespace AutomationTestingProgram.Backend.Actions;
 
 public class ExitCondition : IWebAction
 {

@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Newtonsoft.Json;
 
-namespace AutomationTestingProgram.Actions;
+namespace AutomationTestingProgram.Backend.Actions;
 
 public class SelectDDL : IWebAction
 {
@@ -26,24 +26,24 @@ public class SelectDDL : IWebAction
         {
             datapoint = option;
         }
-        
+
         try
         {
             IReadOnlyList<string>? res = null;
             if (match.Success && iteration != -1)
             {
-                res = await element.SelectOptionAsync(new SelectOptionValue { Label = datapoint});
+                res = await element.SelectOptionAsync(new SelectOptionValue { Label = datapoint });
             }
             else
             {
-                res = await element.SelectOptionAsync(new SelectOptionValue { Label = option });   
+                res = await element.SelectOptionAsync(new SelectOptionValue { Label = option });
             }
 
             if (res == null || res.Count == 0)
             {
                 await element.SelectOptionAsync(new SelectOptionValue { Index = 1 });
             }
-            
+
             return true;
         }
         catch (Exception e)

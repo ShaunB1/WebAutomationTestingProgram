@@ -1,6 +1,6 @@
 using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Actions;
+namespace AutomationTestingProgram.Backend.Actions;
 
 public class VerifyWebElementAvailability : IWebAction
 {
@@ -8,14 +8,14 @@ public class VerifyWebElementAvailability : IWebAction
     {
         var locator = step.Object;
         var state = step.Value.ToLower();
-        var element = step.Comments == "html id" 
-            ? page.Locator($"#{locator}") 
-            : step.Comments == "innertext" 
-                ? page.Locator($"text={locator}") 
+        var element = step.Comments == "html id"
+            ? page.Locator($"#{locator}")
+            : step.Comments == "innertext"
+                ? page.Locator($"text={locator}")
                 : page.Locator(locator);
 
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        
+
         switch (state)
         {
             case "exist":
@@ -26,7 +26,7 @@ public class VerifyWebElementAvailability : IWebAction
 
                 break;
             case "does not exist":
-                if (!(await element.IsVisibleAsync()))
+                if (!await element.IsVisibleAsync())
                 {
                     return true;
                 }
@@ -47,8 +47,8 @@ public class VerifyWebElementAvailability : IWebAction
 
                 break;
             default:
-                 Console.WriteLine($"Unknown state: {state}");
-                 return false;
+                Console.WriteLine($"Unknown state: {state}");
+                return false;
         }
 
         return false;

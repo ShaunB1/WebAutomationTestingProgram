@@ -1,8 +1,9 @@
-﻿using Microsoft.Identity.Client;
+﻿using AutomationTestingProgram.Services.Logging;
+using Microsoft.Identity.Client;
 using Microsoft.Playwright;
 using System.Collections.Concurrent;
 
-namespace AutomationTestingProgram.Actions
+namespace AutomationTestingProgram.Backend
 {
     public class PageManager
     {
@@ -10,27 +11,32 @@ namespace AutomationTestingProgram.Actions
 
         private readonly IBrowserContext Context;
         private readonly int ContextID;
+        private readonly string ContextFolderPath;
         private readonly SemaphoreSlim ActivePageSemaphore;
         private readonly ConcurrentQueue<Func<Task<IPage>>> PageRequestQueue;
         private readonly ConcurrentDictionary<IPage, List<IPage>> Pages; // Primary -> Secondarys
         private readonly ILogger<PageManager> Logger;
+        private int NextPageID;
 
         private const int MaxActivePages = 3;
 
         private int ActivePageCount;
         private int PageCount;
 
-        public PageManager(IBrowserContext context, int contextID, ILogger<PageManager> logger)
+        public PageManager(IBrowserContext context, int contextID, string contextFolderPath)
         {
-            this.Context = context;
-            this.ContextID = contextID;
-            this.Logger = logger;
-            this.ActivePageSemaphore = new SemaphoreSlim(MaxActivePages);
-            this.PageRequestQueue = new ConcurrentQueue<Func<Task<IPage>>>();
-            this.Pages = new ConcurrentDictionary<IPage, List<IPage>>();
+            Context = context;
+            ContextID = contextID;
+            ContextFolderPath = contextFolderPath;
+            ActivePageSemaphore = new SemaphoreSlim(MaxActivePages);
+            PageRequestQueue = new ConcurrentQueue<Func<Task<IPage>>>();
+            Pages = new ConcurrentDictionary<IPage, List<IPage>>();
+            ActivePageCount = 0;
+            PageCount = 0;
+            NextPageID = 0;
 
-            this.ActivePageCount = 0;
-            this.PageCount = 0;
+            CustomLoggerProvider provider = new CustomLoggerProvider(contextFolderPath);
+            Logger = provider.CreateLogger<PageManager>()!;
         }
 
         public async Task<IPage> CreateNewPrimaryPageAsync()
@@ -68,7 +74,10 @@ namespace AutomationTestingProgram.Actions
             try
             {
                 IncrementPageCount();
-                await ExecutePageAsync(page);
+
+                int pageID = Interlocked.Increment(ref NextPageID);
+                string pageFolderPath = LogManager.CreatePageFolder(ContextFolderPath, pageID);
+                await ExecutePageAsync(page, pageID, pageFolderPath);
                 DecrementPageCount();
             }
             catch (Exception e)
@@ -79,30 +88,44 @@ namespace AutomationTestingProgram.Actions
             return page;
         }
 
-        private async Task ExecutePageAsync(IPage page)
+        private async Task ExecutePageAsync(IPage page, int pageID, string pageFolderPath)
         {
             try
             {
+                CustomLoggerProvider provider = new CustomLoggerProvider(pageFolderPath);
+                CustomLogger PageLogger = provider.CreateLogger<PageManager>()!;
+
+                Logger.LogInformation("Starting");
                 await page.GotoAsync("https://www.google.com");
                 await Task.Delay(10000);
+                Logger.LogInformation("Google complete");
                 await page.GotoAsync("https://example.com");
                 await Task.Delay(10000);
+                Logger.LogInformation("Example complete");
                 await page.GotoAsync("https://www.bing.com");
                 await Task.Delay(10000);
+                Logger.LogInformation("Bing complete");
                 await page.GotoAsync("https://www.yahoo.com");
                 await Task.Delay(10000);
+                Logger.LogInformation("Yahoo complete");
                 await page.GotoAsync("https://www.wikipedia.org");
                 await Task.Delay(10000);
+                Logger.LogInformation("Wikipedia complete");
                 await page.GotoAsync("https://www.reddit.com");
                 await Task.Delay(10000);
+                Logger.LogInformation("Reddit complete");
                 await page.GotoAsync("https://www.microsoft.com");
                 await Task.Delay(10000);
+                Logger.LogInformation("Microsoft complete");
                 await page.GotoAsync("https://www.apple.com");
                 await Task.Delay(10000);
+                Logger.LogInformation("Apple complete");
                 await page.GotoAsync("https://www.amazon.com");
                 await Task.Delay(10000);
+                Logger.LogInformation("Amazon complete");
                 await page.GotoAsync("https://www.netflix.com");
                 await Task.Delay(10000);
+                Logger.LogInformation("Netflix complete");
             }
             catch (Exception e)
             {
@@ -133,7 +156,7 @@ namespace AutomationTestingProgram.Actions
             if (await ActivePageSemaphore.WaitAsync(0) && PageRequestQueue.TryDequeue(out var nextTask))
             {
                 Task.Run(nextTask); // DO NOT AWAIT
-            } 
+            }
             else if (PageRequestQueue.Count > 0)
             {
                 Logger.LogInformation($"Context '{ContextID}' : Queuing Active Page -- Count: '{ActivePageCount}' | Queue: '{PageRequestQueue.Count}' | Total # of pages: '{PageCount}'");

@@ -3,7 +3,7 @@ using Microsoft.Azure.Pipelines.WebApi;
 using Microsoft.Playwright;
 using Newtonsoft.Json;
 
-namespace AutomationTestingProgram.Actions;
+namespace AutomationTestingProgram.Backend.Actions;
 
 public class PopulateWebElement : IWebAction
 {
@@ -11,12 +11,12 @@ public class PopulateWebElement : IWebAction
     {
         var locator = step.Object;
         var state = step.Value.ToLower();
-        var element = step.Comments == "html id" 
-            ? page.Locator($"#{locator}") 
-            : step.Comments == "innertext" 
-                ? page.Locator($"text={locator}") 
+        var element = step.Comments == "html id"
+            ? page.Locator($"#{locator}")
+            : step.Comments == "innertext"
+                ? page.Locator($"text={locator}")
                 : page.Locator(locator);
-        
+
         try
         {
             Match match = Regex.Match(step.Value, @"^{(\d+)}$");
@@ -36,9 +36,9 @@ public class PopulateWebElement : IWebAction
             }
             else
             {
-                await element.FillAsync(step.Value);                
+                await element.FillAsync(step.Value);
             }
-            
+
             return true;
         }
         catch (Exception ex)

@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.ExtendedProperties;
+﻿using AutomationTestingProgram.Services.Logging;
+using DocumentFormat.OpenXml.ExtendedProperties;
 using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Server.HttpSys;
 using Microsoft.Playwright;
@@ -6,29 +7,28 @@ using Microsoft.VisualStudio.Services.Common;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
-namespace AutomationTestingProgram.Actions
+namespace AutomationTestingProgram.Backend
 {
     public class ContextManager
     {
 
         private readonly IBrowser Browser;
         private readonly SemaphoreSlim ContextSemaphore;
-        private readonly ConcurrentQueue<Func<Task<IBrowserContext>>> ContextQueue;        
+        private readonly ConcurrentQueue<Func<Task<IBrowserContext>>> ContextQueue;
         private readonly ILogger<ContextManager> Logger;
-        private readonly ILoggerFactory _loggerFactory;
         private int RunningContextCount;
+        private int NextContextID;
 
-        private int ContextID;
-
-        public ContextManager(IBrowser browser, ILogger<ContextManager> logger, ILoggerFactory loggerFactory)
+        public ContextManager(IBrowser browser)
         {
-            this.Browser = browser;
-            this.ContextSemaphore = new SemaphoreSlim(10); // Limit of 10 concurrences contexts.
-            this.ContextQueue = new ConcurrentQueue<Func<Task<IBrowserContext>>>();
-            this.RunningContextCount = 0;
-            this.Logger = logger;
-            _loggerFactory = loggerFactory;
-            this.ContextID = 0;
+            Browser = browser;
+            ContextSemaphore = new SemaphoreSlim(10); // Limit of 10 concurrences contexts.
+            ContextQueue = new ConcurrentQueue<Func<Task<IBrowserContext>>>();
+            RunningContextCount = 0;
+            NextContextID = 0;
+
+            CustomLoggerProvider provider = new CustomLoggerProvider(LogManager.GetRunFolderPath());
+            Logger = provider.CreateLogger<ContextManager>()!;
         }
 
         public async Task<IBrowserContext> CreateNewContextAsync()
@@ -39,7 +39,7 @@ namespace AutomationTestingProgram.Actions
             {
                 try
                 {
-                    IBrowserContext context = await CreateAndRunContextAsync();                    
+                    IBrowserContext context = await CreateAndRunContextAsync();
                     contextTask.SetResult(context);
                 }
                 catch (Exception e)
@@ -65,7 +65,10 @@ namespace AutomationTestingProgram.Actions
             try
             {
                 IncrementContextCount();
-                await ExecuteContextAsync(context);
+
+                int contextID = Interlocked.Increment(ref NextContextID);
+                string contextFolderPath = LogManager.CreateContextFolder(contextID);
+                await ExecuteContextAsync(context, contextID, contextFolderPath);
                 DecrementContextCount();
             }
             catch (Exception e)
@@ -76,12 +79,11 @@ namespace AutomationTestingProgram.Actions
             return context;
         }
 
-        private async Task ExecuteContextAsync(IBrowserContext context)
+        private async Task ExecuteContextAsync(IBrowserContext context, int contextID, string contextFolderPath)
         {
             try
-            { // Use the id here, send it to page manager
-                var pageLogger = _loggerFactory.CreateLogger<PageManager>();
-                PageManager pageManager = new PageManager(context, ContextID, pageLogger);
+            {
+                PageManager pageManager = new PageManager(context, contextID, contextFolderPath);
                 var tasks = new[]
                 {
                     pageManager.CreateNewPrimaryPageAsync(),
@@ -106,7 +108,6 @@ namespace AutomationTestingProgram.Actions
         private void IncrementContextCount()
         {
             Interlocked.Increment(ref RunningContextCount);
-            Interlocked.Increment(ref ContextID);
             Logger.LogInformation($"Executing Context -- Contexts Running: '{RunningContextCount}' | Queued: '{ContextQueue.Count}'");
         }
 

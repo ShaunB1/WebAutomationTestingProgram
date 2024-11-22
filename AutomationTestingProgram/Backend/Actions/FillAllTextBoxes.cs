@@ -1,6 +1,6 @@
 ﻿using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Actions;
+namespace AutomationTestingProgram.Backend.Actions;
 
 public class FillAllTextBoxes : IWebAction
 {
@@ -16,18 +16,18 @@ public class FillAllTextBoxes : IWebAction
                 var isReadOnly = await inputElement.GetAttributeAsync("readonly") != null;
                 var isVisible = await inputElement.IsVisibleAsync();
                 var isEnabled = await inputElement.IsEnabledAsync();
-                
+
                 if (isVisible && isEnabled && !isReadOnly)
                 {
                     var inputValue = await inputElement.InputValueAsync();
-                
+
                     if (string.IsNullOrEmpty(inputValue))
                     {
                         await inputElement.FillAsync(text);
                     }
                 }
             }
-        
+
             var textAreaElements = await page.QuerySelectorAllAsync("textarea");
 
             foreach (var textAreaElement in textAreaElements)

@@ -1,4 +1,5 @@
-using AutomationTestingProgram.Actions;
+using AutomationTestingProgram.Backend;
+using AutomationTestingProgram.Backend.Managers;
 using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
 using ClosedXML.Excel;
@@ -69,8 +70,7 @@ public class TestController : ControllerBase
                 {
                     if (_contextManager == null)
                     {
-                        var contextLogger = _loggerFactory.CreateLogger<ContextManager>();
-                        _contextManager = new ContextManager(Browser, contextLogger, _loggerFactory);
+                        _contextManager = new ContextManager(Browser);
                     }
                 }
             }
@@ -92,38 +92,13 @@ public class TestController : ControllerBase
             return StatusCode(500, new { Error = e.Message });
         }
 
-        /*using var playwright = await Playwright.CreateAsync();
-        await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-        {
-            Headless = false,
-            Channel = "chrome"
-        });
-
-        ContextManager manager = new ContextManager(browser);
-
-        try
-        {
-            var createContextsTasks = new[]
-            {
-                manager.CreateNewContextAsync(),
-                manager.CreateNewContextAsync()
-            };
-
-            // Wait for all context creation tasks to complete
-            await Task.WhenAll(createContextsTasks);
-
-            return Ok("Tests executed successfully.");
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500, new { Error = e.Message });
-        }*/
-        /*Console.WriteLine("Received test request");
+       
+        Console.WriteLine("Received test request");
         Response.ContentType = "text/event-stream";
         Response.Headers.Add("Cache-Control", "no-cache");
         Response.Headers.Add("Connection", "keep-alive");
         
-        var excelReader = new ExcelReader();
+        var excelReader = new FileReader();
         var testSteps = excelReader.ReadTestSteps(file);
         
         using var playwright = await Playwright.CreateAsync();
@@ -156,7 +131,7 @@ public class TestController : ControllerBase
         {
             Console.WriteLine(e);
             return StatusCode(500, new { Error = e.Message });
-        }*/
+        }
     }
 
     public IActionResult SaveTestSteps([FromForm] List<TestStep> testSteps)

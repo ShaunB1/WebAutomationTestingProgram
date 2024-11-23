@@ -8,15 +8,15 @@ public class CustomLoggerProvider : ILoggerProvider
     {
         _logFilePath = logFilePath ?? throw new ArgumentNullException($"{nameof(logFilePath)} cannot be null!");
     }
-    
-    public ILogger CreateLogger(string categoryName) // For non generic loggers
+
+    public ILogger CreateLogger(string categoryName)
     {
-        return new CustomLogger(categoryName, _logFilePath);
+        return new CustomLogger<object>(categoryName, _logFilePath);
     }
 
-    public ILogger<T>? CreateLogger<T>()
+    public ILogger<T> CreateLogger<T>()
     {
-        return new CustomLogger(typeof(T).Name, _logFilePath) as ILogger<T>;
+        return new CustomLogger<T>(typeof(T).Name, _logFilePath);
     }
 
     public void Dispose()

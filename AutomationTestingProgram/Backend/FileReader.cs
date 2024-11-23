@@ -1,10 +1,54 @@
+using AutomationTestingProgram.Models.Backend;
+using AutomationTestingProgram.Services.Logging;
 using ClosedXML.Excel;
-using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
+using Microsoft.Extensions.Logging;
+using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Backend
 {
     public class FileReader
     {   
+        public static async Task ExecutePage(Page pageObject)
+        {
+            CustomLoggerProvider provider = new CustomLoggerProvider(pageObject.FolderPath);
+            ILogger<FileReader> PageLogger = provider.CreateLogger<FileReader>()!;
+
+            IPage page = pageObject.Instance!;
+
+            PageLogger.LogInformation("Starting");
+            await page.GotoAsync("https://www.google.com");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Google complete");
+            await page.GotoAsync("https://example.com");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Example complete");
+            await page.GotoAsync("https://www.bing.com");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Bing complete");
+            await page.GotoAsync("https://www.yahoo.com");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Yahoo complete");
+            await page.GotoAsync("https://www.wikipedia.org");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Wikipedia complete");
+            await page.GotoAsync("https://www.reddit.com");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Reddit complete");
+            await page.GotoAsync("https://www.microsoft.com");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Microsoft complete");
+            await page.GotoAsync("https://www.apple.com");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Apple complete");
+            await page.GotoAsync("https://www.amazon.com");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Amazon complete");
+            await page.GotoAsync("https://www.netflix.com");
+            await Task.Delay(10000);
+            PageLogger.LogInformation("Netflix complete");
+        }
+
         public void ValidateTestFile(IFormFile file)
         {
             if (file == null)
@@ -50,7 +94,7 @@ namespace AutomationTestingProgram.Backend
             return filePath;
         }
 
-        private List<TestStep> ValidateExcel(IFormFile file)
+        /*private List<TestStep> ValidateExcel(IFormFile file)
         {
             var testSteps = new List<TestStep>();
 
@@ -264,6 +308,6 @@ namespace AutomationTestingProgram.Backend
             }
 
             return testSteps;
-        }
+        }*/
     }
 }

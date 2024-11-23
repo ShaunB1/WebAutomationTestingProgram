@@ -20,10 +20,10 @@ public class TestController : ControllerBase
     private readonly ILoggerFactory _loggerFactory;
     private readonly WebSocketLogBroadcaster _broadcaster;
 
-    private static IBrowser _browser;
-    private static readonly object BrowserLock = new object();
-    private static ContextManager _contextManager;
-    private static readonly object ContextLock = new object();
+    private static IPlaywright? _playwright = null;
+    private static readonly object PlaywrightLock = new object();
+    private static BrowserManager? _manager = null;
+    private static readonly object ManagerLock = new object();
 
     public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, ILoggerFactory loggerFactory, WebSocketLogBroadcaster broadcaster)
     {
@@ -36,46 +36,41 @@ public class TestController : ControllerBase
         _broadcaster = broadcaster;
     }
 
-    private IBrowser Browser
+    private IPlaywright playwright
     {
         get
         {
-            if (_browser == null)
+            if (_playwright == null)
             {
-                lock (BrowserLock)
+                lock (PlaywrightLock)
                 {
-                    if (_browser == null)
+                    if (_playwright == null)
                     {
-                        var playwright = Playwright.CreateAsync().GetAwaiter().GetResult();
-                        _browser = playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-                        {
-                            Headless = false,
-                            Channel = "chrome"
-                        }).GetAwaiter().GetResult();
+                        _playwright = Playwright.CreateAsync().GetAwaiter().GetResult();
                     }
                 }
             }
 
-            return _browser;
+            return _playwright;
         }
     }
 
-    private ContextManager Manager
+    private BrowserManager Manager
     {
         get
         {
-            if (_contextManager == null)
+            if (_manager == null)
             {
-                lock(ContextLock)
+                lock(ManagerLock)
                 {
-                    if (_contextManager == null)
+                    if (_manager == null)
                     {
-                        _contextManager = new ContextManager(Browser);
+                        _manager = new BrowserManager(playwright);
                     }
                 }
             }
 
-            return _contextManager;
+            return _manager;
         }
     }
     
@@ -84,7 +79,7 @@ public class TestController : ControllerBase
     {
         try
         {
-            Manager.CreateNewContextAsync();
+            Manager.CreateNewBrowserAsync("chrome", 123);
             return Ok("Tests execution started.");
         }
         catch (Exception e)
@@ -93,7 +88,7 @@ public class TestController : ControllerBase
         }
 
        
-        Console.WriteLine("Received test request");
+        /*Console.WriteLine("Received test request");
         Response.ContentType = "text/event-stream";
         Response.Headers.Add("Cache-Control", "no-cache");
         Response.Headers.Add("Connection", "keep-alive");
@@ -131,7 +126,7 @@ public class TestController : ControllerBase
         {
             Console.WriteLine(e);
             return StatusCode(500, new { Error = e.Message });
-        }
+        }*/
     }
 
     public IActionResult SaveTestSteps([FromForm] List<TestStep> testSteps)

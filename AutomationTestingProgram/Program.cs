@@ -2,11 +2,12 @@ using System.Net.WebSockets;
 using System.Text;
 using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
+using AutomationTestingProgram.Services.Logging;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
 builder.Logging.ClearProviders();
-builder.Logging.AddProvider(new CustomLoggerProvider("Console"));
+builder.Logging.AddProvider(new CustomLoggerProvider(LogManager.GetRunFolderPath()));
 
 builder.Services.Configure<AzureDevOpsSettings>(builder.Configuration.GetSection("AzureDevops"));
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();

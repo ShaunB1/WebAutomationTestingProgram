@@ -1,53 +1,56 @@
 ﻿using AutomationTestingProgram.Services.Logging;
 using DocumentFormat.OpenXml.ExtendedProperties;
-using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Server.HttpSys;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.Services.Common;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using AutomationTestingProgram.Models.Backend;
 
 namespace AutomationTestingProgram.Backend
 {
     public class ContextManager
     {
 
-        private readonly IBrowser Browser;
+        private readonly Browser Browser;
         private readonly SemaphoreSlim ContextSemaphore;
-        private readonly ConcurrentQueue<Func<Task<IBrowserContext>>> ContextQueue;
+        private readonly ConcurrentQueue<Func<Task<Context>>> ContextQueue;
         private readonly ILogger<ContextManager> Logger;
-        private int RunningContextCount;
-        private int NextContextID;
+        private int ContextCount;
 
-        public ContextManager(IBrowser browser)
+        public ContextManager(Browser browser)
         {
             Browser = browser;
             ContextSemaphore = new SemaphoreSlim(10); // Limit of 10 concurrences contexts.
-            ContextQueue = new ConcurrentQueue<Func<Task<IBrowserContext>>>();
-            RunningContextCount = 0;
-            NextContextID = 0;
+            ContextQueue = new ConcurrentQueue<Func<Task<Context>>>();
+            ContextCount = 0;
 
-            CustomLoggerProvider provider = new CustomLoggerProvider(LogManager.GetRunFolderPath());
+            CustomLoggerProvider provider = new CustomLoggerProvider(browser.FolderPath);
             Logger = provider.CreateLogger<ContextManager>()!;
         }
 
-        public async Task<IBrowserContext> CreateNewContextAsync()
+        public async Task<Context> CreateNewContextAsync()
         {
-            var contextTask = new TaskCompletionSource<IBrowserContext>();
+            var contextTask = new TaskCompletionSource<Context>();
 
-            Func<Task<IBrowserContext>> createContext = async () =>
+            Func<Task<Context>> createContext = async () =>
             {
+                Context context = new Context(Browser);
                 try
                 {
-                    IBrowserContext context = await CreateAndRunContextAsync();
+                    IncrementContextCount(context);
+                    await context.InitializeAsync();
+                    await ExecuteContextAsync(context);
                     contextTask.SetResult(context);
                 }
                 catch (Exception e)
                 {
+                    Logger.LogError($"Browser-Level Error encountered\n {e}");
                     contextTask.SetException(e);
                 }
                 finally
                 {
+                    DecrementContextCount(context);
                     ContextSemaphore.Release();
                     await ProcessNextContext();
                 }
@@ -59,45 +62,20 @@ namespace AutomationTestingProgram.Backend
             return await contextTask.Task;
         }
 
-        private async Task<IBrowserContext> CreateAndRunContextAsync()
-        {
-            IBrowserContext context = await Browser.NewContextAsync();
-            try
-            {
-                IncrementContextCount();
-
-                int contextID = Interlocked.Increment(ref NextContextID);
-                string contextFolderPath = LogManager.CreateContextFolder(contextID);
-                await ExecuteContextAsync(context, contextID, contextFolderPath);
-                DecrementContextCount();
-            }
-            catch (Exception e)
-            {
-                Logger.LogError($"Context execution failed: {e.Message}");
-            }
-
-            return context;
-        }
-
-        private async Task ExecuteContextAsync(IBrowserContext context, int contextID, string contextFolderPath)
+        private async Task ExecuteContextAsync(Context context)
         {
             try
             {
-                PageManager pageManager = new PageManager(context, contextID, contextFolderPath);
                 var tasks = new[]
                 {
-                    pageManager.CreateNewPrimaryPageAsync(),
-                    pageManager.CreateNewPrimaryPageAsync(),
-                    pageManager.CreateNewPrimaryPageAsync(),
-                    pageManager.CreateNewPrimaryPageAsync(),
-                    pageManager.CreateNewPrimaryPageAsync()
+                    context.CreateAndRunPageAsync()
                 };
 
                 await Task.WhenAll(tasks);
             }
             catch (Exception e)
             {
-                Logger.LogError($"Context execution failed: {e.Message}");
+                throw;
             }
             finally
             {
@@ -105,27 +83,27 @@ namespace AutomationTestingProgram.Backend
             }
         }
 
-        private void IncrementContextCount()
+        private void IncrementContextCount(Context context)
         {
-            Interlocked.Increment(ref RunningContextCount);
-            Logger.LogInformation($"Executing Context -- Contexts Running: '{RunningContextCount}' | Queued: '{ContextQueue.Count}'");
+            Interlocked.Increment(ref ContextCount);
+            Logger.LogInformation($"Executing Context (ID: {context.ID}) -- Contexts Running: '{ContextCount}' | Queued: '{ContextQueue.Count}'");
         }
 
-        private void DecrementContextCount()
+        private void DecrementContextCount(Context context)
         {
-            Interlocked.Decrement(ref RunningContextCount);
-            Logger.LogInformation($"Terminating Context -- Contexts Running: '{RunningContextCount}' | Queued: '{ContextQueue.Count}'");
+            Interlocked.Decrement(ref ContextCount);
+            Logger.LogInformation($"Terminating Context (ID: {context.ID}) -- Contexts Running: '{ContextCount}' | Queued: '{ContextQueue.Count}'");
         }
 
         private async Task ProcessNextContext()
         {
             if (await ContextSemaphore.WaitAsync(0) && ContextQueue.TryDequeue(out var nextTask))
             {
-                Task.Run(nextTask); // DO NOT AWAIT
+                _ = Task.Run(nextTask); // DO NOT AWAIT
             }
             else if (ContextQueue.Count > 0)
             {
-                Logger.LogInformation($"Queuing Context -- Contexts Running: '{RunningContextCount}' | Queued: '{ContextQueue.Count}'");
+                Logger.LogInformation($"Queuing Context -- Contexts Running: '{ContextCount}' | Queued: '{ContextQueue.Count}'");
             }
         }
     }

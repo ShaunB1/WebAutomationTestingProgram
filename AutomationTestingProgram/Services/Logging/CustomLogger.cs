@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Text;
 
-public class CustomLogger : ILogger
+public class CustomLogger<T> : ILogger<T>
 {
     private readonly string _categoryName;
     private readonly string _logFilePath;
@@ -22,6 +22,11 @@ public class CustomLogger : ILogger
     public bool IsEnabled(LogLevel logLevel)
     {
         return logLevel >= LogLevel.Information;
+    }
+
+    public void Flush()
+    {
+        LogManager.Flush(_logFilePath);
     }
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -55,7 +60,7 @@ public class CustomLogger : ILogger
                 break;
         }
 
-        logMessage.AppendFormat("[{0}] ", coloredLogLevelText);
+        logMessage.AppendFormat("[{0}] ", logLevelText);
         logMessage.AppendLine(formatter(state, exception));
 
         if (exception != null)
@@ -63,21 +68,22 @@ public class CustomLogger : ILogger
             logMessage.AppendLine(exception.ToString());
         }
 
-
         if (_logFilePath.Equals("Console") || _logFilePath.Equals(LogManager.GetRunFolderPath()))
         {
+            
+            LogManager.Log(LogManager.GetRunFolderPath(), logMessage.ToString());
+            logMessage.Clear();
+            logMessage.AppendFormat("[{0}] ", coloredLogLevelText);
+            logMessage.AppendLine(formatter(state, exception));
             Console.WriteLine(logMessage.ToString());
-            LogManager.LogAsync(LogManager.GetRunFolderPath(), logMessage.ToString()).Wait();
         }
         else
         {
-            LogManager.LogAsync(_logFilePath, logMessage.ToString()).Wait();
+            LogManager.Log(_logFilePath, logMessage.ToString());
         }
-
     }
 }
 
-// This is a simple implementation of IDisposable that does nothing, just to satisfy the interface.
 public class NullDisposable : IDisposable
 {
     public static readonly NullDisposable Instance = new NullDisposable();

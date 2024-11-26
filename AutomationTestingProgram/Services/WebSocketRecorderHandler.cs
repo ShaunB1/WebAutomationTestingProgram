@@ -5,20 +5,24 @@ namespace AutomationTestingProgram.Services;
 
 public class WebSocketRecorderHandler
 {
-    private readonly ConcurrentBag<WebSocket> _clients = new();
+    private readonly ConcurrentDictionary<Guid, WebSocket> _clients = new();
 
-    public void AddClient(WebSocket client)
+    public Guid AddClient(WebSocket client)
     {
-        _clients.Add(client);
+        var clientId = Guid.NewGuid();
+        _clients[clientId] = client;
+        Console.WriteLine("Recorder websocket client added.");
+        return clientId;
     }
 
-    // public void RemoveClient(WebSocket client)
-    // {
-    //     _clients.Remove(client);
-    // }
+    public void RemoveClient(Guid clientId)
+    {
+        _clients.TryRemove(clientId, out _);
+        Console.WriteLine("Recorder websocket client removed.");
+    }
 
     public void ProcessMessage(string message)
     {
-        
+        Console.WriteLine($"Processing recorded message: {message}");
     }
 }

@@ -4,8 +4,6 @@ import EnvsPage from "../Pages/EnvsPage.tsx";
 import RecorderPage from "../Pages/RecorderPage.tsx";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
-import DataTable from "./DataTable/DataTable.tsx";
-import LogDisplay from "./LogDisplay/LogDisplay.tsx";
 
 function App() {
     return (

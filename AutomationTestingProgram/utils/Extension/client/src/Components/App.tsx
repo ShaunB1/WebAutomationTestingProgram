@@ -1,9 +1,10 @@
 import './App.css'
+import RecorderTable from "./RecorderTable/RecorderTable.tsx";
 
 function App() {
   return (
     <>
-      <h1>Hello, world!</h1>
+      <RecorderTable />
     </>
   )
 }

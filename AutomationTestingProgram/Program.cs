@@ -22,6 +22,7 @@ builder.Services.Configure<FormOptions>(options =>
 builder.Services.Configure<AzureKeyVaultSettings>(builder.Configuration.GetSection("AzureKeyVault"));
 builder.Services.Configure<KeychainFileSettings>(builder.Configuration.GetSection("KeychainFile"));
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();
+builder.Services.AddSingleton<WebSocketRecorderHandler>();
 builder.Services.AddScoped<AzureKeyVaultService>();
 builder.Services.AddScoped<KeychainFileSettings>();
 builder.Services.AddControllers();
@@ -106,80 +107,42 @@ async Task HandleLogsCommunication(WebSocket webSocket, HttpContext context)
 
 async Task HandleRecorderCommunication(WebSocket webSocket, HttpContext context)
 {
-    
-}
+    var recorderHandler = context.RequestServices.GetRequiredService<WebSocketRecorderHandler>();
+    var clientId = recorderHandler.AddClient(webSocket);
 
-async Task HandleWebSocket(HttpContext context, Func<WebSocketMiddleware, IServiceProvider, Task> communicationHandler)
-{
-    if (context.WebSockets.IsWebSocketRequest)
+    try
     {
-        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        // await communicationHandler(webSocket, context.RequestServices);
-    }
-    else
-    {
-        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-    }
-}
-
-async Task HandleLogsWebSocket(HttpContext context)
-{
-    if (context.WebSockets.IsWebSocketRequest)
-    {
-        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        var broadcaster = context.RequestServices.GetRequiredService<WebSocketLogBroadcaster>();
-        
-        broadcaster.AddClient(webSocket);
-
-        try
-        {
-            var buffer = new byte[1024 * 4];
-
-            while (webSocket.State == WebSocketState.Open)
-            {
-                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-
-                if (result.MessageType == WebSocketMessageType.Close)
-                {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by client.",
-                        CancellationToken.None);
-                }
-                else
-                {
-                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    Console.WriteLine($"Received from logs client: {message}");
-                }
-            }
-        }
-        catch (Exception exception)
-        {
-            Console.WriteLine(exception);
-            throw;
-        }
-        finally
-        {
-            broadcaster.RemoveClient(webSocket);
-        }
-    }
-    else
-    {
-        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-    }
-}
-
-async Task HandleRecorderWebSocket(HttpContext context)
-{
-    if (context.WebSockets.IsWebSocketRequest)
-    {
-        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+        var buffer = new byte[1024 * 4];
 
         while (webSocket.State == WebSocketState.Open)
         {
-            
+            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+            if (result.MessageType == WebSocketMessageType.Close)
+            {
+                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by client.",
+                    CancellationToken.None);
+            }
+            else if (result.MessageType == WebSocketMessageType.Text)
+            {
+                var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                Console.WriteLine($"Received from recorder client {clientId}: {message}");
+                recorderHandler.ProcessMessage(message);
+
+                var responseMessage = "Step recorded";
+                var responseBytes = Encoding.UTF8.GetBytes(responseMessage);
+                await webSocket.SendAsync(new ArraySegment<byte>(responseBytes), WebSocketMessageType.Text, true,
+                    CancellationToken.None);
+            }
         }
     }
-    else
+    catch (Exception exception)
     {
-        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        Console.WriteLine(exception);
+        throw;
+    }
+    finally
+    {
+        recorderHandler.RemoveClient(clientId);
     }
 }

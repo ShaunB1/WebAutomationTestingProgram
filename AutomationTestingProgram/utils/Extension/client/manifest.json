@@ -14,7 +14,16 @@
     "sidePanel",
     "webNavigation",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "tabs",
+    "cookies",
+    "proxy",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
   ],
   "content_scripts": [
     {

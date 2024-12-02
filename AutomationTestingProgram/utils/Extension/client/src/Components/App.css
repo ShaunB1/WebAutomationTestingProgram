@@ -2,3 +2,8 @@ html, body {
     height: 100%;
     margin: 0;
 }
+
+.content-container {
+    padding: 15px;
+    margin-top: 75px;
+}

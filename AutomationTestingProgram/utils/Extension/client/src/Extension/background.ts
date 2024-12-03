@@ -1,3 +1,5 @@
+let isSidePanelOpen = false;
+
 // const socketUrl = "ws://localhost:5223/ws/recorder"
 // let socket: WebSocket | null = null;
 
@@ -38,6 +40,25 @@
 //         chrome.runtime.sendMessage({ action: "RECORD_TEST_STEP", locator: message.locator, stepValues: message.stepValues });
 //     }
 // });
+
+chrome.commands.onCommand.addListener((command) => {
+    if (command === "toggle-side-panel") {
+        if (!isSidePanelOpen) {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0]) {
+                    const tabId = tabs[0].id as any;
+                    chrome.sidePanel.open({ tabId });
+                    isSidePanelOpen = true;
+                }
+            });
+        } else {
+            // There's no sidePanel.close() method in chrome API so this is a workaround
+            chrome.sidePanel.setOptions({ enabled: false });
+            chrome.sidePanel.setOptions({ enabled: true });
+            isSidePanelOpen = false;
+        }
+    }
+});
 
 chrome.runtime.onMessage.addListener(async (message) => {
     if (message.action === "openTabAndLogin") {
@@ -90,20 +111,19 @@ chrome.runtime.onMessage.addListener(async (message) => {
                 console.error("No active tab found.");
                 return;
             }
-            chrome.tabs.update(activeTab.id, { url }, () => {
-                chrome.tabs.onUpdated.addListener(function onUpdated(tabId, changeInfo) {
-                    if (tabId === activeTab.id && changeInfo.status === 'complete') {
-                        chrome.tabs.onUpdated.removeListener(onUpdated);
-                        chrome.scripting.executeScript(
-                            {
-                                target: { tabId: activeTab.id },
-                                func: autofillLogin,
-                                args: [username, password],
-                            }
-                        );
-                    }
-                })
+            chrome.tabs.onUpdated.addListener(function onUpdated(tabId, changeInfo) {
+                if (tabId === activeTab.id && changeInfo.status === 'complete') {
+                    chrome.tabs.onUpdated.removeListener(onUpdated);
+                    chrome.scripting.executeScript(
+                        {
+                            target: { tabId: activeTab.id },
+                            func: autofillLogin,
+                            args: [username, password],
+                        }
+                    );
+                }
             })
+            chrome.tabs.update(activeTab.id, { url });
         });
 
         // Can maybe detect middle click or right click and create new tab 

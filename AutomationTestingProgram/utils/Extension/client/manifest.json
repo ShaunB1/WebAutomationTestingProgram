@@ -18,6 +18,7 @@
     "tabs",
     "cookies",
     "proxy",
+    "storage",
     "http://*/*",
     "https://*/*"
   ],
@@ -32,5 +33,13 @@
       "run_at": "document_idle",
       "all_frames": true
     }
-  ]
+  ],  
+  "commands": {
+    "toggle-side-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E"
+      },
+      "description": "Toggle the side panel"
+    }
+  }
 }

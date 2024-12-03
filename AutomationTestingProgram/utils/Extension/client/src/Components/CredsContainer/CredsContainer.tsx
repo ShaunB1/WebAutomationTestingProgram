@@ -12,6 +12,7 @@ interface ErrorResponse {
 function CredsContainer(props: any) {
     const [rowData, setRowData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [credFilter, setCredFilter] = useState("");
 
     const gridRef: any = useRef();
 
@@ -42,6 +43,27 @@ function CredsContainer(props: any) {
 
         fetchRows();
     }, []);
+
+    useEffect(() => {
+        chrome.storage.local.get("credFilter", (result) => {
+            if (result.credFilter) {
+                setCredFilter(result.credFilter);
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        if (gridRef.current && gridRef.current.api) {
+            gridRef.current.api.setFilterModel({
+                email: {
+                    filterType: 'text',
+                    type: 'contains',
+                    filter: credFilter,
+                }
+            })
+            gridRef.current.api.onFilterChanged();
+        }
+    }, [credFilter]);
 
     const handleClick = async (email: string, setLoading: (value: boolean) => void, setError: (value: boolean) => void) => {
         try {
@@ -94,19 +116,13 @@ function CredsContainer(props: any) {
     ];
 
     const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        gridRef.current?.api.setFilterModel({
-            email: {
-                filterType: 'text',
-                type: 'contains',
-                filter: event.target.value,
-            }
-        })
-        gridRef.current?.api.onFilterChanged();
+        setCredFilter(event.target.value);
+        chrome.storage.local.set({ credFilter: event.target.value });
     };
 
     return (
         <>
-            <TextField id="outlined-basic" label="Search for account" variant="outlined" onChange={handleFilterChange} />
+            <TextField id="outlined-basic" label="Search for account" variant="outlined" value={credFilter} onChange={handleFilterChange} />
 
             <div className="ag-theme-quartz" style={{ width: 301, height: 500, marginTop: 10 }}  >
                 <AgGridReact loading={loading} rowData={rowData} columnDefs={columnDefs} rowHeight={50} ref={gridRef} enableCellTextSelection={true} ></AgGridReact>

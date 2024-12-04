@@ -1,13 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import { ColDef } from "ag-grid-community";
 import {Box, Button, TextField, Toolbar, useTheme} from "@mui/material";
+import * as XLSX from "xlsx";
 
 interface TestStep {
     TESTCASENAME: string;
-    TESTDESCRIPTION: string;
+    TESTSTEPDESCRIPTION: string;
     ACTIONONOBJECT: string;
     OBJECT: string;
     VALUE: string;
@@ -23,14 +24,17 @@ interface TestStep {
 const RecorderTable: React.FC = () => {
     const theme = useTheme();
     const [inputValue, setInputValue] = useState("");
-    const [fillerValue, setFillerValue] = useState("");
     const [testCase, setTestCase] = useState("");
     const [altVerify, setAltVerify] = useState(false);
-    const [fillerText, setFillerText] = useState("");
+    const [start, setStart] = useState(false);
     const [rowData, setRowData] = useState<TestStep[]>([]);
-    const [colDefs] = useState<ColDef[]>([
-        { field: "TESTCASENAME" },
-        { field: "TESTDESCRIPTION" },
+    const [colDefs, setColDefs] = useState<ColDef[]>([
+        {
+            field: "TESTCASENAME",
+            checkboxSelection: true,
+            headerCheckboxSelection: true,
+        },
+        { field: "TESTSTEPDESCRIPTION" },
         { field: "ACTIONONOBJECT" },
         { field: "OBJECT" },
         { field: "VALUE" },
@@ -44,13 +48,31 @@ const RecorderTable: React.FC = () => {
     ])
 
     const testCaseRef = useRef(testCase);
-    const fillerTextRef = useRef(fillerText);
+
     const gridRef = useRef<AgGridReact>(null);
+
+    const handleDeleteSelectedRows = () => {
+        const selectedRows = gridRef.current?.api.getSelectedRows();
+        if (selectedRows && selectedRows.length > 0) {
+            setRowData(prevRows => prevRows.filter(row => !selectedRows.includes(row)));
+        }
+    }
+
+    const renderToolbarButtons = () => (
+        <Box>
+            <Button
+                variant="contained"
+                color="secondary"
+                onClick={handleDeleteSelectedRows}
+            >
+                Delete Selected
+            </Button>
+        </Box>
+    );
 
     useEffect(() => {
         testCaseRef.current = testCase;
-        fillerTextRef.current = fillerText;
-    }, [testCase, fillerText]);
+    }, [testCase]);
 
     useEffect(() => {
         const handleMessage = (message: any) => {
@@ -58,7 +80,7 @@ const RecorderTable: React.FC = () => {
                 // const elDict = JSON.parse(message.locator);
                 const testStep: TestStep = {
                     TESTCASENAME: testCaseRef.current,
-                    TESTDESCRIPTION: message.stepValues.testdescription,
+                    TESTSTEPDESCRIPTION: message.stepValues.testdescription,
                     ACTIONONOBJECT: message.stepValues.actiononobject,
                     OBJECT: message.stepValues.object,
                     VALUE: message.stepValues.value,
@@ -101,14 +123,6 @@ const RecorderTable: React.FC = () => {
         setRowData([]);
     }
 
-    const handleFillerTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFillerValue(e.target.value);
-    }
-
-    const handleSubmitFillerText = () => {
-        setFillerText(fillerValue);
-    }
-
     const scrollToBottom = () => {
         const gridApi = gridRef.current?.api;
 
@@ -122,17 +136,6 @@ const RecorderTable: React.FC = () => {
         scrollToBottom();
     }, [rowData]);
 
-    const sendFillerTextToContentScript = useCallback(() => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0].id) {
-                chrome.tabs.sendMessage(
-                    tabs[0].id,
-                    { action: "FILL_TEXT_BOXES", fillerText: fillerTextRef.current },
-                )
-            }
-        })
-    }, [fillerText]);
-
     const sendMessageToContentScript = useCallback(() => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0].id) {
@@ -144,13 +147,142 @@ const RecorderTable: React.FC = () => {
         });
     }, [altVerify])
 
+    const sendStartState = useCallback(() => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0].id) {
+                chrome.tabs.sendMessage(
+                    tabs[0].id,
+                    { action: "CHANGE_START_STATE", start: start }
+                )
+            }
+        })
+    }, [start]);
+
+    const handleStartSwitch = () => {
+        setStart(!start);
+    }
+
+    const handleExport = () => {
+        try {
+            const rows: any[] = [];
+            gridRef.current?.api.forEachNode((node) => {
+                rows.push(node.data);
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1")
+            XLSX.writeFile(workbook, "recorded_test.xlsx");
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    // const insertRowsAfterSelected = (selectedRowIndex: any, newSteps: any) => {
+    //     if (gridRef.current) {
+    //         const api = gridRef.current.api;
+    //         const addTransactions = newSteps.map((step, index) => ({
+    //             add: [step],
+    //             addIndex: selectedRowIndex + index + 1,
+    //         }));
+    //
+    //         addTransactions.forEach((transaction: any) => {
+    //             api.applyTransaction(transaction);
+    //         })
+    //
+    //         setRowData(prevRows => {
+    //
+    //         });
+    //     }
+    // }
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+
+        if (files && files[0]) {
+            try {
+                const file = files[0];
+                const reader = new FileReader();
+
+                reader.onload = (event) => {
+                    const data = event.target?.result;
+
+                    if (typeof data === "string" || data instanceof ArrayBuffer) {
+                        const workbook = XLSX.read(data, { type: "binary" });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+
+                        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                        if (jsonData.length === 0) {
+                            alert("The selected Excel file is empty.");
+                            return;
+                        }
+
+                        const mappedData: TestStep[] = jsonData.map((row) => {
+                            const testStep: TestStep = {
+                                TESTCASENAME: String(row.TESTCASENAME || "test"),
+                                TESTSTEPDESCRIPTION: String(row.TESTSTEPDESCRIPTION || ""),
+                                ACTIONONOBJECT: String(row.ACTIONONOBJECT || ""),
+                                OBJECT: String(row.OBJECT || ""),
+                                VALUE: String(row.VALUE || ""),
+                                COMMENTS: String(row.COMMENTS || ""),
+                                LOCAL_ATTEMPTS: String(row.LOCAL_ATTEMPTS || ""),
+                                LOCAL_TIMEOUT: String(row.LOCAL_TIMEOUT || ""),
+                                CONTROL: String (row.CONTROL || ""),
+                                TESTSTEPTYPE: String(row.TESTSTEPTYPE),
+                                GOTOSTEP: String(row.GOTOSTEP),
+                                CYCLEGROUP: String(row.CYCLEGROUP || ""),
+                            };
+
+                            return testStep;
+                        });
+
+                        setRowData(mappedData);
+
+                        const cols: any[] = Object.keys(mappedData[0]).map((key) => {
+                            if (key === "TESTCASENAME") {
+                                return {
+                                    headerName: key,
+                                    field: key,
+                                    sortable: true,
+                                    filter: true,
+                                    resizable: true,
+                                    checkboxSelection: true,
+                                    headerCheckboxSelection: true,
+                                };
+                            } else {
+                                return {
+                                    headerName: key,
+                                    field: key,
+                                    sortable: true,
+                                    filter: true,
+                                    resizable: true,
+                                }
+                            }
+                        });
+
+                        setColDefs(cols);
+                    }
+                }
+
+                reader.onerror = (error) => {
+                    console.error(`Error reading file: ${error}`);}
+
+                reader.readAsArrayBuffer(file);
+            } catch (e: any) {
+                console.log(e);
+            }
+        }
+    }
+
     useEffect(() => {
         sendMessageToContentScript();
     }, [sendMessageToContentScript]);
 
     useEffect(() => {
-        sendFillerTextToContentScript();
-    }, [sendFillerTextToContentScript]);
+        sendStartState();
+    }, [sendStartState]);
 
     return (
         <>
@@ -174,10 +306,17 @@ const RecorderTable: React.FC = () => {
                     <Button variant="contained" color="primary" onClick={handleClearTable}>
                         Clear
                     </Button>
-                    <TextField label="Enter Filler Text..." variant="outlined" onChange={handleFillerTextChange} value={fillerValue} />
-                    <Button variant="contained" color="primary" onClick={handleSubmitFillerText}>
-                        Fill
+                    <Button variant="contained" color="primary" onClick={handleStartSwitch}>
+                        {start ? "STOP" : "START"}
                     </Button>
+                    <Button variant="contained" color="primary" onClick={handleExport}>
+                        EXPORT
+                    </Button>
+                    <Button variant="contained" component="label">
+                        IMPORT
+                        <input type="file" accept=".xlsxm, .xls, .xlsx" hidden onChange={handleFileUpload} />
+                    </Button>
+                    {renderToolbarButtons()}
                 </Box>
             </Toolbar>
             <div className="ag-theme-quartz-dark" style={{ height: 500 }}>

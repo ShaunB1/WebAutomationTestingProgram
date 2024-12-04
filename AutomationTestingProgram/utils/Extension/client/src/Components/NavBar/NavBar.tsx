@@ -8,8 +8,10 @@ const NavBar = () => {
         <>
             <AppBar position="fixed">
                 <Toolbar>
-                    <Button component={Link} to={"/"} color="inherit" style={{ marginRight: '30px' }}>Test Recorder</Button>
+                    <Button component={Link} to={"/"} color="inherit" style={{ fontWeight: 'bold', fontSize: '25px', marginRight: '30px' }}>TAP</Button>
                     <Button component={Link} to={"/environments"} color="inherit" style={{ marginRight: '30px' }} >Environments</Button>
+                    <Button component={Link} to={"/recorder"} color="inherit">Test Recorder</Button>
+                    <Button component={Link} to={"/tools"} color="inherit">Tools</Button>
                 </Toolbar>
             </AppBar>
         </>

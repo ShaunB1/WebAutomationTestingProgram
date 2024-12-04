@@ -8,7 +8,7 @@ interface TableValues {
     comments: string;
 }
 
-document.addEventListener("click", (e) => {
+function clickEventListener(e: Event) {
     const element = e.target as HTMLElement;
     const tag = element.tagName.toLowerCase();
     const elDict = getAllAttributes(e.target as HTMLElement);
@@ -19,16 +19,95 @@ document.addEventListener("click", (e) => {
         value: "",
         comments: "",
     }
-    const text = getTextContent(element);
 
-    values.actiononobject = "ClickWebElement";
-    values.testdescription = text !== "" ? `Click ${text}` : `Click ${tag}`;
+    if ((tag === "input" && (element as HTMLInputElement).type === "text") || tag === "textarea") {
+        element.removeEventListener("blur", blurEventListener);
+        element.removeEventListener("keydown", triggerBlur);
+
+        element.addEventListener("blur", blurEventListener);
+        element.addEventListener("keydown", triggerBlur);
+    } else if (tag === "select") {
+        values.testdescription = "Select option ";
+        values.actiononobject = "SelectDDL";
+
+        element.removeEventListener("change", changeEventListener);
+        element.addEventListener("change", changeEventListener);
+    } else if (tag === "input" && (element as HTMLInputElement).type === "file") {
+        const fileInput = e.target as HTMLInputElement;
+
+        values.actiononobject = "UploadFile";
+
+        fileInput.removeEventListener("change", fileChangeListener);
+        fileInput.addEventListener("change", fileChangeListener);
+
+        function fileChangeListener() {
+            const files = fileInput.files;
+            const fileNum = files ? files.length : 0;
+
+            if (fileNum > 0) {
+                const file = files ? files[0] : null;
+                values.value = (file as unknown as HTMLInputElement).name;
+            } else {
+                values.value = "No file selected.";
+            }
+
+            values.testdescription = `Upload ${values.value}`;
+
+            fileInput.removeEventListener("change", fileChangeListener);
+            chrome.runtime.sendMessage({ action: "actiononobject", locator: elDict, stepValues: values });
+        }
+    }
+
+    else {
+        const text = getTextContent(element);
+        values.actiononobject = "ClickWebElement";
+        values.testdescription = text !== "" ? `Click ${text}` : `Click ${tag}`;
+        chrome.runtime.sendMessage({ action: "actiononobject", locator: elDict, stepValues: values });
+    }
+}
+
+function changeEventListener(e: Event) {
+    const element = e.target as HTMLSelectElement;
+    const target = e.target as HTMLSelectElement;
+    const elDict = getAllAttributes(target as HTMLElement);
+    const selectedOption = element.options[target.selectedIndex];
+    const text = selectedOption.text;
+    const values: TableValues = {
+        testdescription: `Select option ${text}`,
+        actiononobject: "SelectDDL",
+        object: elDict,
+        value: text,
+        comments: "",
+    }
 
     chrome.runtime.sendMessage({ action: "actiononobject", locator: elDict, stepValues: values });
-});
+}
 
-document.addEventListener("contextmenu", (e) => {
-    console.log("VERIFY MODE: ", verifyMode);
+function triggerBlur(e: KeyboardEvent) {
+    const key = e.key;
+    const element = e.target as HTMLElement;
+    if (key === "Enter") {
+        element.blur();
+    }
+}
+
+function blurEventListener(e: Event) {
+    const element = e.target as HTMLElement;
+    const tag = element.tagName.toLowerCase();
+    const textContent = (element as HTMLInputElement).value;
+    const elDict = getAllAttributes(e.target as HTMLElement);
+    const values: TableValues = {
+        testdescription: `Populate ${tag}`,
+        actiononobject: "PopulateWebElement",
+        object: elDict,
+        value: textContent,
+        comments: "",
+    }
+
+    chrome.runtime.sendMessage({ action: "actiononobject", locator: elDict, stepValues: values });
+}
+
+function contextMenuEventListener(e: Event) {
     e.preventDefault();
     const interactiveElements = ["button", "input", "select", "textarea", "fieldset", "optgroup", "option"];
     const elementTag = (e.target as HTMLElement).tagName.toLowerCase();
@@ -69,7 +148,7 @@ document.addEventListener("contextmenu", (e) => {
 
         chrome.runtime.sendMessage({ action: "actiononobject", locator: elDict, stepValues: values });
     }
-})
+}
 
 chrome.runtime.onMessage.addListener((message) => {
     if (message.action === "ALT_VERIFY") {
@@ -88,7 +167,6 @@ chrome.runtime.onMessage.addListener((message) => {
 
                 const inputEvent = new Event("input", { bubbles: true });
                 input.dispatchEvent(inputEvent);
-                input.scrollIntoView({ behavior: "instant", block: "center" });
             }
         });
 
@@ -98,9 +176,16 @@ chrome.runtime.onMessage.addListener((message) => {
 
                 const textareaEvent = new Event("input", { bubbles: true });
                 textarea.dispatchEvent(textareaEvent);
-                textarea.scrollIntoView({ behavior: "instant", block: "center" });
             }
         });
+    } else if (message.action === "CHANGE_START_STATE") {
+        if (!message.start) {
+            document.removeEventListener("click", clickEventListener);
+            document.removeEventListener("contextmenu", contextMenuEventListener);
+        } else {
+            document.addEventListener("click", clickEventListener);
+            document.addEventListener("contextmenu", contextMenuEventListener);
+        }
     }
 })
 

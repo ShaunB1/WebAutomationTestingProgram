@@ -51,6 +51,10 @@
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-Dl41TavX.js" />
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-DwcCbfx_.js" />
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-BLO-fjg2.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-5yilpbi_.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-C1eD0ztI.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-Cbz7X4Sb.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-DT0luH8i.js" />
     </ItemGroup>
 
     <ItemGroup>

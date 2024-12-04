@@ -35,11 +35,11 @@ let isSidePanelOpen = false;
 // }
 
 // chrome.runtime.onMessage.addListener(sendInteractionData);
-// chrome.runtime.onMessage.addListener((message) => {
-//     if (message.action === "actiononobject") {
-//         chrome.runtime.sendMessage({ action: "RECORD_TEST_STEP", locator: message.locator, stepValues: message.stepValues });
-//     }
-// });
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === "actiononobject") {
+        chrome.runtime.sendMessage({ action: "RECORD_TEST_STEP", locator: message.locator, stepValues: message.stepValues });
+    }
+});
 
 chrome.commands.onCommand.addListener((command) => {
     if (command === "toggle-side-panel") {
@@ -126,7 +126,7 @@ chrome.runtime.onMessage.addListener(async (message) => {
             chrome.tabs.update(activeTab.id, { url });
         });
 
-        // Can maybe detect middle click or right click and create new tab 
+        // Can maybe detect middle click or right click and create new tab
         //
         // chrome.tabs.create({ url }, (tab: any) => {
         //     chrome.tabs.update(tab.id, { url }, () => {

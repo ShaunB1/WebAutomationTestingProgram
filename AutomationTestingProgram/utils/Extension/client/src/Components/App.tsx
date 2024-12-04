@@ -2,25 +2,25 @@ import './App.css'
 import NavBar from "./NavBar/NavBar";
 import EnvPage from "./Pages/EnvPage";
 import RecorderTable from "./RecorderTable/RecorderTable.tsx";
-import { HashRouter, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
+import ToolsPage from "../Pages/ToolsPage/ToolsPage.tsx";
 
 function App() {
   return (
-    <>
-      <HashRouter>
+      <>
         <div className="main-container">
-          <NavBar />
+          <NavBar/>
           <div className="content-container">
             <Routes>
               <Route path="/">
-                <Route index element={<RecorderTable />} />
-                <Route path="environments" element={<EnvPage />} />
+                <Route path="recorder" element={<RecorderTable/>}/>
+                <Route path="environments" element={<EnvPage/>}/>
+                <Route path="tools" element={<ToolsPage/>}/>
               </Route>
             </Routes>
           </div>
         </div>
-      </HashRouter>
-    </>
+      </>
   )
 }
 

@@ -26,10 +26,16 @@ public class TestController : ControllerBase
         _broadcaster = broadcaster;
     }
 
-    [HttpPost("test")]
+    [HttpPost("test_post")]
     public IActionResult TestPost()
     {
         return Ok("POST request successful.");
+    }
+
+    [HttpGet("test_get")]
+    public IActionResult TestGet()
+    {
+        return Ok("GET request successful.");
     }
     
     [HttpPost("run")]

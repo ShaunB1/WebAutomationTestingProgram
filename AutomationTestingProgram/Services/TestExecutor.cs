@@ -33,6 +33,8 @@ public class TestExecutor
             { "selectddl", new SelectDDL() },
             { "runsqlscript", new RunSQLScript() },
             { "uploadfile", new UploadFile() },
+            { "savefile", new SaveFile() },
+            { "convertpdf", new ConvertPDF() },
             { "closewindow", new CloseWindow() },
             { "waitinseconds", new WaitInSeconds() },
             { "exitcondition", new ExitCondition() },

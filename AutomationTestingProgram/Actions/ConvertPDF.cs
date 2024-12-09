@@ -1,52 +1,59 @@
-﻿using System;
+﻿using Microsoft.Playwright;
+using System;
 using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
-using System.Text;
-using System.Linq;
-using System.Reflection;
 
-namespace AutomationTestingProgram.AutomationFramework
+namespace AutomationTestingProgram.Actions
 {
     /// <summary>
-    /// This test step converts PDFs to text files using PdfSharp.
+    /// This action converts PDFs to text files using PdfSharp.
     /// </summary>
-    public class ConvertPDF : TestStep
+    public class ConvertPDF : IWebAction
     {
-        /// <inheritdoc/>
-        public override string TestCaseName { get; set; } = "ConvertPDF";
+        public string Name { get; set; } = "ConvertPDF";
 
-        private string _pdfFileToConvertExpected;
-        private string _pdfFileToConvertActual;
-        private string _outputDirectory;
+        private string? _pdfFileToConvertExpected;
+        private string? _pdfFileToConvertActual;
+        private string? _outputDirectory;
 
-        public ConvertPDF()
+        /*public ConvertPDF()
         {
             // Set up a temporary output directory for converted text files.
             _outputDirectory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
             Directory.CreateDirectory(_outputDirectory); // Ensure the directory exists
-            /*_outputDirectory = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), ConfigurationManager.AppSettings["TEMPORARY_FILES_FOLDER"]);*/
+        }*/
 
-            // Hardcoded paths for the PDF files to be converted (can be customized) from test file
-            _pdfFileToConvertExpected = this.Object;  // Hardcoded path to expected PDF
-            _pdfFileToConvertActual = this.Value;      // Hardcoded path to actual PDF
-        }
-
-        /// <summary>
-        /// This method performs the PDF conversion operation.
-        /// </summary>
-        public void RunConversion()
+        /// <inheritdoc/>
+        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
         {
+            // Set up a temporary output directory for converted text files.
+            _outputDirectory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
+            Directory.CreateDirectory(_outputDirectory); // Ensure the directory exists
+
+            // Hardcoded paths for the PDF files to be converted (can be customized)
+            _pdfFileToConvertExpected = step.Object;  // Path to expected PDF
+            _pdfFileToConvertActual = step.Value;      // Path to actual PDF
+
             try
             {
-                // Convert PDFs to text
+                // Convert PDFs to text files
                 ConvertPdfToText(_pdfFileToConvertExpected, "expected.txt");
                 ConvertPdfToText(_pdfFileToConvertActual, "actual.txt");
+
+                /*step.Status = true;
+                step.Actual = $"Successfully converted PDFs to text files.";*/
+                return true;
             }
             catch (Exception e)
             {
                 // Handle exceptions if anything goes wrong
                 Console.WriteLine("Convert PDF FAILED: " + e.Message);
+                /*step.Status = false;
+                step.Actual = $"Error converting PDFs: {e.Message}";*/
+                return false;
             }
         }
 
@@ -82,7 +89,6 @@ namespace AutomationTestingProgram.AutomationFramework
                     File.WriteAllText(outputFilePath, text.ToString());
 
                     Console.WriteLine($"Converted {pdfFilePath} to {outputFilePath}");
-                    /*this.TestStepStatus.Actual += $"\nConverted {pdfFilePath} to {outputFilePath}";*/
                 }
             }
             catch (Exception ex)

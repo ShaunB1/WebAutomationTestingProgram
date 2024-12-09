@@ -1,9 +1,9 @@
 import Home from "../Pages/Home.tsx";
 import NavBar from "./NavBar/NavBar.tsx";
 import EnvsPage from "../Pages/EnvsPage.tsx";
-import RecorderPage from "../Pages/RecorderPage.tsx";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
+import PivotTable from "./PivotTable/PivotTable.tsx";
 
 function App() {
     return (
@@ -16,7 +16,7 @@ function App() {
                             <Route path="/">
                                 <Route index element={<Home />} />
                                 <Route path="environments" element={<EnvsPage />} />
-                                <Route path="testRecorder" element={<RecorderPage />} />
+                                <Route path="pivottable" element={<PivotTable />} />
                             </Route>
                         </Routes>
                     </div>

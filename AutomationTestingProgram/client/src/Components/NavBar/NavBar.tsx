@@ -10,7 +10,7 @@ const NavBar = () => {
                 <Toolbar>
                     <Button component={Link} to={"/"} color="inherit" style={{ fontWeight: 'bold', fontSize: '25px', marginRight: '30px' }}>TAP</Button>
                     <Button component={Link} to={"/environments"} color="inherit" style={{ marginRight: '30px' }} >Environments</Button>
-                    <Button component={Link} to={"/testRecorder"} color="inherit">Test Recorder</Button>
+                    <Button component={Link} to={"/pivottable"} color="inherit">Pivot Table</Button>
                 </Toolbar>
             </AppBar>
         </>

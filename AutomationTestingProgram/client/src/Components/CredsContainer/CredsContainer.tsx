@@ -52,14 +52,13 @@ function CredsContainer() {
             if (!response.ok) {
                 setError(true);
                 const errorData = await response.json() as ErrorResponse;
-                console.log(errorData);
                 throw new Error(`${errorData.error}`);
             }
             const result = await response.json();
             setError(false);
-            setValue(result.secretKey);
+            setValue(result.message);
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     }
 
@@ -72,7 +71,7 @@ function CredsContainer() {
             {loading ? (
                 <CircularProgress size={24} />
             ) : value ? (
-                <>{value}</>
+                <span>{value}</span>
             ) : (
                 <Button
                     variant="contained"
@@ -108,7 +107,6 @@ function CredsContainer() {
     return (
         <>
             <TextField id="outlined-basic" label="Search for account" variant="outlined" onChange={handleFilterChange} />
-
             <div className="ag-theme-quartz" style={{ width: 650, height: 500, marginTop: 10 }}  >
                 <AgGridReact loading={loading} rowData={rowData} columnDefs={columnDefs} rowHeight={50} ref={gridRef} enableCellTextSelection={true} ></AgGridReact>
             </div>

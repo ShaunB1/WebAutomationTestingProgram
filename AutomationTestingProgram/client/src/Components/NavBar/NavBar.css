@@ -1,0 +1,13 @@
+.button {
+    margin-right: 20px !important;
+    height: 100%;
+}
+
+.button:first-child {
+    font-weight: bold;
+    font-size: 25px; 
+}
+
+.navbar {
+    height: 60px;
+}

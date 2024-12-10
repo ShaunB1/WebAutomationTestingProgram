@@ -12,11 +12,13 @@ using System.Text.Json;
 public class EnvironmentsController : ControllerBase
 {
     private readonly AzureKeyVaultService _azureKeyVaultService;
+    private readonly PasswordResetService _passwordResetService;
     private readonly KeychainFileSettings _keychainFileSettings;
     private readonly IWebHostEnvironment _env;
-    public EnvironmentsController(AzureKeyVaultService azureKeyVaultService, IOptions<KeychainFileSettings> keychainFileSettings, IWebHostEnvironment env)
+    public EnvironmentsController(AzureKeyVaultService azureKeyVaultService, PasswordResetService passwordResetService, IOptions<KeychainFileSettings> keychainFileSettings, IWebHostEnvironment env)
     {
         _azureKeyVaultService = azureKeyVaultService;
+        _passwordResetService = passwordResetService;
         _keychainFileSettings = keychainFileSettings.Value;
         _env = env;
     }
@@ -26,7 +28,7 @@ public class EnvironmentsController : ControllerBase
     {
         string contentRootPath = _env.ContentRootPath;
         string keychainFilePath = _keychainFileSettings.KeychainFilePath;
-        string filepath =  keychainFilePath.Replace("%PROJECT_ROOT%", contentRootPath);
+        string filepath = keychainFilePath.Replace("%PROJECT_ROOT%", contentRootPath);
 
         var keychainRows = new List<object>();
         try
@@ -59,27 +61,29 @@ public class EnvironmentsController : ControllerBase
             Console.WriteLine(ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError, new { error = ex.Message });
         }
-
     }
 
     [HttpGet("secretKey")]
     public async Task<IActionResult> GetSecretKey([FromQuery] string email)
     {
-        try
+        var result = await _azureKeyVaultService.GetKvSecret(email);
+        Console.WriteLine(result.message);
+        if (!result.success)
         {
-            string secretKey = _azureKeyVaultService.GetKvSecret(email);
-            if (secretKey.StartsWith("Error"))
-            {
-                Console.WriteLine("Secret key could not be fetched from Key Vault");
-                return StatusCode(StatusCodes.Status400BadRequest, new { error = secretKey });
-            }
-            Console.WriteLine("Successfully read secret from Azure Key Vault");
-            return Ok(new { secretKey });
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = result.message });
         }
-        catch (Exception ex)
+        return Ok(new { result.message });
+    }
+
+    [HttpPost("resetPassword")]
+    public async Task<IActionResult> ResetPassword([FromBody] string email)
+    {
+
+        var result = await _passwordResetService.ResetPassword(email);
+        if (!result.success)
         {
-            Console.WriteLine(ex.Message);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = ex.Message });
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = result.message, email = email, success = false });
         }
+        return Ok(new { message = result.message, email = email, success = true });
     }
 }

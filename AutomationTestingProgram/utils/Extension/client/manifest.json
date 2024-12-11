@@ -18,7 +18,9 @@
     "tabs",
     "cookies",
     "proxy",
-    "storage"
+    "storage",
+    "http://*/*",
+    "https://*/*"
   ],
   "host_permissions": [
     "http://*/*",

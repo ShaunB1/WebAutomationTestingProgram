@@ -4,11 +4,7 @@ namespace AutomationTestingProgram.Actions
 {
     public class SaveParameter : IWebAction
     {
-        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
-        {
-            return false;
-        }
-        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> SaveParameters)
+        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
         {
             string value = step.Value;
             string obj = step.Object;
@@ -19,7 +15,7 @@ namespace AutomationTestingProgram.Actions
                 return false;
             }
 
-            SaveParameters[obj] = value;
+            saveParams[obj] = value;
             Console.WriteLine($"Successfully updated parameter {obj} to {value}");
             return true;
         }

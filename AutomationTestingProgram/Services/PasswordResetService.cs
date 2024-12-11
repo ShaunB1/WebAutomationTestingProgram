@@ -14,32 +14,28 @@ namespace AutomationTestingProgram.Services
 {
     public class PasswordResetService
     {
-        private readonly AzureKeyVaultService _azureKeyVaultService;
         private static readonly HttpClient _client;
-        private string _graphClientId;
-        private string _graphTenantId;
-        private string _graphEmail;
-        private string _graphPassword;
-
-        public PasswordResetService(IOptions<MicrosoftGraphSettings> microsoftGraphSettings, AzureKeyVaultService azureKeyVaultService)
-        {
-            _azureKeyVaultService = azureKeyVaultService;
-            _graphClientId = microsoftGraphSettings.Value.GraphClientId;
-            _graphTenantId = microsoftGraphSettings.Value.GraphTenantId;
-            _graphEmail = microsoftGraphSettings.Value.GraphEmail;
-            _graphPassword = microsoftGraphSettings.Value.GraphPassword;
-        }
+        private static readonly string _graphClientId;
+        private static readonly string _graphTenantId;
+        private static readonly string _graphEmail;
+        private static readonly string _graphPassword;
 
         static PasswordResetService()
         {
+            var graphConfig = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build();
+            _graphClientId = graphConfig["MicrosoftGraph:GraphClientId"];
+            _graphTenantId = graphConfig["MicrosoftGraph:GraphTenantId"];
+            _graphEmail = graphConfig["MicrosoftGraph:GraphEmail"];
+            _graphPassword = graphConfig["MicrosoftGraph:GraphPassword"];
+
             _client = new HttpClient();
             _client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
         }
 
-        public async Task<(bool success, string message)> ResetPassword(string email)
+        public static async Task<(bool success, string message)> ResetPassword(string email)
         {
-            var result = await _azureKeyVaultService.CheckAzureKVAccount(email);
-            Console.WriteLine($"{email}: {result.message}");
+            var result = await AzureKeyVaultService.CheckAzureKVAccount(email);
+            Console.WriteLine($"{result.message}");
             if (!result.success)
             {
                 return (false, result.message);
@@ -47,18 +43,18 @@ namespace AutomationTestingProgram.Services
 
             string emailTime = DateTime.UtcNow.ToString("O");
             result = await RequestOTP(email);
-            Console.WriteLine($"{email}: {result.message}");
+            Console.WriteLine($"{result.message}");
             if (!result.success)
             {
                 return (false, result.message);
             }
 
             // Wait 20 seconds for reset email to be sent
-            Console.WriteLine($"{email}: Waiting for 20 seconds for reset email");
+            Console.WriteLine($"Waiting for 20 seconds for reset email");
             await Task.Delay(20000);
 
             result = await GetOTPFromEmail(email, emailTime);
-            Console.WriteLine($"{email}: {result.message}");
+            Console.WriteLine($"{result.message}");
             if (!result.success)
             {
                 return (false, result.message);
@@ -66,14 +62,14 @@ namespace AutomationTestingProgram.Services
             string OTP = result.message;
 
             result = await RequestPasswordReset(email, OTP);
-            Console.WriteLine($"{email}: {result.message}");
+            Console.WriteLine($"{result.message}");
             if (!result.success)
             {
                 return (false, result.message);
             }
 
-            result = await _azureKeyVaultService.UpdateKvSecret(email);
-            Console.WriteLine($"{email}: {result.message}");
+            result = await AzureKeyVaultService.UpdateKvSecret(email);
+            Console.WriteLine($"{result.message}");
             if (!result.success)
             {
                 return (false, "Password successfully updated in OPS BPS but failed to update in Azure Key Vault\n" +
@@ -83,9 +79,9 @@ namespace AutomationTestingProgram.Services
         }
 
         // Make a password reset request on OPS BPS
-        private async Task<(bool success, string message)> RequestOTP(string email)
+        private static async Task<(bool success, string message)> RequestOTP(string email)
         {
-            Console.WriteLine($"{email}: Requesting OTP from OPS BPS");
+            Console.WriteLine($"Requesting OTP from OPS BPS");
             string forgotPasswordURL = "https://stage.login.security.gov.on.ca/ciam/bps/public/forgotpassword/";
 
             var jsonBody = $"{{\"email\":\"{email}\"}}";
@@ -114,7 +110,7 @@ namespace AutomationTestingProgram.Services
         }
 
         // Retrieve one-time password from uft@ontario.ca
-        private async Task<(bool success, string message)> GetOTPFromEmail(string email, string emailTime)
+        private static async Task<(bool success, string message)> GetOTPFromEmail(string email, string emailTime)
         {
             string emailText = string.Empty;
 
@@ -150,7 +146,7 @@ namespace AutomationTestingProgram.Services
                 {
                     return (false, "No reset password email was found");
                 }
-                Console.WriteLine($"{email} password reset email text\n{emailText}");
+                Console.WriteLine($"Password reset email text:\n{emailText}");
             }
             catch (Exception ex)
             {
@@ -182,9 +178,9 @@ namespace AutomationTestingProgram.Services
             }
         }
 
-        private async Task<(bool success, string message)> RequestPasswordReset(string email, string OTP)
+        private static async Task<(bool success, string message)> RequestPasswordReset(string email, string OTP)
         {
-            Console.WriteLine($"{email}: Requesting password reset from OPS BPS");
+            Console.WriteLine($"Requesting password reset from OPS BPS");
             string resetPasswordURL = "https://stage.login.security.gov.on.ca/ciam/bps/public/passwordreset/";
 
             string newPassword = $"OPS{DateTime.Now.ToString("ddMMMyyyy", CultureInfo.InvariantCulture)}!";

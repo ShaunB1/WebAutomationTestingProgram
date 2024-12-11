@@ -14,7 +14,8 @@ public class TestExecutor
     private readonly bool _recordVideo = false;
     private readonly ILogger<TestController> _logger;
     private readonly WebSocketLogBroadcaster _broadcaster;
-    private Dictionary<string, string> SaveParameters = new Dictionary<string, string>();
+    private Dictionary<string, string> _envVars = new Dictionary<string, string>();
+    private Dictionary<string, string> _saveParameters = new Dictionary<string, string>();
 
     public TestExecutor(ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
     {
@@ -48,9 +49,10 @@ public class TestExecutor
     public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
     {
         // execute test steps
+        _envVars["environment"] = environment;
         var context = await browser.NewContextAsync();
         var page = await context.NewPageAsync();
-        await page.SetViewportSizeAsync(1920, 1080);
+        //await page.SetViewportSizeAsync(1920, 1080);
         var testResults = new List<TestCaseResultParams>();
         var testCases = testSteps.Where(s => s.Control != "#").GroupBy(s => s.TestCaseName);
         var cycleGroups = testSteps.Where(s => s.Cycle != string.Empty).GroupBy(s => s.Cycle);
@@ -79,11 +81,11 @@ public class TestExecutor
             {
                 if (_actions.TryGetValue(firstStep.ActionOnObject.ToLower().Replace(" ", ""), out var action))
                 {
-                    var res = await action.ExecuteAsync(page, firstStep, -1);
+                    var res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
                     while (!res)
                     {
                         Task.Delay(TimeSpan.FromSeconds(15)).Wait();
-                        res = await action.ExecuteAsync(page, firstStep, -1);
+                        res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
                         Console.WriteLine($"EXIT CONDITION: {res}");
 
                         if (!res)
@@ -138,11 +140,11 @@ public class TestExecutor
                     {
                         if (_actions.TryGetValue(firstStep.ActionOnObject.ToLower().Replace(" ", ""), out var action))
                         {
-                            var res = await action.ExecuteAsync(page, firstStep, -1);
+                            var res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
                             while (!res)
                             {
                                 Task.Delay(TimeSpan.FromSeconds(15)).Wait();
-                                res = await action.ExecuteAsync(page, firstStep, -1);
+                                res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
                                 Console.WriteLine($"EXIT CONDITION: {res}");
 
                                 if (!res)
@@ -224,15 +226,7 @@ public class TestExecutor
 
                         page.SetDefaultTimeout(timeout);
 
-                        var res = false;
-                        if (action is SaveParameter saveParameter)
-                        {
-                            res = await saveParameter.ExecuteAsync(page, step, iteration, SaveParameters);
-                        }
-                        else
-                        {
-                            res = await action.ExecuteAsync(page, step, iteration);
-                        }
+                        var res = await action.ExecuteAsync(page, step, iteration, _envVars, _saveParameters);
 
                         _logger.LogInformation($"TEST RESULT: {res}");
                         await _broadcaster.BroadcastLogAsync($"TEST RESULT: {res}");
@@ -301,10 +295,10 @@ public class TestExecutor
         foreach (Match match in matches)
         {
             string key = match.Groups[1].Value;
-            if (SaveParameters.ContainsKey(key))
+            if (_saveParameters.ContainsKey(key))
             {
-                input = input.Replace(match.Value, SaveParameters[key]);
-            } 
+                input = input.Replace(match.Value, _saveParameters[key]);
+            }
             else
             {
                 Console.WriteLine($"Input parameter {key} does not exist in Save Parameters");

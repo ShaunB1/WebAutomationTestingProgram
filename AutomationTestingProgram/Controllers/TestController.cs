@@ -37,48 +37,62 @@ public class TestController : ControllerBase
     {
         return Ok("GET request successful.");
     }
-    
+
     [HttpPost("run")]
-    public async Task<IActionResult> RunTests(IFormFile file)
+    public async Task<IActionResult> RunTests([FromForm] IFormFile file, [FromForm] string env, [FromForm] string browser)
     {
         if (file == null)
         {
             return BadRequest("No file received.");
         }
-        
+
         Console.WriteLine("Received test request");
         // Response.ContentType = "text/event-stream";
         Response.Headers.Add("Cache-Control", "no-cache");
         Response.Headers.Add("Connection", "keep-alive");
-        
-        var excelReader = new ExcelReader();
-        var testSteps = excelReader.ReadTestSteps(file);
-        
-        using var playwright = await Playwright.CreateAsync();
-            
-        await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-        {
-            Headless = false,
-            Channel = "chrome"
-        });
-        
-        var executor = new TestExecutor(_logger, _broadcaster);
-        
+;
         try
         {
-            var environment = "EarlyON";
-            var fileName = Path.GetFileNameWithoutExtension(file.Name);
-            var reportHandler = new HandleReporting(_logger, _broadcaster);
-        
-            if (_reportToDevops)
+            var excelReader = new ExcelReader();
+            var testSteps = excelReader.ReadTestSteps(file);
+
+            using var playwright = await Playwright.CreateAsync();
+
+            IBrowserType browserType;
+
+            if (browser == "chrome" || browser == "edge")
             {
-                await reportHandler.ReportToDevOps(browser, testSteps, environment, fileName, Response);                
+                browserType = playwright.Chromium;
+            }
+            else if (browser == "firefox")
+            {
+                browserType = playwright.Firefox;
             }
             else
             {
-                await executor.ExecuteTestCasesAsync(browser, testSteps, environment, fileName, Response);
+                throw new ArgumentException($"{browser} is not a supported browser choice");
             }
-            
+
+            await using var browserInstance = await browserType.LaunchAsync(new BrowserTypeLaunchOptions
+            {
+                Headless = false,
+                Channel = browser == "chrome" ? "chrome" :
+                    browser == "edge" ? "msedge" : null
+            });
+
+            var executor = new TestExecutor(_logger, _broadcaster);
+            var fileName = Path.GetFileNameWithoutExtension(file.Name);
+            var reportHandler = new HandleReporting(_logger, _broadcaster);
+
+            if (_reportToDevops)
+            {
+                await reportHandler.ReportToDevOps(browserInstance, testSteps, env, fileName, Response);
+            }
+            else
+            {
+                await executor.ExecuteTestCasesAsync(browserInstance, testSteps, env, fileName, Response);
+            }
+
             return Ok("Tests executed successfully.");
         }
         catch (Exception e)
@@ -98,8 +112,8 @@ public class TestController : ControllerBase
 
             for (int i = 0; i < testSteps.Count; i++)
             {
-                worksheet.Cell(i+2, 1).Value = testSteps[i].TestCaseName;
-                worksheet.Cell(i+2, 2).Value = testSteps[i].TestDescription;
+                worksheet.Cell(i + 2, 1).Value = testSteps[i].TestCaseName;
+                worksheet.Cell(i + 2, 2).Value = testSteps[i].TestDescription;
             }
 
             using (var stream = new MemoryStream())

@@ -8,7 +8,7 @@ namespace AutomationTestingProgram.Actions;
 public class VerifyTxtFile : IWebAction
 {
     private const string Seperator = "];[";
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         string option = step.Comments;
         switch (option.ToLower())

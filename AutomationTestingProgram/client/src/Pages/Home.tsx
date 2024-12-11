@@ -1,8 +1,8 @@
-import React, {useState} from "react";
-import FileUpload from "../Components/FileUpload/FileUpload.tsx";
+import React, { useState } from "react";
+import FileUpload from "../Components/SetArguments/SetArguments.tsx";
 import LogDisplay from "../Components/LogDisplay/LogDisplay.tsx";
 import DataTable from "../Components/DataTable/DataTable.tsx";
-import {Box, Button, TextField} from "@mui/material";
+import { Box, Button, TextField, Select } from "@mui/material";
 
 interface TableData {
     name: string;
@@ -20,14 +20,16 @@ const Home: React.FC = () => {
 
     return (
         <>
-            <FileUpload />
-            <LogDisplay />
+            <Box sx={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <FileUpload />
+                <LogDisplay />
+            </Box>
             <Box
                 sx={{
-                    display: "flex", // Flex layout to align items
-                    alignItems: "center", // Vertically center items
-                    gap: "10px", // Add spacing between items
-                    marginBottom: "20px", // Add spacing below the box
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginBottom: "20px",
                     marginTop: "20px",
                 }}
             >

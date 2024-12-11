@@ -19,14 +19,11 @@ builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 31457280;
 });
-builder.Services.Configure<AzureKeyVaultSettings>(builder.Configuration.GetSection("AzureKeyVault"));
-builder.Services.Configure<KeychainFileSettings>(builder.Configuration.GetSection("KeychainFile"));
-builder.Services.Configure<MicrosoftGraphSettings>(builder.Configuration.GetSection("MicrosoftGraph"));
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();
 builder.Services.AddSingleton<WebSocketRecorderHandler>();
 builder.Services.AddScoped<AzureKeyVaultService>();
 builder.Services.AddScoped<PasswordResetService>();
-builder.Services.AddScoped<KeychainFileSettings>();
+
 builder.Services.AddControllers();
 
 var app = builder.Build(); // represents configured web app

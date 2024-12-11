@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from "ag-grid-community";
-import TextField from '@mui/material/TextField';
-import { Button, CircularProgress } from "@mui/material";
+import { Button, CircularProgress, TextField } from "@mui/material";
 import { HOST } from "../../constants";
 
 interface ErrorResponse {
@@ -31,13 +30,12 @@ function CredsContainer(props: any) {
                 setLoading(false);
                 if (!response.ok) {
                     const errorData = await response.json() as ErrorResponse;
-                    console.log(errorData);
-                    throw new Error(`${response.status}`);
+                    throw new Error(`${errorData.error}`);
                 }
                 const result = await response.json();
                 setRowData(result);
             } catch (err) {
-                console.log(err);
+                console.error(err);
             }
         };
 
@@ -78,14 +76,14 @@ function CredsContainer(props: any) {
             if (!response.ok) {
                 setError(true);
                 const errorData = await response.json() as ErrorResponse;
-                console.log(errorData);
                 throw new Error(`${errorData.error}`);
             }
             const result = await response.json();
             setError(false);
-            props.setCurrentCreds({ username: email, password: result.secretKey });
+            console.log(result.secretKey);
+            props.setCurrentCreds({ username: email, password: result.message });
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     }
 
@@ -107,13 +105,16 @@ function CredsContainer(props: any) {
         </div>
     };
 
-    const columnDefs: ColDef[] = [
-        { field: "email", headerName: "Email", width: 150, filter: true, suppressHeaderFilterButton: true },
-        {
-            field: "secretKey", headerName: "Set Auto-Login Credentials", width: 150,
-            cellRenderer: SecretKeyCellRenderer, cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
-        }
-    ];
+    const columnDefs: ColDef[] = useMemo<ColDef[]>(() => {
+        return [
+            { field: "email", headerName: "Email", width: 150, filter: true, suppressHeaderFilterButton: true },
+            {
+                field: "secretKey", headerName: "Set Auto-Login Credentials", width: 150,
+                cellRenderer: SecretKeyCellRenderer, cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
+            }
+        ];
+    }, []);
+
 
     const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setCredFilter(event.target.value);

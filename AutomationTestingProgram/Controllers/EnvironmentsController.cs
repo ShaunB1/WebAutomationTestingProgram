@@ -1,6 +1,5 @@
 ﻿using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
-using DotNetEnv;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using NPOI.HSSF.UserModel;
@@ -11,24 +10,19 @@ using System.Text.Json;
 [Route("api/[controller]")]
 public class EnvironmentsController : ControllerBase
 {
-    private readonly AzureKeyVaultService _azureKeyVaultService;
-    private readonly PasswordResetService _passwordResetService;
-    private readonly KeychainFileSettings _keychainFileSettings;
-    private readonly IWebHostEnvironment _env;
-    public EnvironmentsController(AzureKeyVaultService azureKeyVaultService, PasswordResetService passwordResetService, IOptions<KeychainFileSettings> keychainFileSettings, IWebHostEnvironment env)
+    private readonly string _keychainFilePath;
+
+    public EnvironmentsController()
     {
-        _azureKeyVaultService = azureKeyVaultService;
-        _passwordResetService = passwordResetService;
-        _keychainFileSettings = keychainFileSettings.Value;
-        _env = env;
+        _keychainFilePath = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build()["KeychainFilePath"];
     }
 
     [HttpGet("keychainAccounts")]
     public async Task<IActionResult> GetKeychainAccounts()
     {
-        string contentRootPath = _env.ContentRootPath;
-        string keychainFilePath = _keychainFileSettings.KeychainFilePath;
-        string filepath = keychainFilePath.Replace("%PROJECT_ROOT%", contentRootPath);
+        string baseDirectory = AppContext.BaseDirectory;
+        string filepath = _keychainFilePath.Replace("%PROJECT_ROOT%", baseDirectory);
+        Console.WriteLine(filepath);
 
         var keychainRows = new List<object>();
         try
@@ -66,7 +60,7 @@ public class EnvironmentsController : ControllerBase
     [HttpGet("secretKey")]
     public async Task<IActionResult> GetSecretKey([FromQuery] string email)
     {
-        var result = await _azureKeyVaultService.GetKvSecret(email);
+        var result = await AzureKeyVaultService.GetKvSecret(email);
         Console.WriteLine(result.message);
         if (!result.success)
         {
@@ -79,7 +73,7 @@ public class EnvironmentsController : ControllerBase
     public async Task<IActionResult> ResetPassword([FromBody] string email)
     {
 
-        var result = await _passwordResetService.ResetPassword(email);
+        var result = await PasswordResetService.ResetPassword(email);
         if (!result.success)
         {
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = result.message, email = email, success = false });

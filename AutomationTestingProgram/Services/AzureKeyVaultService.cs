@@ -12,20 +12,21 @@ namespace AutomationTestingProgram.Services;
 
 public class AzureKeyVaultService
 {
-    private string _vault;
-    private string _clientId;
-    private string _tenantId;
-    private string _clientSecret;
+    private static readonly string _vault;
+    private static readonly string _clientId;
+    private static readonly string _tenantId;
+    private static readonly string _clientSecret;
 
-    public AzureKeyVaultService(IOptions<AzureKeyVaultSettings> azureKeyVaultSettings)
+    static AzureKeyVaultService()
     {
-        _vault = azureKeyVaultSettings.Value.CredentialVault;
-        _clientId = azureKeyVaultSettings.Value.KeyVaultClientId;
-        _tenantId = azureKeyVaultSettings.Value.KeyVaultTenantId;
-        _clientSecret = azureKeyVaultSettings.Value.KeyVaultClientSecret;
+        var azureConfig = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build();
+        _vault = azureConfig["AzureKeyVault:CredentialVault"];
+        _clientId = azureConfig["AzureKeyVault:KeyVaultClientId"];
+        _tenantId = azureConfig["AzureKeyVault:KeyVaultTenantId"];
+        _clientSecret = azureConfig["AzureKeyVault:KeyVaultClientSecret"];
     }
 
-    public async Task<(bool success, string message)> GetKvSecret(string secretName)
+    public static async Task<(bool success, string message)> GetKvSecret(string secretName)
     {
         Console.WriteLine($"Getting Azure Key Vault secret key for {secretName}");
         try
@@ -49,7 +50,7 @@ public class AzureKeyVaultService
         }
     }
 
-    public async Task<(bool success, string message)> UpdateKvSecret(string secretName)
+    public static async Task<(bool success, string message)> UpdateKvSecret(string secretName)
     {
         Console.WriteLine($"Updating Azure Key Vault secret key for {secretName}");
         try
@@ -75,7 +76,7 @@ public class AzureKeyVaultService
     }
 
     // Before updating a password on OPS BPS, use this function to check that the account is enabled first and also verify connection with Key Vault
-    public async Task<(bool success, string message)> CheckAzureKVAccount(string secretName)
+    public static async Task<(bool success, string message)> CheckAzureKVAccount(string secretName)
     {
         Console.WriteLine($"Checking if {secretName} is enabled in Azure Key Vault");
         try
@@ -117,7 +118,7 @@ public class AzureKeyVaultService
         }
     }
 
-    private SecretClient GetAzureClient(SecretClientOptions clientOptions)
+    private static SecretClient GetAzureClient(SecretClientOptions clientOptions)
     {
         string keyVaultUrl = $"https://{_vault}.vault.azure.net/";
 

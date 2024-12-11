@@ -1,12 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, memo, useMemo } from "react";
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from "ag-grid-community";
-import TextField from '@mui/material/TextField';
-import { Button, CircularProgress } from "@mui/material";
+import { Button, CircularProgress, TextField } from "@mui/material";
 
 interface ErrorResponse {
     error: string;
-  }
+}
 
 function CredsContainer() {
     const [rowData, setRowData] = useState([]);
@@ -26,13 +25,12 @@ function CredsContainer() {
                 setLoading(false);
                 if (!response.ok) {
                     const errorData = await response.json() as ErrorResponse;
-                    console.log(errorData);
-                    throw new Error(`${response.status}`);
+                    throw new Error(`${errorData.error}`);
                 }
                 const result = await response.json();
                 setRowData(result);
             } catch (err) {
-                console.log(err);
+                console.error(err);
             }
         };
 
@@ -62,7 +60,7 @@ function CredsContainer() {
         }
     }
 
-    const SecretKeyCellRenderer = (params: any) => {
+    const SecretKeyCellRenderer = memo((params: any) => {
         const [value, setValue] = useState<string | null>(null);
         const [loading, setLoading] = useState<boolean>(false);
         const [error, setError] = useState<boolean>(false);
@@ -81,17 +79,19 @@ function CredsContainer() {
                 </Button>
             )}
         </div>
-    };
+    });
 
-    const columnDefs: ColDef[] = [
-        { field: "email", headerName: "Email", width: 150, filter: true, suppressHeaderFilterButton: true },
-        { field: "role", headerName: "Role", width: 150 },
-        { field: "organization", headerName: "Organization", width: 150 },
-        {
-            field: "secretKey", headerName: "Get Secret Key", width: 150,
-            cellRenderer: SecretKeyCellRenderer, cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
-        }
-    ];
+    const columnDefs: ColDef[] = useMemo<ColDef[]>(() => {
+        return [
+            { field: "email", headerName: "Email", width: 150, filter: true, suppressHeaderFilterButton: true },
+            { field: "role", headerName: "Role", width: 150 },
+            { field: "organization", headerName: "Organization", width: 150 },
+            {
+                field: "secretKey", headerName: "Get Secret Key", width: 150,
+                cellRenderer: SecretKeyCellRenderer, cellStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center' },
+            }
+        ];
+    }, []);
 
     const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         gridRef.current?.api.setFilterModel({

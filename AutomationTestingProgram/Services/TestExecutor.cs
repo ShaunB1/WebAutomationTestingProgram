@@ -24,7 +24,10 @@ public class TestExecutor
         _actions = new Dictionary<string, IWebAction>
         {
             { "clickwebelement", new ClickWebElement() },
+            { "clickbutton", new ClickButton() },
+            { "clicklink", new ClickLink() },
             { "populatewebelement", new PopulateWebElement() },
+            { "populatetextbox", new PopulateTextBox() },
             { "navigatetourl", new NavigateToURL() },
             { "verifywebelementavailability", new VerifyWebElementAvailability() },
             { "checkbox", new CheckBox() },
@@ -33,6 +36,8 @@ public class TestExecutor
             { "selectddl", new SelectDDL() },
             { "runsqlscript", new RunSQLScript() },
             { "uploadfile", new UploadFile() },
+            { "savefile", new SaveFile() },
+            { "convertpdf", new ConvertPDF() },
             { "closewindow", new CloseWindow() },
             { "waitinseconds", new WaitInSeconds() },
             { "exitcondition", new ExitCondition() },

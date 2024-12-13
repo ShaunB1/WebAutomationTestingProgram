@@ -11,6 +11,6 @@ public class TestCaseResultParams
     public int duration { get; set; }
     public string errorMsg { get; set; }
     public string stackTrace { get; set; }
-    public int testPointId { get; set; }
-    public int testCaseRevision { get; set; }
+    public int testPointId { get; set; } ??
+    public int testCaseRevision { get; set; } ??
 }

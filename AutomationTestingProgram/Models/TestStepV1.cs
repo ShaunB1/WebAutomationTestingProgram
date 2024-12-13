@@ -1,4 +1,4 @@
-public class TestStep
+public class TestStepV1
 {
     public string TestCaseName { get; set; }
     public string TestDescription { get; set; }
@@ -23,4 +23,5 @@ public class TestStep
     public string ErrorMessage { get; set; }
     public string StackTrace { get; set; }
     public int SequenceIndex { get; set; }
+
 }

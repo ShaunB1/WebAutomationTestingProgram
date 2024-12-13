@@ -3,20 +3,27 @@ using Microsoft.TeamFoundation.Build.WebApi;
 using System.Collections.Concurrent;
 using Microsoft.Playwright;
 using System.Text;
+using Microsoft.VisualStudio.Services.WebApi.Internal;
+using System.Runtime.CompilerServices;
 
 namespace AutomationTestingProgram.Services.Logging
 {
     public class LogManager
     {
-        /* NOTE: For DEVELOPMENT purposes, all logs will be kept inside
-         * the project file system.
-         * This may be changed for PROD, with logs being saved in a specific
-         * directory from the C folder.
+        /* NOTE: 
+         * For DEVELOPMENT purposes, all logs will be kept in C Drive. 
          */
-        private static readonly string BasePath = @"C:\TestingLogs\_logs";
+        private static readonly string BasePath = @"C:\TestingLogs\_runs";
         private static readonly string BrowserPath = "_browsers";
         private static readonly string ContextPath = "_contexts";
         private static readonly string PagePath = "_pages";
+
+        // All inside Page Folder Path
+        public static readonly string DownloadPath = "_downloads";
+        public static readonly string ResultsPath = "_results";
+        public static readonly string ScreenShotPath = "_screenshots";
+        public static readonly string TempFilePath = "_tempFiles";
+
         private static string RunFolderPath = "";
 
         private static readonly ConcurrentDictionary<string, (SemaphoreSlim bufferSemaphore, SemaphoreSlim fileSemaphore, StringBuilder logMessage)> LogBuffer = new ConcurrentDictionary<string, (SemaphoreSlim, SemaphoreSlim, StringBuilder)>();
@@ -111,6 +118,30 @@ namespace AutomationTestingProgram.Services.Logging
             if (!Directory.Exists(pageFolderPath))
             {
                 Directory.CreateDirectory(pageFolderPath);
+            }
+
+            string downloads = Path.Combine(pageFolderPath, DownloadPath);
+            if (!Directory.Exists(downloads))
+            {
+                Directory.CreateDirectory(downloads);
+            }
+
+            string results = Path.Combine(pageFolderPath, ResultsPath);
+            if (!Directory.Exists(results))
+            {
+                Directory.CreateDirectory(results);
+            }
+
+            string screenshots = Path.Combine(pageFolderPath, ScreenShotPath);
+            if (!Directory.Exists(screenshots))
+            {
+                Directory.CreateDirectory(screenshots);
+            }
+
+            string tempFiles = Path.Combine(pageFolderPath, TempFilePath);
+            if (!Directory.Exists(tempFiles))
+            {
+                Directory.CreateDirectory(tempFiles);
             }
 
             return pageFolderPath;

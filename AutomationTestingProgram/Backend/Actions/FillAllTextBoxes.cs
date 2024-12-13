@@ -4,7 +4,7 @@ namespace AutomationTestingProgram.Backend.Actions;
 
 public class FillAllTextBoxes : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration)
     {
         try
         {

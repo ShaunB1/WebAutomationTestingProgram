@@ -2,6 +2,7 @@
 using AutomationTestingProgram.Services.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
+using Microsoft.VisualStudio.Services.Account;
 using System;
 using System.Collections.Generic;
 
@@ -14,7 +15,7 @@ namespace AutomationTestingProgram.Models.Backend
         {
             get
             {
-                return Pages.ElementAt(Index);
+                return Pages?.ElementAt(Index);
             } 
         }
         public int Index { get; private set; }
@@ -31,6 +32,10 @@ namespace AutomationTestingProgram.Models.Backend
 
         private readonly ILogger<Page> Logger;
 
+        /// <summary>
+        /// The Page object.
+        /// </summary>
+        /// <param name="context">Context (parent) instance </param>
         public Page(Context context)
         {
             this.Parent = context;
@@ -41,6 +46,11 @@ namespace AutomationTestingProgram.Models.Backend
             Logger = provider.CreateLogger<Page>()!;
         }
 
+        /// <summary>
+        /// Initializes the page object. MUST BE CALLED AFTER DEFINING THE OBJECT FROM THE CONSTRUCTOR.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task InitializeAsync()
         {
             try
@@ -56,8 +66,34 @@ namespace AutomationTestingProgram.Models.Backend
             }
         }
 
+        /// <summary>
+        /// Re-Initializes the page object. MUST BE CALLED AFTER DEFINING THE OBJECT FROM THE CONSTRUCTOR.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task InitializeAsync(Page pageObject)
         {
+            try
+            {
+                this.Index = 0;
+                this.Pages = new List<IPage>() { await CreatePageInstance(this.Parent) };
+                Logger.LogInformation($"Successfully initialized Page (ID: {this.ID})");
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Failed to initialize Page (ID: {this.ID}) because of\n{e}");
+                throw new Exception($"Failed to initialize Page (ID: {this.ID})", e);
+            }
+        }
+
+        /// <summary>
+        /// Initializes the page object using another page object (deep copy). 
+        /// MUST BE CALLED AFTER DEFINING THE OBJECT FROM THE CONSTRUCTOR.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task CopyAsync(Page pageObject)
+        { AccountLicenseSource COPY DOWNLOAD AND TEMPFILES DIRECTORIES AND FILES
             try
             {
                 this.Index = pageObject.Index;
@@ -77,11 +113,19 @@ namespace AutomationTestingProgram.Models.Backend
             }
         }
 
+        /// <summary>
+        /// Switches the current page (changes index of active page in list)
+        /// </summary>
+        /// <param name="index"></param>
         public void SwitchToPage(int index)
         {
             this.Index = index;
         }
 
+        /// <summary>
+        /// Runs the page object.
+        /// </summary>
+        /// <returns></returns>
         public async Task RunAsync()
         {
             try
@@ -102,6 +146,20 @@ namespace AutomationTestingProgram.Models.Backend
             }
         }
 
+        /// <summary>
+        /// Closes the current page, and moves you to the appropriate new page.
+        /// </summary>
+        /// <returns></returns>
+        public async Task CloseCurrentPageAsync()
+        {
+
+        }
+
+        /// <summary>
+        /// Closes all pages associated with the page object.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task CloseAllAsync()
         {
             try

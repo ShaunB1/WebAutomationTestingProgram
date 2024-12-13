@@ -29,7 +29,7 @@ public class HandleReporting
         _broadcaster = broadCaster;
     }
     
-    public async Task ReportToDevOps(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
+    public async Task ReportToDevOps(IBrowser browser, List<TestStepV1> testSteps, string environment, string fileName, HttpResponse response)
     {
         var testPlanName = fileName;
         var testPlanId = await _testPlanHandler.GetTestPlanIdByNameAsync(testPlanName);

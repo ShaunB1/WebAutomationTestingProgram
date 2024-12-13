@@ -4,7 +4,7 @@ namespace AutomationTestingProgram.Services;
 
 public class Helpers
 {
-    public static string GenerateStepsXml(List<TestStep> steps)
+    public static string GenerateStepsXml(List<TestStepV1> steps)
     {
         var sb = new StringBuilder();
         var stepId = 1;

@@ -4,5 +4,5 @@ namespace AutomationTestingProgram.Backend.Actions;
 
 public interface IWebAction
 {
-    Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration);
+    Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration);
 }

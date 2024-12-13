@@ -46,7 +46,7 @@ public class TestExecutor
         
     }
 
-    public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
+    public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStepV1> testSteps, string environment, string fileName, HttpResponse response)
     {
         var testCases = testSteps.GroupBy(s => s.TestCaseName);
         
@@ -102,7 +102,7 @@ public class TestExecutor
         }
     }
     
-    public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page, List<TestStep> testSteps, HttpResponse response, int iteration, int maxAttempts = 2)
+    public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page, List<TestStepV1> testSteps, HttpResponse response, int iteration, int maxAttempts = 2)
     {
         var stepsFailed = new List<(int, string)>();
         var failCount = 0;

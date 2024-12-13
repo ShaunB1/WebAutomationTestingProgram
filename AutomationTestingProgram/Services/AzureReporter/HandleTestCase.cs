@@ -75,7 +75,7 @@ public class HandleTestCase : AzureReporter
     //     );
     // }
 
-    public async Task AddTestStepsToTestCaseAsync(int testCaseId, List<TestStep> testSteps)
+    public async Task AddTestStepsToTestCaseAsync(int testCaseId, List<TestStepV1> testSteps)
     {
         var stepsXml = Helpers.GenerateStepsXml(testSteps);
         var patchDocument = new JsonPatchDocument

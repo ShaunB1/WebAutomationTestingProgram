@@ -4,7 +4,7 @@ namespace AutomationTestingProgram.Backend.Actions;
 
 public class ClickWebElement : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration)
     {
         var locator = step.Object;
         var element = step.Comments == "html id"

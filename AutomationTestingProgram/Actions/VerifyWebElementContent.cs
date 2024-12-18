@@ -12,7 +12,7 @@ namespace AutomationTestingProgram.Actions
     {
         public string Name { get; set; } = "Verify WebElement Content";
 
-        public async Task<bool> ExecuteAsync(IPage page, TestStep step)
+        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
         {
             //base.Execute();
 

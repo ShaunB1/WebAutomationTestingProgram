@@ -14,7 +14,8 @@ public class VerifyDDLContent : IWebAction
 {
     public string Name { get; set; } = "VerifyDDLContent";
 
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step){
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    {
             //base.Execute();
 
          var expectedValues = step.Value.ToLower().Split(';').ToList();

@@ -14,7 +14,7 @@ public class VerifyCheckBoxStatus : IWebAction
 {
     public string Name { get; set; } = "Verify Checkbox Status";
 
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         //base.Execute();
 

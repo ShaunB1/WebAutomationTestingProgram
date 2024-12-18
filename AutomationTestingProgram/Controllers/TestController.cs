@@ -42,25 +42,29 @@ public class TestController : ControllerBase
     //private readonly HandleTestCase _caseHandler;
     //private readonly bool _reportToDevops;
     private readonly ILogger<TestController> _logger;
-    private readonly ILoggerFactory _loggerFactory;
     //private readonly WebSocketLogBroadcaster _broadcaster;
 
     private static PlaywrightObject? _playwright = null;
     private static readonly object PlaywrightLock = new object();
 
+    /*
+     * Priority Requests -> Require SUPER USER Permissions
+     *  - Retrieval Request
+     * Normal Requests
+     *  - Stop Request
+     *  - Validate Request
+     *  - Process Request
+     */
     private static readonly ConcurrentDictionary<string, object> ActiveRequests = new ConcurrentDictionary<string, object>();
-    private static readonly SemaphoreSlim MaxRequests = new SemaphoreSlim(150); // Up to 150 requests queued or active at a time.
-    private static readonly object ShutDownLock = new object();
-    private static bool isShuttingDown = false;
-
-    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, ILoggerFactory loggerFactory, WebSocketLogBroadcaster broadcaster)
+    private static readonly SemaphoreSlim MaxRequests = new SemaphoreSlim(140); // Up to 140 requests queued or active at a time.
+    private static readonly SemaphoreSlim MaxPriorityRequests = new SemaphoreSlim(15); // Up to 15 priority requests at a time
+    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
     {
         //_azureDevOpsSettings = azureDevOpsSettings.Value;
         //_planHandler = new HandleTestPlan();
         //_caseHandler = new HandleTestCase();
         //_reportToDevops = false;
         _logger = logger;
-        _loggerFactory = loggerFactory;
         //_broadcaster = broadcaster;
     }
 
@@ -93,7 +97,51 @@ public class TestController : ControllerBase
      *   curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\Schools Table.xlsx" http://localhost:5223/api/test/validate
      * - PROCESS
      * curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\Schools Table.xlsx" -F "Type=Chrome" -F "Version=92" -F "Environment=TestEnv" http://localhost:5223/api/test/run
+     * - GETACTIVEREQUESTS
+     * curl -X POST -H "Content-Type: application/json" http://localhost:5223/api/test/retrieve
      */
+
+    /// <summary>
+    /// Receives api requests to retrieve all active requests.
+    /// Validation:
+    ///     - MUST BE SUPER USER
+    /// </summary>
+    [HttpPost("retrieve")]
+    public async Task<IActionResult> GetActiveRequests() // Maybe add options for different types of retrievals??
+    {
+        if (!MaxPriorityRequests.Wait(0))
+        {
+            _logger.LogError($"Priority Request received but ignored. Too many priority requests active. Please try again later.");
+            return StatusCode(503, new { Error = "Too many requests. Please try again later.", Request = (object?)null });
+        }
+
+        // Create a RETRIEVAL REQUEST
+        RetrievalRequest request = new RetrievalRequest();
+
+        try
+        {
+            // Process the request and await a response.
+            _logger.LogInformation($"Retrieval Request (ID: {request.ID}) received.");
+            ActiveRequests.TryAdd(request.ID, request);
+
+            await request.Execute();
+
+            // If request succeeds
+            _logger.LogInformation($"Retrieval Request (ID: {request.ID}) successfully completed.");
+            return Ok(new { Message = $"Retrieval Request (ID: {request.ID}) Complete.", Request = request });
+        }
+        catch (Exception e)
+        {
+            // If request fails
+            _logger.LogError($"Retrieval Request (ID: {request.ID}) failed.\nError: '{e.Message}'");
+            return StatusCode(500, new { Error = e.Message, Request = request });
+        }
+        finally
+        {
+            ActiveRequests.TryRemove(request.ID, out _);            
+            MaxRequests.Release();
+        }
+    }
 
 
     /// <summary>
@@ -107,21 +155,9 @@ public class TestController : ControllerBase
     ///         -> If Admin: Can then stop request
     ///         -> If User: Can only stop requests from self, not from other users
     /// </summary>
-    /// <param name="ID">The ID of the request to stop.</param>
-    /// <returns></returns>
     [HttpPost("stop")]
     public async Task<IActionResult> StopRequest([FromBody] CancellationRequestModel model)
     {
-
-        lock (ShutDownLock)
-        {
-            if (isShuttingDown)
-            {
-                _logger.LogError($"ShutDown already in progress. Request ignored.");
-                return StatusCode(503, new { Error = "ShutDown already in progress. Request ignored.", Request = (object?)null });
-            }
-        }
-
         if (model == null || string.IsNullOrEmpty(model.ID))
         {
             return BadRequest(new { Error = "ID is required." }); 
@@ -162,71 +198,15 @@ public class TestController : ControllerBase
     }
 
     /// <summary>
-    /// Receives api requests to shut down application
-    /// Validation:
-    ///     - Permissions -> MUST BE SUPER USER
-    /// </summary>
-    /// <param name="force">Whether its a force shutdown (stops everything)</param>
-    /// <returns></returns>
-    [HttpPost("shutdown")]
-    public async Task<IActionResult> ShutDown([FromBody] bool force = false)
-    {
-        // SHUTDOWN request always pre-dominates other requests. If multiple received, rest are ignored.
-
-        lock (ShutDownLock)
-        {
-            if (isShuttingDown)
-            {
-                _logger.LogError($"ShutDown already in progress. Request ignored.");
-                return StatusCode(503, new { Error = "ShutDown already in progress. Request ignored.", Request = (object?)null });
-            }
-            else
-            {
-                isShuttingDown = true;
-            }
-        }
-
-        // Create a CANCELLATION REQUEST
-        ShutDownRequest request = new ShutDownRequest(force);
-
-        try
-        {
-            // Process the request and await a response.
-            _logger.LogInformation($"ShutDown Request (ID: {request.ID}) received. {(force ? "FORCED SHUTDOWN" : "GRACEFUL SHUTDOWN")}");
-            await request.Execute();
-
-            // No need for logs, application will be terminated in request. Just here to keep away errors.
-            return Ok(new { Message = $"ShutDown Request (ID: {request.ID}) Complete.", Request = request });
-        }
-        catch (Exception e)
-        {
-            // If request fails
-            _logger.LogError($"ShutDownRequest Request (ID: {request.ID}) failed.\nError: '{e.Message}'");
-            return StatusCode(500, new { Error = e.Message, Request = request });
-        }
-    }
-
-    /// <summary>
     /// Receives api requests to validate files
     /// Validation:
     ///     - Valid permissions:
     ///         -> Permission to use application (Keychain: Coarse Grain)
     ///         -> Permission to use environment/organization (Keychain: Fine Grain)
     /// </summary>
-    /// <param name="File">The File to validate</param>
-    /// <returns></returns>
     [HttpPost("validate")] 
     public async Task<IActionResult> ValidateRequest([FromForm] ValidationRequestModel model)
     {
-        lock (ShutDownLock)
-        {
-            if (isShuttingDown)
-            {
-                _logger.LogError($"ShutDown already in progress. Request ignored.");
-                return StatusCode(503, new { Error = "ShutDown already in progress. Request ignored.", Request = (object?)null });
-            }
-        }
-
         if (model == null || model.File == null || model.File.Length == 0)
         {
             return BadRequest(new { Error = "No File Uploaded." });
@@ -238,7 +218,7 @@ public class TestController : ControllerBase
             return StatusCode(503, new { Error = "Too many requests. Please try again later.", Request = (object?)null });
         }
 
-        // Create a CANCELLATION REQUEST
+        // Create a VALIDATION REQUEST
         ValidationRequest request = new ValidationRequest(model.File);
 
         try
@@ -269,23 +249,9 @@ public class TestController : ControllerBase
     /// <summary>
     /// Receives api requests to process files
     /// </summary>
-    /// <param name="File">The file to process</param>
-    /// <param name="Type">The Type of Browser to run on</param>
-    /// <param name="Version">The Version of Browser to run on</param>
-    /// <param name="Env">The environment to run on</param>
-    /// <returns></returns>
     [HttpPost("run")] 
     public async Task<IActionResult> RunRequest([FromForm] ProcessRequestModel model)
     {
-        lock (ShutDownLock)
-        {
-            if (isShuttingDown)
-            {
-                _logger.LogError($"ShutDown already in progress. Request ignored.");
-                return StatusCode(503, new { Error = "ShutDown already in progress. Request ignored.", Request = (object?)null });
-            }
-        }
-
         if (model == null || model.File == null || model.File.Length == 0)
         {
             return BadRequest(new { Error = "No File Uploaded." });
@@ -302,7 +268,7 @@ public class TestController : ControllerBase
             return StatusCode(503, new { Error = "Too many requests. Please try again later.", Request = (object?)null });
         }
 
-        // Create a CANCELLATION REQUEST
+        // Create a PROCESS REQUEST
         ProcessRequest request = new ProcessRequest(model.File, model.Type, model.Version, model.Environment);
 
         try

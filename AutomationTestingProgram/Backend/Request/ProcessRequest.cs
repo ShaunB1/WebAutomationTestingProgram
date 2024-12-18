@@ -6,7 +6,7 @@ namespace AutomationTestingProgram.Backend
     /// <summary>
     /// Request to process a test file using playwright
     /// </summary>
-    public class ProcessRequest : IRequest<ProcessRequest>
+    public class ProcessRequest : IClientRequest
     {
         public string ID { get; }
         [JsonIgnore]
@@ -18,6 +18,10 @@ namespace AutomationTestingProgram.Backend
         public CancellationTokenSource CancellationTokenSource { get; }
         public string Message { get; private set; }
         public string FolderPath { get; private set; }
+
+        /// <summary>
+        /// The Logger object associated with this request
+        /// </summary>
         [JsonIgnore]
         public ILogger<ProcessRequest> Logger { get; }
 
@@ -126,7 +130,7 @@ namespace AutomationTestingProgram.Backend
             FolderPath = folderPath;
         }
 
-        public async Task<ProcessRequest> Execute()
+        public async Task Execute()
         {
             Logger.LogInformation($"Process Request (ID: {ID}, BrowserType: {BrowserType}," +
                 $" BrowserVersion: {BrowserVersion}, Environment: {Environment}) received.");
@@ -179,7 +183,6 @@ namespace AutomationTestingProgram.Backend
             {
                 customLogger.Flush();
             }
-            return this;
         }
     }
 }

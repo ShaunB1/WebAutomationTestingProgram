@@ -1,16 +1,13 @@
-﻿using AutomationTestingProgram.ModelsOLD;
-using AutomationTestingProgram.Services.Logging;
+﻿using AutomationTestingProgram.Services.Logging;
 using Microsoft.Playwright;
-using Org.BouncyCastle.Asn1.Ocsp;
 using System.Text.Json.Serialization;
 
-namespace AutomationTestingProgram.Backend
-{
+namespace AutomationTestingProgram.Backend.Request
+{   
     /// <summary>
-    /// Request to cancel another request.
-    /// NOTE: cannot cancel a CancellationRequest
+    /// Request to retrieve a list of all active requests
     /// </summary>
-    public class CancellationRequest : IClientRequest
+    public class RetrievalRequest : IClientRequest
     {
         public string ID { get; }
         [JsonIgnore]
@@ -19,7 +16,7 @@ namespace AutomationTestingProgram.Backend
         [JsonIgnore]
         public object StateLock { get; }
         [JsonIgnore] // Cannot serialize. Ignore
-        public CancellationTokenSource? CancellationTokenSource { get; }
+        public CancellationTokenSource CancellationTokenSource { get; }
         public string Message { get; private set; }
         public string FolderPath { get; private set; }
 
@@ -27,48 +24,32 @@ namespace AutomationTestingProgram.Backend
         /// The Logger object associated with this request
         /// </summary>
         [JsonIgnore]
-        public ILogger<CancellationRequest> Logger { get; }
+        public ILogger<RetrievalRequest> Logger { get; }
 
         /// <summary>
-        /// The unique identifier of the request to cancel
+        /// Initializes a new instance of the <see cref="RetrievalRequest"/> class.
         /// </summary>
-        public string CancelRequestID { get; }
-
-        /// <summary>
-        /// The Request to Cancel
-        /// </summary>
-        public IClientRequest? CancelRequest { get; private set; }
-
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CancellationRequest"/> class.
-        /// Instance is associated with the ID of the request to cancel.
-        /// </summary>
-        /// <param name="ID">The unique identifier of the request to cancel.</param>
-        public CancellationRequest(string ID)
+        public RetrievalRequest() // Can maybe add option to retrieve only a certain # of requests (based on location??)
         {
-            this.ID = Guid.NewGuid().ToString();
-            CancelRequestID = ID;
+            ID = Guid.NewGuid().ToString();
             ResponseSource = new TaskCompletionSource();
             State = State.Received;
             StateLock = new object();
-            CancellationTokenSource = null; // CANNOT CANCEL CANCELLATION REQUEST
+            CancellationTokenSource = new CancellationTokenSource();
             Message = string.Empty;
-            FolderPath = LogManager.CreateRequestFolder(this.ID);
+            FolderPath = LogManager.CreateRequestFolder(ID);
 
             CustomLoggerProvider provider = new CustomLoggerProvider(FolderPath);
-            Logger = provider.CreateLogger<CancellationRequest>()!;
+            Logger = provider.CreateLogger<RetrievalRequest>()!;
         }
 
         public void SetStatus(State responseType, string message = "", Exception? e = null)
         {
             lock (StateLock)
             {
+
                 if (ResponseSource!.Task.IsCompleted)
                     return; // DO nothing if already complete
-
-                if (responseType == State.Cancelled)
-                    throw new Exception("Cannot cancel a Cancellation Request!");
 
                 State = responseType; // Set the State
 
@@ -90,12 +71,16 @@ namespace AutomationTestingProgram.Backend
                     case State.Failure:
                         ResponseSource!.SetException(new Exception($"{responseType.ToString()} : {message}"));
                         break;
+                    case State.Cancelled:
+                        ResponseSource!.SetCanceled();
+                        break;
                     case State.Completed:
                         ResponseSource!.SetResult();
                         break;
                 }
             }
         }
+
         public string GetStatus()
         {
             lock (StateLock)
@@ -118,23 +103,19 @@ namespace AutomationTestingProgram.Backend
 
         public async Task Execute()
         {
-            /* IDEA: When canceling a request:
-             * - Request must exist
-             * - Request must not be a Cancellation Request
-             * 
-             * We set the CancellationFlag to true.
-             * Requests check this flag throughout the code to cancel themselves.
-             * 
-             * Issue: What if a request is queued for a long period of time?
-             * -> We make state transitions atomic
-             * -> Once entered lock, we make sure its in a queued state -> then cancelled
-             * -> If not in a queued state, we ignore, and leave it up to the request to cancel itself.
-             * 
-             * Requests send THEMSELVES to RequestHandler, without awaiting. Then await a result to the taskcompletionsource.
-             */
-
-            Logger.LogInformation($"Cancellation Request (ID: {ID}, RequestCancelID: {CancelRequestID}) received.");
+            Logger.LogInformation($"Retrieval Request (ID: {ID}) received.");
             await Task.Delay(20000);
+            Logger.LogInformation($"First");
+            await Task.Delay(20000);
+            Logger.LogInformation($"Second");
+            await Task.Delay(20000);
+            Logger.LogInformation($"Third");
+            await Task.Delay(20000);
+            Logger.LogInformation($"Fourth");
+            await Task.Delay(20000);
+            Logger.LogInformation($"Fifth");
+            await Task.Delay(20000);
+
             ResponseSource.SetResult();
 
             try
@@ -143,43 +124,32 @@ namespace AutomationTestingProgram.Backend
             }
             catch (Exception e)
             {
-                Logger.LogError($"Error while awaiting cancellation request: {e.Message}.");
+                Logger.LogError($"Error while awaiting retrieval request: {e.Message}.");
             }
 
             switch (ResponseSource.Task.Status)
             {
                 case TaskStatus.RanToCompletion:
                     // Task completed successfully -> SetResult
-                    Logger.LogInformation($"Cancellation Request (ID: {ID}) COMPLETED successfully.");
+                    Logger.LogInformation($"Retrieval Request (ID: {ID}) COMPLETED successfully.");
                     break;
 
                 case TaskStatus.Faulted:
                     // Task failed -> SetException
                     var exceptionMessage = ResponseSource.Task.Exception?.ToString() ?? "Unknown error.";
-                    Logger.LogError($"Cancellation Request (ID: {ID}) FAILED:\n{exceptionMessage}");
+                    Logger.LogError($"Retrieval Request (ID: {ID}) FAILED:\n{exceptionMessage}.");
                     break;
 
                 case TaskStatus.Canceled:
                     // Task was canceled -> SetCanceled
-                    Logger.LogError($"Cancellation Request (ID: {ID}) was CANCELED!! Investigate. CancellationRequests should not be cancellable");
+                    Logger.LogError($"Retrieval Request (ID: {ID}) CANCELED.");
                     break;
             }
 
-
-            if (Logger is CustomLogger<CancellationRequest> customLogger)
+            if (Logger is CustomLogger<RetrievalRequest> customLogger)
             {
                 customLogger.Flush();
             }
-
-        }
-
-        /// <summary>
-        /// Link the found request to this Cancellation Request
-        /// </summary>
-        /// <param name="request"></param>
-        public void LinkRequest(IClientRequest request)
-        {
-            CancelRequest = request;
         }
     }
 }

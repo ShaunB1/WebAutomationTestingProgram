@@ -3,7 +3,7 @@
 namespace AutomationTestingProgram.Backend.Request
 {   
     /// <summary>
-    /// The Request Handler handles all incoming requests, queing them, validating them and processing them.
+    /// The Request Handler handles all incoming requests, including validation and processing.
     /// </summary>
     public static class RequestHandler
     {   

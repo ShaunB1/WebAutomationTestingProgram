@@ -5,7 +5,7 @@ namespace AutomationTestingProgram.Backend
     /// <summary>
     /// Interface used by all Request Classes
     /// </summary>
-    public interface IRequest<T>
+    public interface IClientRequest
     {
         /// <summary>
         /// The unique identifier of the request
@@ -47,11 +47,6 @@ namespace AutomationTestingProgram.Backend
         /// </summary>
         string FolderPath { get; }
 
-        /// <summary>
-        /// The Logger object associated with this request
-        /// </summary>
-        ILogger<T> Logger { get; }
-
 
         /// <summary>
         /// Sets the status of the request, including its state and message. 
@@ -88,7 +83,7 @@ namespace AutomationTestingProgram.Backend
         /// This includes validation.
         /// </summary>
         /// <returns>Result of TaskCompletionSource</returns>
-        Task<T> Execute();
+        Task Execute();
 
     }
 

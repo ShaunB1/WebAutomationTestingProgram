@@ -8,7 +8,7 @@ namespace AutomationTestingProgram.Backend
     /// <summary>
     /// Request to validate a test file.
     /// </summary>
-    public class ValidationRequest : IRequest<ValidationRequest>
+    public class ValidationRequest : IClientRequest
     {
         public string ID { get; }
         [JsonIgnore]
@@ -20,6 +20,10 @@ namespace AutomationTestingProgram.Backend
         public CancellationTokenSource CancellationTokenSource { get; }
         public string Message { get; private set; }
         public string FolderPath { get; private set; }
+
+        /// <summary>
+        /// The Logger object associated with this request
+        /// </summary>
         [JsonIgnore]
         public ILogger<ValidationRequest> Logger { get; }
 
@@ -104,7 +108,7 @@ namespace AutomationTestingProgram.Backend
             FolderPath = folderPath;
         }
 
-        public async Task<ValidationRequest> Execute()
+        public async Task Execute()
         {
             Logger.LogInformation($"Validation Request (ID: {ID}) received.");
             await Task.Delay(20000);
@@ -153,7 +157,6 @@ namespace AutomationTestingProgram.Backend
             {
                 customLogger.Flush();
             }
-            return this;
         }
     }
 }

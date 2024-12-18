@@ -255,7 +255,7 @@ namespace AutomationTestingProgram.Services.Logging
         /// ONLY CALL AT THE END (no more logs). Else, IO issues may arise.
         /// </summary>
         /// <param name="path">The path to flush</param>
-        public static void Flush(string path)
+        public static void Flush(string path, string message = "")
         {
             if (!LogBuffer.TryRemove(path, out var logObject))
             {
@@ -267,6 +267,11 @@ namespace AutomationTestingProgram.Services.Logging
 
             StringBuilder logMessage = logObject.logMessage;
             string fileMessage = logMessage.ToString();
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                fileMessage += $"\n{message}";
+            }
 
             if (!string.IsNullOrEmpty(fileMessage))
             {
@@ -286,7 +291,7 @@ namespace AutomationTestingProgram.Services.Logging
         /// <summary>
         /// Flushes all logs.
         /// </summary>
-        public static void FlushAll()
+        public static void FlushAll(string message)
         {   
             /* We loop through all entries in the snapshot of LogBuffer
              * Graceful shutdown: Should wait for all requests to close before FlushAll
@@ -297,7 +302,7 @@ namespace AutomationTestingProgram.Services.Logging
             foreach (var entry in LogBuffer)
             {
                 string path = entry.Key;
-                Flush(path);
+                Flush(path, message);
             }
         }
 

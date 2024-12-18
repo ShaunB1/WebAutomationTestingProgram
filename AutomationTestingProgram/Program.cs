@@ -4,6 +4,8 @@ using AutomationTestingProgram.ModelsOLD;
 using AutomationTestingProgram.Services;
 using AutomationTestingProgram.Services.Logging;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 /*
  * Maybe add request limiting here instead
@@ -25,8 +27,13 @@ builder.Services.Configure<FormOptions>(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddSingleton<CustomService>();
 
 var app = builder.Build(); // represents configured web app
+
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+var myService = app.Services.GetRequiredService<CustomService>();
+lifetime.ApplicationStopping.Register(myService.OnApplicationStopping);
 
 if (!app.Environment.IsDevelopment())
 {

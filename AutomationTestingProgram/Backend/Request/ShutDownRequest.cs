@@ -1,4 +1,4 @@
-﻿using AutomationTestingProgram.Services.Logging;
+﻿/*using AutomationTestingProgram.Services.Logging;
 using System.Text.Json.Serialization;
 
 namespace AutomationTestingProgram.Backend.Request
@@ -6,6 +6,8 @@ namespace AutomationTestingProgram.Backend.Request
     /// <summary>
     /// Request to shut down the whole application.
     /// NOTE: ShutDown is irreversible. Only one may process, rest are ignored.
+    /// 
+    /// ****************** NO LONGER USED -> USING HOOK INSTEAD. KEPT JUST IN CASE *****************
     /// </summary>
     public class ShutDownRequest : IRequest<ShutDownRequest>
     {
@@ -105,11 +107,11 @@ namespace AutomationTestingProgram.Backend.Request
 
         public async Task<ShutDownRequest> Execute()
         {
-            /* If Forceful -> Will just close whole application immediatelly. Flushes all logs.
+            *//* If Forceful -> Will just close whole application immediatelly. Flushes all logs.
              * If Graceful:
              * - Sends Cancellation Flag to all non-Cancellation requests.
              * - Waits for ActiveRequests Dictionary to be empty
-             */
+             *//*
 
             Logger.LogInformation($"ShutDown Request (ID: {ID}) received.");
             if (Force)
@@ -126,16 +128,17 @@ namespace AutomationTestingProgram.Backend.Request
             {
                 // Graceful shutdown: Sends cancellation requests, and makes sure application ends in a stable state
                 Logger.LogInformation($"Graceful shutdown initiated.");
-                /*
+                *//*
                  * Sends cancellation requests to all non-CancellationRequests.
                  * Wait for ActiveDictionary to be empty.
                  * FlushAll
                  * Environment.Exit(0)
                  * Needs cancellationrequest to be completed first
-                 */
+                 *//*
             }
 
             return this;
         }
-    }
-}
+    } 
+}*/
+

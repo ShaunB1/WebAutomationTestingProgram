@@ -3,6 +3,7 @@ using AutomationTestingProgram.Models;
 using Microsoft.Playwright;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using HostingEnvironmentExtensions = Microsoft.AspNetCore.Hosting.HostingEnvironmentExtensions;
+using AutomationTestingProgram.ModelsOLD;
 
 namespace AutomationTestingProgram.Services;
 
@@ -79,7 +80,7 @@ public class HandleReporting
         // add test steps to test case
         foreach (var (testCaseGroup, index) in testCases.Select((group, index) => (group, index)))
         {
-            await _testCaseHandler.AddTestStepsToTestCaseAsync(testCaseIds[index], testCaseGroup.ToList());
+            // await _testCaseHandler.AddTestStepsToTestCaseAsync(testCaseIds[index], testCaseGroup.ToList());
             _logger.LogInformation($"Added {testCaseGroup.ToList().Count} test steps to test case '{testCaseGroup.Key}'");
             await _broadcaster.BroadcastLogAsync(
                 $"Added {testCaseGroup.ToList().Count} test steps to test case '{testCaseGroup.Key}'");
@@ -104,22 +105,22 @@ public class HandleReporting
             testResultObj.startedDate = DateTime.UtcNow;
 
             var testPoint = await _testPointHandler.GetTestPointFromTestCaseIdAsync(testPlan.Id, testSuite.Id, testCaseIds[index]);
-            var (testCaseResult, failedTests, stackTrace) = await testExecutor.ExecuteTestStepsAsync(page, testCase.ToList(), response, 3);
+            // var (testCaseResult, failedTests, stackTrace) = await testExecutor.ExecuteTestStepsAsync(page, testCase.ToList(), response, 3);
             
             testResultObj.testPointId = testPoint.Id;
             testResultObj.completedDate = DateTime.UtcNow;
-            testResultObj.outcome = testCaseResult;
+            // testResultObj.outcome = testCaseResult;
             testResultObj.state = "Completed";
             testResultObj.duration = Convert.ToInt32((testResultObj.completedDate - testResultObj.startedDate).TotalMilliseconds);
-            testResultObj.errorMsg = testResultObj.outcome == "Failed" ? $"[{failedTests.Count()} STEPS FAILED]\n{string.Join("\n", failedTests.Select(ft => $" {ft.Item1}: {ft.Item2}"))}" : null;
-            testResultObj.stackTrace = testResultObj.outcome == "Failed" ? $"{string.Join("\n", stackTrace.Select(st => $"{st.Item1}: {st.Item2}"))}" : null;
+            // testResultObj.errorMsg = testResultObj.outcome == "Failed" ? $"[{failedTests.Count()} STEPS FAILED]\n{string.Join("\n", failedTests.Select(ft => $" {ft.Item1}: {ft.Item2}"))}" : null;
+            // testResultObj.stackTrace = testResultObj.outcome == "Failed" ? $"{string.Join("\n", stackTrace.Select(st => $"{st.Item1}: {st.Item2}"))}" : null;
             
             testResults.Add(testResultObj);
-            failedTests.Clear();
+            // failedTests.Clear();
             
-            _logger.LogInformation($"Test case '{testCase.Key}' execution completed with outcome: {testCaseResult}");
-            await _broadcaster.BroadcastLogAsync(
-                $"Test case '{testCase.Key}' execution completed with outcome: {testCaseResult}");
+            // _logger.LogInformation($"Test case '{testCase.Key}' execution completed with outcome: {testCaseResult}");
+            // await _broadcaster.BroadcastLogAsync(
+                //$"Test case '{testCase.Key}' execution completed with outcome: {testCaseResult}");
         }
 
         // add test result to test run

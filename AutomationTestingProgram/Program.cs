@@ -1,8 +1,14 @@
 using System.Net.WebSockets;
 using System.Text;
-using AutomationTestingProgram.Models;
+using AutomationTestingProgram.ModelsOLD;
 using AutomationTestingProgram.Services;
 using AutomationTestingProgram.Services.Logging;
+using Microsoft.AspNetCore.Http.Features;
+
+/*
+ * Maybe add request limiting here instead
+ * 
+ */
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
@@ -11,6 +17,13 @@ builder.Logging.AddProvider(new CustomLoggerProvider(LogManager.GetRunFolderPath
 
 builder.Services.Configure<AzureDevOpsSettings>(builder.Configuration.GetSection("AzureDevops"));
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 15 MB limit total
+    options.ValueLengthLimit = 10 * 1024 * 1024; // 10 MB limit per individual file
+    options.MultipartHeadersCountLimit = 100; // Limit the number of headers
+});
+
 builder.Services.AddControllers();
 
 var app = builder.Build(); // represents configured web app

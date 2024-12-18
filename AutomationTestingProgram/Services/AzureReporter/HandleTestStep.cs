@@ -4,6 +4,7 @@ using Microsoft.TeamFoundation.TestManagement.WebApi.Legacy;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
+using AutomationTestingProgram.ModelsOLD;
 
 namespace AutomationTestingProgram.Services;
 
@@ -13,14 +14,14 @@ public class HandleTestStep : AzureReporter
     
     public async Task AddTestStepsToTestCaseAsync(int testCaseId, List<TestStepV1> testSteps)
     {
-        var stepsXml = Helpers.GenerateStepsXml(testSteps);
+        // var stepsXml = Helpers.GenerateStepsXml(testSteps);
         var patchDocument = new JsonPatchDocument
         {
             new JsonPatchOperation
             {
                 Operation = Operation.Add,
                 Path = "/fields/Microsoft.VSTS.TCM.Steps",
-                Value = stepsXml
+                // Value = stepsXml
             }
         };
         var updatedWorkItem = await _witClient.UpdateWorkItemAsync(patchDocument, testCaseId);

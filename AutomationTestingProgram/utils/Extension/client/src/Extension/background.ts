@@ -38,6 +38,8 @@ let isSidePanelOpen = false;
 chrome.runtime.onMessage.addListener((message) => {
     if (message.action === "actiononobject") {
         chrome.runtime.sendMessage({ action: "RECORD_TEST_STEP", locator: message.locator, stepValues: message.stepValues });
+    } else if (message.action === "sendElementDetails") {
+        chrome.runtime.sendMessage({ action: "SEND_ELEMENT_DETAILS", attributes: message.attributes, properties: message.properties });
     }
 });
 

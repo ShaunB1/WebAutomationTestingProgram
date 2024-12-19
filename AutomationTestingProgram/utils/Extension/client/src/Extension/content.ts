@@ -1,4 +1,8 @@
 let verifyMode = "availability";
+let previouslySelectedElement: any = null;
+let previousOutlineStyle: any = null;
+let startState: boolean = false;
+let prevMouseOverOutline: any = null;
 
 interface TableValues {
     testdescription: string;
@@ -8,16 +12,55 @@ interface TableValues {
     comments: string;
 }
 
+const START_KEY = "startState";
+
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (changes[START_KEY] && namespace === "local") {
+        startState = changes[START_KEY].newValue;
+
+        if (startState) {
+            document.addEventListener("click", clickEventListener);
+            document.addEventListener("contextmenu", contextMenuEventListener);
+        } else {
+            document.removeEventListener("click", clickEventListener);
+            document.removeEventListener("contextmenu", contextMenuEventListener);
+        }
+    }
+})
+
+chrome.storage.local.get(START_KEY, (result) => {
+    if (result[START_KEY]) {
+        startState = result[START_KEY];
+        if (startState) {
+            document.addEventListener("click", clickEventListener);
+            document.addEventListener("contextmenu", contextMenuEventListener);
+        }
+    }
+});
+
+function getElementDetails(e: Event) {
+    const element = e.target as HTMLElement;
+    const attributes = Array.from(element.attributes).map((attr) => ({
+        ATTRIBUTE: attr.name,
+        VALUE: attr.value,
+    }));
+
+    chrome.runtime.sendMessage({ action: "sendElementDetails", attributes: attributes });
+}
+
+document.addEventListener("click", getElementDetails);
+
 function clickEventListener(e: Event) {
     const element = e.target as HTMLElement;
     const tag = element.tagName.toLowerCase();
     const elDict = getAllAttributes(e.target as HTMLElement);
+
     const values: TableValues = {
         testdescription: "",
         actiononobject: "",
         object: elDict,
         value: "",
-        comments: "",
+        comments: "eldict",
     }
 
     if ((tag === "input" && (element as HTMLInputElement).type === "text") || tag === "textarea") {
@@ -77,7 +120,7 @@ function changeEventListener(e: Event) {
         actiononobject: "SelectDDL",
         object: elDict,
         value: text,
-        comments: "",
+        comments: "eldict",
     }
 
     chrome.runtime.sendMessage({ action: "actiononobject", locator: elDict, stepValues: values });
@@ -101,7 +144,7 @@ function blurEventListener(e: Event) {
         actiononobject: "PopulateWebElement",
         object: elDict,
         value: textContent,
-        comments: "",
+        comments: "eldict",
     }
 
     chrome.runtime.sendMessage({ action: "actiononobject", locator: elDict, stepValues: values });
@@ -120,7 +163,7 @@ function contextMenuEventListener(e: Event) {
         actiononobject: "",
         object: elDict,
         value: "",
-        comments: ""
+        comments: "eldict"
     }
 
     if (verifyMode === "availability") {
@@ -150,6 +193,21 @@ function contextMenuEventListener(e: Event) {
     }
 }
 
+document.addEventListener("mouseover", (e: any) => {
+    const element = e.target as HTMLElement;
+    if (startState) {
+        prevMouseOverOutline = element.style.outline;
+        element.style.outline = "2px solid red";
+    }
+})
+
+document.addEventListener("mouseout", (e: any) => {
+    const element = e.target as HTMLElement;
+    if (startState) {
+        element.style.outline = prevMouseOverOutline || "";
+    }
+})
+
 chrome.runtime.onMessage.addListener((message) => {
     if (message.action === "ALT_VERIFY") {
         if (message.changeMode) {
@@ -178,38 +236,213 @@ chrome.runtime.onMessage.addListener((message) => {
                 textarea.dispatchEvent(textareaEvent);
             }
         });
-    } else if (message.action === "CHANGE_START_STATE") {
-        if (!message.start) {
-            document.removeEventListener("click", clickEventListener);
-            document.removeEventListener("contextmenu", contextMenuEventListener);
+    } else if (message.action === "ROW_SELECTED") {
+        if (previouslySelectedElement instanceof HTMLElement || message.selectedRow.COMMENTS === "") {
+            previouslySelectedElement.style.outline = previousOutlineStyle || "";
+        }
+
+        if (message.selectedRow.COMMENTS === "eldict") {
+            const elDictString = message.selectedRow.OBJECT;
+            const closestElement: any = findClosestElement(elDictString);
+
+            if (closestElement instanceof HTMLElement) {
+                previousOutlineStyle = closestElement.style.outline;
+                closestElement.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+                closestElement.style.outline = "2px solid red";
+                previouslySelectedElement = closestElement;
+            }
+        } else if (message.selectedRow.COMMENTS !== "") {
+            const type = message.selectedRow.COMMENTS.replace(" ", "").trim();
+            const locator: string = message.selectedRow.OBJECT;
+            let element: any = null;
+            let xpath: string;
+            switch (type) {
+                case "xpath":
+                    element = document.evaluate(locator, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    break;
+                case "htmlid":
+                    xpath = `//*[@id="${locator}"]`
+                    element = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    break;
+                case "innertext":
+                    xpath = `//*[contains(text(), "${locator}")]`
+                    element = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    break;
+                default:
+                    console.log("Invalid locator type:", message.selectedRow.COMMENTS);
+            }
+            if (element) {
+                previousOutlineStyle = element?.style.outline;
+                element?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+                element.style.outline = "2px solid red";
+                previouslySelectedElement = element;
+            } else {
+                previouslySelectedElement.style.outline = previousOutlineStyle || "";
+            }
+        }
+    } else if (message.action === "ROW_UNSELECTED") {
+        previouslySelectedElement.style.outline = previousOutlineStyle || "";
+    } else if (message.action === "EXECUTE_TEST_STEP") {
+        const action = message.stepData.ACTIONONOBJECT.toLowerCase().replace(" ", "");
+        const object = message.stepData.OBJECT;
+        const value = message.stepData.VALUE;
+        const type = message.stepData.COMMENTS.replace(" ", "").trim().toLowerCase();
+        let element;
+        const inputEvent = new Event("input", { bubbles: true });
+
+        if (type === "eldict") {
+            element = findClosestElement(object);
+        } else if (type !== "") {
+            const locator: string = message.stepData.OBJECT;
+            let xpath: string;
+            switch (type) {
+                case "xpath":
+                    element = document.evaluate(locator, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    break;
+                case "htmlid":
+                    xpath = `//*[@id="${locator}"]`
+                    element = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    break;
+                case "innertext":
+                    xpath = `//*[contains(text(), "${locator}")]`
+                    element = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    break;
+                default:
+                    console.log("Invalid locator type:", message.selectedRow.COMMENTS);
+            }
+        }
+
+        if (element) {
+            if (action.includes("click")) {
+                (element as HTMLElement).click();
+            } else if (action === "populatewebelement") {
+                (element as HTMLInputElement).value = value;
+                (element as HTMLInputElement).dispatchEvent(inputEvent);
+            } else {
+                console.error("Unsupported action on object: ", action);
+            }
         } else {
-            document.addEventListener("click", clickEventListener);
-            document.addEventListener("contextmenu", contextMenuEventListener);
+            console.log(`Element of locator ${object} does not exist.`)
         }
     }
 })
 
+function getAllIFrames(root: any) {
+    const queue = [root];
+    const iframes = [];
+
+    while (queue.length > 0) {
+        const currentNode = queue.shift();
+        if (currentNode.tagName?.toLowerCase() === "iframe") {
+            iframes.push(currentNode);
+        }
+
+        for (let i = 0; i < currentNode.childNodes.length; i++) {
+            const child = currentNode.childNodes[i];
+            if (child.nodeType === Node.ELEMENT_NODE) {
+                queue.push(child);
+            }
+        }
+    }
+
+    return iframes;
+}
+
+function findClosestElement(elDict: string) {
+    const elDictObj = JSON.parse(elDict);
+    const { iframe, tag, text, attributes } = elDictObj;
+    const elements = document.getElementsByTagName(tag);
+    const iframes = getAllIFrames(window.top?.document);
+    let bestMatch: HTMLElement | null = null;
+    let highestScore = -1;
+    let maxScore = 0;
+
+    if (text !== "") {
+        maxScore += 2;
+    }
+
+    if (iframe !== -1) {
+        maxScore += 2;
+    }
+
+    maxScore += Object.keys(attributes).length;
+
+    Array.from(elements).forEach((el) => {
+        let score = 0;
+
+        const iframeIndex = iframes.findIndex(iframe => iframe.contentDocument === el.ownerDocument);
+
+        if (iframeIndex === iframe) {
+            score += 2;
+        }
+
+        if (el.tagName.toLowerCase() === tag.toLowerCase()) {
+            score += 2;
+        } else {
+            score += 0.5;
+        }
+
+        for (const [key, value] of Object.entries(attributes)) {
+            let attrValue = el.getAttribute(key)
+            if (attrValue) {
+                attrValue = attrValue.replace(/\s+/g, " ").trim();
+                if (attrValue === value) {
+                    score += 1
+                } else if (attrValue.includes(value)) {
+                    score += 0.5
+                }
+            }
+        }
+
+        const elText = getTextContent(el);
+
+        if (elText === text) {
+            score += 2;
+        } else if (elText.includes(text)) {
+            score += 1;
+        }
+
+        if (score > highestScore) {
+            highestScore = score;
+            bestMatch = el;
+        }
+    });
+
+    return maxScore !== 0 && highestScore/maxScore >= 0.66 ? bestMatch : null;
+}
+
 function getTextContent(element: HTMLElement) {
-    const interactiveElements = ["button", "input", "select", "textarea", "fieldset", "optgroup", "option"];
+    const interactiveElements = ["input", "select", "textarea", "fieldset", "optgroup", "option"];
     const tag = element.tagName.toLowerCase();
     let text = "";
 
     if (interactiveElements.includes(tag)) {
-        text = (element as HTMLInputElement).value;
+        if (tag === "select") {
+            const select = element as HTMLSelectElement;
+            text = Array.from(select.selectedOptions).map(option => option.text).join(", ");
+        } else {
+            text = (element as HTMLInputElement).value;
+        }
     } else {
         element.childNodes.forEach((node) => {
             if (node.nodeType === Node.TEXT_NODE) {
                 text += node.textContent?.trim() || "";
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                text += getTextContent(node as HTMLElement);
             }
         });
     }
 
-    return text;
+    return text.trim();
 }
 
 function getAllAttributes(element: HTMLElement) {
     const attributesDict: { [key: string]: string | string[] | { [key: string]: string | string[] } } = {};
+    const iframes = getAllIFrames(window.top?.document);
+    const iframeIndex = iframes.findIndex(iframe => iframe.contentDocument === element.ownerDocument);
+    const index = iframeIndex === -1 ? 0 : iframeIndex;
 
+    attributesDict["iframe"] = index.toString();
     attributesDict["tag"] = element.tagName.toLowerCase();
     attributesDict["text"] = getTextContent(element);
     attributesDict["attributes"] = {};

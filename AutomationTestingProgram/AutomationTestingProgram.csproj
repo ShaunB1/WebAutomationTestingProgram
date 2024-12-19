@@ -28,6 +28,7 @@
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
 		<Folder Include="client\src\utils\" />
+		<Folder Include="wwwroot\" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -55,6 +56,8 @@
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-C1eD0ztI.js" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-Cbz7X4Sb.css" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-DT0luH8i.js" />
+		<_ContentIncludedByDefault Remove="wwwroot\assets\index-DsuYRK7M.js" />
+		<_ContentIncludedByDefault Remove="wwwroot\assets\index-uBzdGwA-.css" />
 	</ItemGroup>
 
 	<ItemGroup>

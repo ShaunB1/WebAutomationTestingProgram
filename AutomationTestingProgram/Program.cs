@@ -21,6 +21,7 @@ builder.Services.Configure<FormOptions>(options =>
 });
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();
 builder.Services.AddSingleton<WebSocketRecorderHandler>();
+builder.Services.AddSingleton<WebSocketTaskBroadcaster>();
 builder.Services.AddScoped<AzureKeyVaultService>();
 builder.Services.AddScoped<PasswordResetService>();
 
@@ -54,6 +55,10 @@ app.Use(async (context, next) =>
         {
             await HandleRecorderCommunication(webSocket, context);
         }
+        else if (path == "/ws/tasks")
+        {
+            await HandleTaskCommunication(webSocket, context);
+        }
         else
         {
             await webSocket.CloseAsync(WebSocketCloseStatus.ProtocolError, "Invalid endpoint.", CancellationToken.None);
@@ -72,6 +77,11 @@ app.MapControllers();
 app.MapFallbackToFile("index.html"); // fallback to index.html for SPA routes
 
 app.Run();
+
+async Task HandleTaskCommunication(WebSocket webSocket, HttpContext context)
+{
+    var taskBroadcaster = context.RequestServices.GetRequiredService<WebSocketTaskBroadcaster>();
+}
 
 async Task HandleLogsCommunication(WebSocket webSocket, HttpContext context)
 {

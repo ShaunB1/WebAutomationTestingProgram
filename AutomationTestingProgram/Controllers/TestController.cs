@@ -1,6 +1,7 @@
 using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
 using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -45,6 +46,8 @@ public class TestController : ControllerBase
         return Ok("GET request successful.");
     }
 
+    // We want to authorization for all endpoints, but if you are testing then comment out the line below
+    [Authorize]
     [HttpPost("run")]
     public async Task<IActionResult> RunTests([FromForm] IFormFile file, [FromForm] string env, [FromForm] string browser, [FromForm] string browserVersion)
     {

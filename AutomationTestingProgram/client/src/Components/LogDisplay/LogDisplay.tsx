@@ -4,10 +4,11 @@ import {Box, List, ListItem, Paper, Typography} from "@mui/material";
 const LogDisplay = () => {
     const [logs, setLogs] = useState<string[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);
+    const host = process.env.NODE_ENV === "production" ? process.env.VITE_HOST : process.env.LOCAL_HOST;
 
     useEffect(() => {
-        const socket = new WebSocket(`ws://${import.meta.env.VITE_HOST}/ws/logs`);
-        console.log(`VITE_HOST: ${import.meta.env.VITE_HOST}`);
+        const socket = new WebSocket(`ws://${host}/ws/logs`);
+        console.log(`WS Host: ${host}`);
         
         socket.onopen = (event) => {
             console.log("Connected to WebSocket server");

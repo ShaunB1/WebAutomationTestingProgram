@@ -12,6 +12,7 @@
 		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.7.0" />
 		<PackageReference Include="ClosedXML" Version="0.104.1" />
 		<PackageReference Include="DotNetEnv" Version="3.1.1" />
+		<PackageReference Include="Microsoft.Identity.Web.UI" Version="3.4.0" />
 		<PackageReference Include="Microsoft.Graph" Version="5.65.0" />
 		<PackageReference Include="Microsoft.Playwright" Version="1.47.0" />
 		<PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.6" />
@@ -21,6 +22,7 @@
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="NPOI" Version="2.7.2" />
 		<PackageReference Include="Oracle.ManagedDataAccess" Version="23.6.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 	</ItemGroup>
 
@@ -28,6 +30,7 @@
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
 		<Folder Include="client\src\utils\" />
+		<Folder Include="wwwroot\" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -55,6 +58,8 @@
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-C1eD0ztI.js" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-Cbz7X4Sb.css" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-DT0luH8i.js" />
+		<_ContentIncludedByDefault Remove="wwwroot\assets\index-DsuYRK7M.js" />
+		<_ContentIncludedByDefault Remove="wwwroot\assets\index-uBzdGwA-.css" />
 	</ItemGroup>
 
 	<ItemGroup>

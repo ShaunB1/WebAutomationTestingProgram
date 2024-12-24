@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Box, Button, Stack, Typography, TextField, Autocomplete } from "@mui/material";
 import envData from "../../assets/environment_list.json";
+import browserVerData from "../../assets/AllowedBrowserVersions.json";
 
 const FileUpload = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -8,13 +9,29 @@ const FileUpload = () => {
     const [envInputValue, setEnvInputValue] = useState('');
     const [browser, setBrowser] = useState<string | null>(null);
     const [browserInputValue, setBrowserInputValue] = useState('');
+    const [browserVersions, setBrowserVersions] = useState<string[]>([]);
+    const [selectedBrowserVersion, setSelectedBrowserVersion] = useState<string | null>(null);
 
     const envOptions: string[] = useMemo<string[]>(() => {
         return envData.map((env) => {
             return env.ENVIRONMENT
         });
     }, []);
+
+    // Function to get versions based on selected browser
+    const getBrowserVersions = (browser: string) => {
+        const browserData = browserVerData.find((data) => data.browser === browser);
+        return browserData ? browserData.versions : [];
+    };
+
     const browserOptions = ["Chrome", "Edge", "Firefox"];
+
+    useEffect(() => {
+        if (browser) {
+            const versions = getBrowserVersions(browser);
+            setBrowserVersions(versions);
+        }
+    }, [browser]);
 
     useEffect(() => {
         const browserChoice = localStorage.getItem('browser');
@@ -39,7 +56,7 @@ const FileUpload = () => {
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
 
-        if (!file || !env || !browser) {
+        if (!file || !env || !browser || !selectedBrowserVersion) {
             alert("File or arguments missing");
             return;
         }
@@ -48,6 +65,7 @@ const FileUpload = () => {
         formData.append("file", file);
         formData.append('env', env);
         formData.append('browser', browser.toLowerCase());
+        formData.append('browserVersion', selectedBrowserVersion); 
 
         try {
             const res = await fetch("/api/test/run", {
@@ -78,10 +96,20 @@ const FileUpload = () => {
 
     const handleBrowserChange = (e: any, newValue: string | null) => {
         setBrowser(newValue);
+        setSelectedBrowserVersion(null); // Reset browser version when changing browser
         if (newValue) {
             localStorage.setItem('browser', newValue);
         } else {
             localStorage.setItem('browser', '');
+        }
+    }
+
+    const handleBrowserVersionChange = (e: any, newValue: string | null) => {
+        setSelectedBrowserVersion(newValue);
+        if (newValue) {
+            localStorage.setItem('browserVersion', newValue);
+        } else {
+            localStorage.setItem('browserVersion', '');
         }
     }
 
@@ -134,6 +162,16 @@ const FileUpload = () => {
                         }}
                         renderInput={(params) => <TextField {...params} label="Browser" />}
                         options={browserOptions}
+                    />
+                    <Autocomplete
+                        sx={{ width: 220 }}
+                        value={selectedBrowserVersion}
+                        onChange={handleBrowserVersionChange}
+                        renderInput={(params) => {
+                            const label = browser ? `Select ${browser} Version` : 'Select Browser';
+                            return <TextField {...params} label={label} />;
+                        }}
+                        options={browserVersions}
                     />
                     <Button
                         variant="contained"

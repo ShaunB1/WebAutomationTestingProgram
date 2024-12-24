@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AutoUpdater": {
+      "commandName": "Project",
+      "commandLineArgs": "--browser Chrome --version 113"
+    }
+  }
+}

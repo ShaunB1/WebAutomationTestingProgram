@@ -1,0 +1,1 @@
+This logging folder is used for executions. We will transition all logs to this folder so that we can view the results of the execution on demand. 

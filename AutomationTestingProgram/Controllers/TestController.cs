@@ -1,9 +1,14 @@
 using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
+using System.Diagnostics;
+/*using AutoUpdater;*/
+/*using AutomationTestingProgram.Helper*/
 
 [ApiController]
 [Route("api/[controller]")]
@@ -15,8 +20,9 @@ public class TestController : ControllerBase
     private readonly bool _reportToDevops;
     private readonly ILogger<TestController> _logger;
     private readonly WebSocketLogBroadcaster _broadcaster;
+    private readonly IConfiguration _configuration;
 
-    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
+    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster, IConfiguration configuration)
     {
         _azureDevOpsSettings = azureDevOpsSettings.Value;
         _planHandler = new HandleTestPlan();
@@ -24,6 +30,7 @@ public class TestController : ControllerBase
         _reportToDevops = false;
         _logger = logger;
         _broadcaster = broadcaster;
+        _configuration = configuration;
     }
 
     [HttpPost("test_post")]
@@ -39,7 +46,7 @@ public class TestController : ControllerBase
     }
 
     [HttpPost("run")]
-    public async Task<IActionResult> RunTests([FromForm] IFormFile file, [FromForm] string env, [FromForm] string browser)
+    public async Task<IActionResult> RunTests([FromForm] IFormFile file, [FromForm] string env, [FromForm] string browser, [FromForm] string browserVersion)
     {
         if (file == null)
         {
@@ -53,6 +60,23 @@ public class TestController : ControllerBase
 ;
         try
         {
+            // Automatically run the AutoUpdater before starting the tests using helper 
+            var updateResult = RunAutoUpdater(browser, browserVersion);
+            if (!updateResult.IsSuccess)
+            {
+                return StatusCode(500, updateResult.ErrorMessage);
+            }
+
+            // Automatically run the AutoUpdater before starting the tests using main method of AutoUpdater
+            /*Console.WriteLine("Running AutoUpdater");
+            string[] autoupdater_args = new string[]
+            {
+                    "--browser", browser,
+                    "--version", browserVersion,
+            };
+            AutoUpdater.AutoUpdater.AutoUpdateBrowsers(autoupdater_args);*/
+            /*AutoUpdater.AutoUpdateBrowsers(autoupdater_args);*/
+
             var excelReader = new ExcelReader();
             var testSteps = excelReader.ReadTestSteps(file);
 
@@ -122,5 +146,80 @@ public class TestController : ControllerBase
                 return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Testing.xlsx");
             }
         }
+    }
+
+    // Helper method to run AutoUpdater
+    private (bool IsSuccess, string ErrorMessage) RunAutoUpdater(string browser, string version)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(browser) || string.IsNullOrEmpty(version))
+            {
+                return (false, "Browser or version not provided.");
+            }
+
+            // Set the path to the AutoUpdater.exe
+            var autoUpdaterPath = Path.Combine(Directory.GetCurrentDirectory(), "utils", "AutoUpdater", "AutoUpdater.exe");
+
+            // Check if the AutoUpdater.exe exists
+            if (!System.IO.File.Exists(autoUpdaterPath))
+            {
+                return (false, "AutoUpdater.exe not found in the root directory.");
+            }
+
+            // Set up the process start info
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = autoUpdaterPath,
+                Arguments = $"--browser {browser} --version {version}",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false, 
+                CreateNoWindow = true 
+            };
+
+            using (var process = Process.Start(startInfo))
+            {
+                if (process == null)
+                {
+                    return (false, "Failed to start AutoUpdater process.");
+                }
+
+                string output = process.StandardOutput.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
+
+                process.WaitForExit();
+
+                if (process.ExitCode == 0)
+                {
+                    return (true, output); 
+                }
+                else
+                {
+                    return (false, error); 
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message); 
+        }
+    }
+
+    // New endpoint to get browser versions from appsettings
+    [HttpGet("browserVersions")]
+    public IActionResult GetBrowserVersions()
+    {
+        var browserVersions = _configuration.GetSection("AllowedBrowserVersions").Get<Dictionary<string, string>>();
+
+        // Convert semicolon-separated versions into arrays
+        var parsedVersions = new Dictionary<string, List<string>>();
+
+        foreach (var browser in browserVersions)
+        {
+            parsedVersions[browser.Key] = new List<string>(browser.Value.Split(';'));
+        }
+
+        return Ok(parsedVersions);
     }
 }

@@ -1,0 +1,182 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AutoUpdater</name>
+    </assembly>
+    <members>
+        <member name="T:AutoUpdater.AutoUpdater">
+            <summary>
+            Adapted From https://starbeamrainbowlabs.com/blog/article.php?article=posts/156-Autoupdate-CSharp.html.
+            </summary>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.Main(System.String[])">
+            <summary>
+            Runs then re runs PrefXML.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.AutoUpdateBrowsers(System.String[])">
+            <summary>
+            Automatically updates the drivers according to the binaries.
+            How it works: Takes the user's --browser and --version args. --browser specifies which Browser the user wants to use and
+            --version specifies which browser version the user wants to use. --version default takes the default browser's version, 
+            --version latest takes the latest binary of a browser located in C:\Automation\Browsers, and --version 114 (for example) takes
+            the first binary with a version starting with 114. If --browser is empty, defaults to Chrome, if --version is empty, defaults
+            to --version default.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.ReadJson(System.String)">
+            <summary>
+            Reads the json and returns as a string.
+            </summary>
+            <param name="location"></param>
+            <returns></returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.BrowserLocationConfig(System.String)">
+            <summary>
+            Returns the path to a browser located in App.config.
+            </summary>
+            <param name="browser"></param>
+            <returns>Browser binary path.</returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.FindLatestLocalBinary(System.String,System.String)">
+            <summary>
+            From the starting path, find the binary with the latest version.
+            </summary>
+            <param name="browsersPath"></param>
+            <param name="browser"></param>
+            <returns>The binary file path.</returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.DriverDownloadJson(System.String,System.String)">
+            <summary>
+            Goes through the JSON of a specified driver version and searches for the appropriate platform.
+            </summary>
+            <param name="json"></param>
+            <param name="platform"></param>
+            <returns>The .zip url.</returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.BinaryDownloadJson(System.String,System.String)">
+            <summary>
+            Takes a json and searches for the binary url.
+            </summary>
+            <param name="json"></param>
+            <param name="platform"></param>
+            <returns>The url to the binary version</returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.DownloadFileAsync(System.String,System.String)">
+            <summary>
+            Navigates to the URL and downloads it under temp_files/fileName.
+            </summary>
+            <param name="url"></param>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.ExtractZipFile(System.String,System.String)">
+            <summary>
+            Extracts the .zip file into an extract path
+            </summary>
+            <param name="zipPath"></param>
+            <param name="extractPath"></param>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.JsonString(System.String,System.String)">
+            <summary>
+            Downloads the json file under driverUrl.json and returns the json text.
+            </summary>
+            <param name="ver"></param>
+            <returns></returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.DecrementLastDigit(System.String)">
+            <summary>
+            Used to update the version in case the JSON url doesn't exist.
+            </summary>
+            <param name="ver"></param>
+            <returns>Updated version.</returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.CheckUrlSucces(System.String)">
+            <summary>
+            Checks if a URL is succeeds.
+            </summary>
+            <param name="url"></param>
+            <returns>True or False.</returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.GetChromeDriverVersion(System.String,System.String)">
+            <summary>
+            Goes to the URL, converts the json as a string and stores in in the download path.
+            </summary>
+            <param name="url"></param>
+            <param name="downloadPath"></param>
+            <returns>The download path.</returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.FindBinaryFilePath(System.String,System.String)">
+            <summary>
+            Starts in the given directory and searches for the given file name.
+            </summary>
+            <param name="directory"></param>
+            <param name="fileName"></param>
+            <returns>The path to the file.</returns>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.SetProxy(System.String,System.Int32,System.String)">
+            <summary>
+            Sets up a proxy. https://stackoverflow.com/questions/1938990/c-sharp-connecting-through-proxy.
+            </summary>
+            <param name="address">Address to connect to.</param>
+            <param name="port">port to connect to.</param>
+            <param name="requestString">Destination of your request.</param>
+        </member>
+        <member name="M:AutoUpdater.AutoUpdater.CheckForUpdates(System.String)">
+            <summary>
+            Checks to see if there is any update avalible.
+            </summary>
+            <param name="program">Name of the program to check</param>.
+            <returns>true if there are updates.</returns>
+        </member>
+        <member name="T:AutomationTestingProgram.Logger">
+            <summary>
+            Logger class to be used. \n
+            Reference 1: https://stackify.com/log4net-guide-dotnet-logging/ \n
+            Reference 2: https://www.dotnetdepth.in/2018/06/how-to-use-log4net-in-net-core-20.html.
+            </summary>
+        </member>
+        <member name="M:AutomationTestingProgram.Logger.Debug(System.Object)">
+            <summary>
+            Allows the user to log a debug message.
+            </summary>
+            <param name="message">The debug message to be logged.</param>
+        </member>
+        <member name="M:AutomationTestingProgram.Logger.Error(System.Object)">
+            <summary>
+            Allows the user to log an error message.
+            </summary>
+            <param name="message">The error message to be logged.</param>
+        </member>
+        <member name="M:AutomationTestingProgram.Logger.Fatal(System.Object)">
+            <summary>
+            Allows the user to log a fatal message.
+            </summary>
+            <param name="message">The fatal message to be logged.</param>
+        </member>
+        <member name="M:AutomationTestingProgram.Logger.Info(System.Object)">
+            <summary>
+            Allows the user to log an info message.
+            </summary>
+            <param name="message">The info message to be logged.</param>
+        </member>
+        <member name="M:AutomationTestingProgram.Logger.Warn(System.Object)">
+            <summary>
+            Allows the user to log a warning message.
+            </summary>
+            <param name="message">The warning message to be logged.</param>
+        </member>
+        <member name="M:AutomationTestingProgram.Logger.GetLogger(System.Type)">
+            <summary>
+            Returns the type for the logger.
+            </summary>
+            <param name="type">Class this logger is under.</param>
+            <returns>ILog instance to interact with.</returns>
+        </member>
+        <member name="M:AutomationTestingProgram.Logger.SetLog4NetConfiguration">
+            <summary>
+            Sets up the Log4Net Configuration.
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,46 @@
+// Lines starting with '//' are skipped.
+// summary
+// Whitelist of verified browser versions that do not present with errors for the autoupdater to run
+// Currently only versions of chrome are supported.
+// Currently not being used, the list exists in app.config of automatio testing program.
+
+// default option only exists for browsers except chrome as they only run on default currently.
+default
+
+latest
+
+// Chrome Versions
+// Specifying only the major build will choose the latest stable full build for that version
+114
+114.0.5735.133
+115
+115.0.5790.170
+116
+116.0.5845.96
+117
+117.0.5938.149
+118
+118.0.5993.70
+119
+119.0.6045.105
+120
+120.0.6099.109
+121
+121.0.6167.184
+122
+122.0.6261.128
+123
+123.0.6312.122
+124
+127
+127.0.6533.119
+// 129
+// 129.0.6668.70
+
+// Firefox Versions
+
+// Edge Versions
+
+// Brave Versions
+
+// Opera Versions

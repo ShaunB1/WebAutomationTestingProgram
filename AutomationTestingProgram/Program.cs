@@ -21,7 +21,7 @@ builder.Services.Configure<AzureDevOpsSettings>(builder.Configuration.GetSection
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 15 MB limit total
+    options.MultipartBodyLengthLimit = 15 * 1024 * 1024; // 15 MB limit total
     options.ValueLengthLimit = 10 * 1024 * 1024; // 10 MB limit per individual file
     options.MultipartHeadersCountLimit = 100; // Limit the number of headers
 });

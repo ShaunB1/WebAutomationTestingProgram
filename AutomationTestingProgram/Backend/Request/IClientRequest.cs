@@ -35,7 +35,7 @@ namespace AutomationTestingProgram.Backend
         /// Used by CancellationRequest to cancel requests.
         /// </summary>
         [JsonIgnore] // Cannot serialize CancellationTokenSource. Ignore
-        CancellationTokenSource? CancellationTokenSource { get; }
+        CancellationTokenSource CancellationTokenSource { get; }
 
         /// <summary>
         /// Message associated with the request. Used to further explain the current state (ex: errors)
@@ -73,17 +73,17 @@ namespace AutomationTestingProgram.Backend
         string GetStatus();
 
         /// <summary>
-        /// Sets the folder path of the request
+        /// Checks whether request is flagged for cancellation.
+        /// If so, request is cancelled.
+        /// T/F returned on whether request was cancelled or not.
         /// </summary>
-        /// <param name="folderPath">The folder path to set</param>
-        void SetPath(string folderPath);
+        /// <returns>Bool determining whether the request was cancelled or not.</returns>
+        Task IsCancellationRequested();
 
         /// <summary>
         /// Process the request.
-        /// This includes validation.
         /// </summary>
-        /// <returns>Result of TaskCompletionSource</returns>
-        Task Execute();
+        Task Process();
 
     }
 

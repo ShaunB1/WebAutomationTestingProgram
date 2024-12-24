@@ -2,7 +2,7 @@
 using Microsoft.Playwright;
 using System.Text.Json.Serialization;
 
-namespace AutomationTestingProgram.Backend.Request
+namespace AutomationTestingProgram.Backend
 {   
     /// <summary>
     /// Request to retrieve a list of all active requests
@@ -63,19 +63,26 @@ namespace AutomationTestingProgram.Backend.Request
                 {
                     Message += "\n" + e.ToString();
                     ResponseSource.SetException(e);
+                    Logger.LogError($"State: {State}\nMessage: {Message}");
                     return;
                 }
 
                 switch (responseType) // Set Exception if Status warrants, but no exception given. Set Result if Completed Status
                 {
                     case State.Failure:
+                        Logger.LogError($"State: {State}\nMessage: {Message}");
                         ResponseSource!.SetException(new Exception($"{responseType.ToString()} : {message}"));
                         break;
                     case State.Cancelled:
+                        Logger.LogError($"State: {State}\nMessage: {Message}");
                         ResponseSource!.SetCanceled();
                         break;
                     case State.Completed:
+                        Logger.LogInformation($"State: {State}\nMessage: {Message}");
                         ResponseSource!.SetResult();
+                        break;
+                    default:
+                        Logger.LogInformation($"State: {State}\nMessage: {Message}");
                         break;
                 }
             }
@@ -96,56 +103,99 @@ namespace AutomationTestingProgram.Backend.Request
             }
         }
 
-        public void SetPath(string folderPath)
+        public async Task IsCancellationRequested()
         {
-            FolderPath = folderPath;
+            if (this.CancellationTokenSource.IsCancellationRequested)
+            {
+                this.SetStatus(State.Cancelled, "Request Cancelled");
+                await this.ResponseSource.Task;
+            }
         }
 
-        public async Task Execute()
+        public async Task Process()
         {
-            Logger.LogInformation($"Retrieval Request (ID: {ID}) received.");
-            await Task.Delay(20000);
-            Logger.LogInformation($"First");
-            await Task.Delay(20000);
-            Logger.LogInformation($"Second");
-            await Task.Delay(20000);
-            Logger.LogInformation($"Third");
-            await Task.Delay(20000);
-            Logger.LogInformation($"Fourth");
-            await Task.Delay(20000);
-            Logger.LogInformation($"Fifth");
-            await Task.Delay(20000);
-
-            ResponseSource.SetResult();
+            /*
+             * Requests can only be completed either in Validate or Execute.
+             * If Validate, we no longer perform execute.
+             */
 
             try
             {
-                await ResponseSource.Task;
+                await this.Validate();
+
+                if (this.ResponseSource!.Task.IsCompleted)
+                    return;
+
+                await this.Execute();
+            }
+            finally
+            {
+                this.Flush();
+            }
+
+        }
+
+        /// <summary>
+        /// Validate the <see cref="RetrievalRequest"/>.
+        /// View inner documentation on specifics.  
+        /// </summary>
+        private async Task Validate()
+        {
+            /*
+             * VALIDATION:
+             * - User has permission to access application
+             * - User has permission to access application section (requets sent from sections in the application)
+             */
+
+            try
+            {
+                Logger.LogInformation($"Validating Retrieval Request (ID: {ID})");
+
+                await this.IsCancellationRequested();
+
+                // Validate permission to access application
+                this.SetStatus(State.Validating, $"Validating User Permissions - Application");
+
             }
             catch (Exception e)
             {
-                Logger.LogError($"Error while awaiting retrieval request: {e.Message}.");
+                this.SetStatus(State.Failure, "Validation Failure", e);
             }
+        }
 
-            switch (ResponseSource.Task.Status)
+        /// <summary>
+        /// Execute the <see cref="RetrievalRequest"/>.
+        /// View inner documentation on specifics.  
+        /// </summary>
+        private async Task Execute()
+        {
+            try
             {
-                case TaskStatus.RanToCompletion:
-                    // Task completed successfully -> SetResult
-                    Logger.LogInformation($"Retrieval Request (ID: {ID}) COMPLETED successfully.");
-                    break;
+                Logger.LogInformation($"Processing Retrieval Request (ID: {ID})");
 
-                case TaskStatus.Faulted:
-                    // Task failed -> SetException
-                    var exceptionMessage = ResponseSource.Task.Exception?.ToString() ?? "Unknown error.";
-                    Logger.LogError($"Retrieval Request (ID: {ID}) FAILED:\n{exceptionMessage}.");
-                    break;
+                await this.IsCancellationRequested();
 
-                case TaskStatus.Canceled:
-                    // Task was canceled -> SetCanceled
-                    Logger.LogError($"Retrieval Request (ID: {ID}) CANCELED.");
-                    break;
+                for (int i = 0; i <= 5; i++)
+                {
+                    // Check if cancellation requested
+                    await this.IsCancellationRequested();
+                    await Task.Delay(20000);
+                    Logger.LogInformation($"{i}");
+                }
+
+                this.SetStatus(State.Completed, $"Retrieval Request (ID: {ID}) completed successfully");
             }
+            catch (Exception e)
+            {
+                this.SetStatus(State.Failure, "Processing Failure", e);
+            }
+        }
 
+        /// <summary>
+        /// Flush all logs.
+        /// </summary>
+        private void Flush()
+        {
             if (Logger is CustomLogger<RetrievalRequest> customLogger)
             {
                 customLogger.Flush();

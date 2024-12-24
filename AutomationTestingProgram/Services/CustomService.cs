@@ -19,9 +19,9 @@ namespace AutomationTestingProgram.Services
             CustomLoggerProvider provider = new CustomLoggerProvider(LogManager.GetRunFolderPath());
             _logger = provider.CreateLogger<CustomService>();
         }
-        public void OnApplicationStopping()
+        public async void OnApplicationStopping()
         {
-            _logger.LogInformation("Application is stopping/closing -- (Graceful shutdown)");
+            _logger.LogInformation("Application is stopping -- (Graceful shutdown)");
             if (_logger is CustomLogger<CustomService> customLogger)
             {
                 string logLevelText = "CRITICAL";
@@ -30,6 +30,10 @@ namespace AutomationTestingProgram.Services
 
                 customLogger.FlushAll(logMessage);
             }
+
+            RequestHandler.ShutDownSignal();
+            await RequestHandler.ReadyForTermination();
+            
             Environment.Exit(0);
         }
     }

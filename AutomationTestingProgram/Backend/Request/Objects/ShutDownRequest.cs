@@ -1,7 +1,7 @@
 ﻿/*using AutomationTestingProgram.Services.Logging;
 using System.Text.Json.Serialization;
 
-namespace AutomationTestingProgram.Backend.Request
+namespace AutomationTestingProgram.Backend
 {
     /// <summary>
     /// Request to shut down the whole application.

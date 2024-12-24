@@ -6,8 +6,15 @@ using AutomationTestingProgram.Services;
 using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.WebSockets;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
+
+// AAD Authentication boilerplate
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 DotNetEnv.Env.Load();
 
@@ -27,10 +34,15 @@ builder.Services.AddScoped<PasswordResetService>();
 
 builder.Services.AddControllers();
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build(); // represents configured web app
 
 if (!app.Environment.IsDevelopment())
 {
+    app.UseSwagger();
+    app.UseSwaggerUI();
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts(); // (HTTP Strict Transport Security) browsers interact with server only over HTTPS
 }
@@ -71,6 +83,9 @@ app.Use(async (context, next) =>
 });
 
 app.UseRouting(); // adds routing capabilities
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

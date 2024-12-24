@@ -1,5 +1,6 @@
 ﻿using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using NPOI.HSSF.UserModel;
@@ -17,6 +18,7 @@ public class EnvironmentsController : ControllerBase
         _keychainFilePath = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build()["KeychainFilePath"];
     }
 
+    //[Authorize]
     [HttpGet("keychainAccounts")]
     public async Task<IActionResult> GetKeychainAccounts()
     {
@@ -57,6 +59,7 @@ public class EnvironmentsController : ControllerBase
         }
     }
 
+    //[Authorize]
     [HttpGet("secretKey")]
     public async Task<IActionResult> GetSecretKey([FromQuery] string email)
     {
@@ -69,6 +72,7 @@ public class EnvironmentsController : ControllerBase
         return Ok(new { result.message });
     }
 
+    [Authorize]
     [HttpPost("resetPassword")]
     public async Task<IActionResult> ResetPassword([FromBody] string email)
     {

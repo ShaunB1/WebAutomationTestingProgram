@@ -1,13 +1,16 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Box, Button, Stack, Typography, TextField, Autocomplete } from "@mui/material";
 import envData from "../../assets/environment_list.json";
+import { useMsal } from "@azure/msal-react";
+import { getToken } from "../../authConfig";
 
-const FileUpload = () => {
+const SetArguments = () => {
     const [file, setFile] = useState<File | null>(null);
     const [env, setEnv] = useState<string | null>(null);
     const [envInputValue, setEnvInputValue] = useState('');
     const [browser, setBrowser] = useState<string | null>(null);
     const [browserInputValue, setBrowserInputValue] = useState('');
+    const { instance, accounts } = useMsal();
 
     const envOptions: string[] = useMemo<string[]>(() => {
         return envData.map((env) => {
@@ -50,17 +53,20 @@ const FileUpload = () => {
         formData.append('browser', browser.toLowerCase());
 
         try {
+            const token = await getToken(instance, accounts);
+            const headers = new Headers();
+            headers.append("Authorization", `Bearer ${token}`);
             const res = await fetch("/api/test/run", {
                 method: "POST",
                 body: formData,
+                headers: headers,
             });
 
             if (res.ok) {
                 alert("File uploaded successfully!");
             } else {
-                alert("Failed to upload file.")
+                alert("Failed to upload file.");
             }
-
         } catch (e) {
             console.error("Error uploading file: ", e);
             alert("An error occurred while uploading the file.");
@@ -160,4 +166,4 @@ const FileUpload = () => {
     );
 }
 
-export default FileUpload;
+export default SetArguments;

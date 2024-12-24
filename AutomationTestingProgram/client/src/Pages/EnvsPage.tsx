@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import EnvNavContainer from "../Components/EnvNavContainer/EnvNavContainer";
 import CredsContainer from "../Components/CredsContainer/CredsContainer";
 import { Button, CircularProgress, TextField, Typography } from "@mui/material";
+import { useMsal } from "@azure/msal-react";
+import { getToken } from "../authConfig";
 
 interface ApiResponse {
     message: string;
@@ -18,6 +20,7 @@ function EnvPage() {
     const [fileLines, setFileLines] = useState<string[]>([]);
     const [fileResults, setFileResults] = useState<ApiResponse[]>([]);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const { instance, accounts } = useMsal();
 
     const handleFileChange = async (event: any) => {
         if (event.target.files && event.target.files[0]) {
@@ -46,12 +49,18 @@ function EnvPage() {
         setResult(null);
         setLoading(true);
         setError(null);
+
+        const token = await getToken(instance, accounts);
+        const headers = new Headers();
+        headers.append("Authorization", `Bearer ${token}`);
+        headers.append('Content-Type', 'application/json');
+
         if (fileLines?.length > 0) {
             for (const item of fileLines) {
                 const response = await fetch('/api/environments/resetPassword', {
                     method: 'POST',
                     body: JSON.stringify(item),
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: headers,
                 });
                 const result = await response.json();
                 console.log(JSON.stringify(result));
@@ -68,10 +77,8 @@ function EnvPage() {
             try {
                 const response = await fetch("api/environments/resetPassword", {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(resetEmail)
+                    body: JSON.stringify(resetEmail),
+                    headers: headers
                 });
                 setLoading(false);
                 if (!response.ok) {

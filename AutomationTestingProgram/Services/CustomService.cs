@@ -22,18 +22,21 @@ namespace AutomationTestingProgram.Services
         public async void OnApplicationStopping()
         {
             _logger.LogInformation("Application is stopping -- (Graceful shutdown)");
-            if (_logger is CustomLogger<CustomService> customLogger)
-            {
-                string logLevelText = "CRITICAL";
-                string text = "SHUTDOWN INITIATED. STOPPING ALL THREADS.";
-                string logMessage = string.Format("{0:HH:mm:ss.fff} [{1}] {2}", DateTime.Now, logLevelText, text);
 
-                customLogger.FlushAll(logMessage);
-            }
+            string logLevelText = "CRITICAL";
+            string text = "SHUTDOWN INITIATED. STOPPING ALL THREADS.";
+            string logMessage = string.Format("{0:HH:mm:ss.fff} [{1}] {2}\n", DateTime.Now, logLevelText, text);
+
+            LogManager.FlushAll(logMessage);
 
             RequestHandler.ShutDownSignal();
             await RequestHandler.ReadyForTermination();
             
+            if (_logger is CustomLogger<CustomService> customLogger)
+            {
+                customLogger.Flush();
+            }
+
             Environment.Exit(0);
         }
     }

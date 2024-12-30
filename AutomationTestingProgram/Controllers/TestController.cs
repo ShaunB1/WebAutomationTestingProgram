@@ -6,17 +6,8 @@ using AutomationTestingProgram.Models;
 using AutomationTestingProgram.ModelsOLD;
 using AutomationTestingProgram.Services;
 using ClosedXML.Excel;
-using DocumentFormat.OpenXml.EMMA;
-using DocumentFormat.OpenXml.Office2010.Excel;
-using DocumentFormat.OpenXml.Office2016.Excel;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Options;
-using Microsoft.Playwright;
-using Org.BouncyCastle.Asn1.Ocsp;
-using System.Collections.Concurrent;
-using System.Management.Automation;
-using System.Runtime.CompilerServices;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -55,18 +46,11 @@ public class TestController : ControllerBase
 
     private async Task<IActionResult> HandleRequest<TRequest>(TRequest request) where TRequest : IClientRequest
     {
-        if (!RequestHandler.TryAcquireRequestSlot(request))
-        {
-            _logger.LogError($"Too many requests active. Please try again later.");
-            return StatusCode(503, new { Error = "Too many requests. Please try again later.", Request = (object?)null });
-        }
-
         try
         {
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received.");
 
-            _ = RequestHandler.ProcessRequestAsync(request);
-            await request.ResponseSource.Task;
+            await RequestHandler.ProcessRequestAsync(request);
 
             // If request succeeds
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) successfully completed.");
@@ -83,10 +67,6 @@ public class TestController : ControllerBase
             // If request fails
             _logger.LogError($"{request.GetType().Name} (ID: {request.ID}) failed.\nError: '{e.Message}'");
             return StatusCode(500, new { Error = e.Message, Request = request });
-        }
-        finally
-        {
-            RequestHandler.ReleaseRequestSlot(request);
         }
     }
 

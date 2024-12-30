@@ -29,11 +29,6 @@ public class CustomLogger<T> : ILogger<T>
         LogManager.Flush(_logFilePath);
     }
 
-    public void FlushAll(string message)
-    {
-        LogManager.FlushAll(message);
-    }
-
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         var logMessage = new StringBuilder();

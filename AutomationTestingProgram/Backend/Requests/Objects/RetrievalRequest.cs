@@ -1,14 +1,13 @@
 ﻿using AutomationTestingProgram.Services.Logging;
-using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 using System.Text.Json.Serialization;
 
 namespace AutomationTestingProgram.Backend
-{
+{   
     /// <summary>
-    /// Request to validate a test file.
+    /// Request to retrieve a list of all active requests
     /// </summary>
-    public class ValidationRequest : IClientRequest
+    public class RetrievalRequest : IClientRequest
     {
         public string ID { get; }
         [JsonIgnore]
@@ -25,23 +24,14 @@ namespace AutomationTestingProgram.Backend
         /// The Logger object associated with this request
         /// </summary>
         [JsonIgnore]
-        public ILogger<ValidationRequest> Logger { get; }
-
-
-        /// <summary>
-        /// The file provided with the request
-        /// </summary>
-        public IFormFile File { get; }
+        public ILogger<RetrievalRequest> Logger { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ValidationRequest"/> class.
-        /// Instance is associated with a file.
+        /// Initializes a new instance of the <see cref="RetrievalRequest"/> class.
         /// </summary>
-        /// <param name="File">The file to be validated in the request.</param>
-        public ValidationRequest(IFormFile File)
+        public RetrievalRequest() // Can maybe add option to retrieve only a certain # of requests (based on location??)
         {
             ID = Guid.NewGuid().ToString();
-            this.File = File;
             ResponseSource = new TaskCompletionSource();
             State = State.Received;
             StateLock = new object();
@@ -50,13 +40,14 @@ namespace AutomationTestingProgram.Backend
             FolderPath = LogManager.CreateRequestFolder(ID);
 
             CustomLoggerProvider provider = new CustomLoggerProvider(FolderPath);
-            Logger = provider.CreateLogger<ValidationRequest>()!;
+            Logger = provider.CreateLogger<RetrievalRequest>()!;
         }
 
         public void SetStatus(State responseType, string message = "", Exception? e = null)
         {
             lock (StateLock)
             {
+
                 if (ResponseSource!.Task.IsCompleted)
                     return; // DO nothing if already complete
 
@@ -89,6 +80,10 @@ namespace AutomationTestingProgram.Backend
                     case State.Completed:
                         Logger.LogInformation($"State: {State}\nMessage: {Message}");
                         ResponseSource!.SetResult();
+                        break;
+                    case State.Rejected:
+                        Logger.LogInformation($"State: {State}\nMessage: {Message}");
+                        this.Flush();
                         break;
                     default:
                         Logger.LogInformation($"State: {State}\nMessage: {Message}");
@@ -145,7 +140,7 @@ namespace AutomationTestingProgram.Backend
         }
 
         /// <summary>
-        /// Validate the <see cref="ValidationRequest"/>.
+        /// Validate the <see cref="RetrievalRequest"/>.
         /// View inner documentation on specifics.  
         /// </summary>
         private async Task Validate()
@@ -154,23 +149,16 @@ namespace AutomationTestingProgram.Backend
              * VALIDATION:
              * - User has permission to access application
              * - User has permission to access application section (requets sent from sections in the application)
-             * - Values are all valid:
-             *      -> File is valid 
              */
 
             try
             {
-                Logger.LogInformation($"Validating Process Request (ID: {ID})");
+                Logger.LogInformation($"Validating Retrieval Request (ID: {ID})");
 
                 await this.IsCancellationRequested();
 
                 // Validate permission to access application
                 this.SetStatus(State.Validating, $"Validating User Permissions - Application");
-
-                await this.IsCancellationRequested();
-
-                // Validate File
-                this.SetStatus(State.Validating, $"Validating File");
 
             }
             catch (Exception e)
@@ -180,14 +168,14 @@ namespace AutomationTestingProgram.Backend
         }
 
         /// <summary>
-        /// Execute the <see cref="ValidationRequest"/>.
+        /// Execute the <see cref="RetrievalRequest"/>.
         /// View inner documentation on specifics.  
         /// </summary>
         private async Task Execute()
         {
             try
             {
-                Logger.LogInformation($"Processing Validation Request (ID: {ID})");
+                Logger.LogInformation($"Processing Retrieval Request (ID: {ID})");
 
                 await this.IsCancellationRequested();
 
@@ -199,7 +187,7 @@ namespace AutomationTestingProgram.Backend
                     Logger.LogInformation($"{i}");
                 }
 
-                this.SetStatus(State.Completed, $"Validation Request (ID: {ID}) completed successfully");
+                this.SetStatus(State.Completed, $"Retrieval Request (ID: {ID}) completed successfully");
             }
             catch (Exception e)
             {
@@ -212,7 +200,7 @@ namespace AutomationTestingProgram.Backend
         /// </summary>
         private void Flush()
         {
-            if (Logger is CustomLogger<ValidationRequest> customLogger)
+            if (Logger is CustomLogger<RetrievalRequest> customLogger)
             {
                 customLogger.Flush();
             }

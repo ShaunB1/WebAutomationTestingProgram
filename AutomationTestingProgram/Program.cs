@@ -44,6 +44,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection(); // client and server comms encrypted
 app.UseStaticFiles(); // can request static assets for frontend
 
+app.UseMiddleware<RequestMiddleware>();
+
 app.UseWebSockets();
 
 app.Use(async (HttpContext context, Func<Task> next) =>

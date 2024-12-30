@@ -67,17 +67,9 @@ namespace AutomationTestingProgram.Backend
         void SetStatus(State responseType, string message = "", Exception? e = null);
 
         /// <summary>
-        /// Retrieves the current Status of the Request, including any messages linked with request.
-        /// </summary>
-        /// <returns>A string message</returns>
-        string GetStatus();
-
-        /// <summary>
         /// Checks whether request is flagged for cancellation.
-        /// If so, request is cancelled.
-        /// T/F returned on whether request was cancelled or not.
+        /// If so, request is cancelled, and OperationCanceledException is thrown.
         /// </summary>
-        /// <returns>Bool determining whether the request was cancelled or not.</returns>
         Task IsCancellationRequested();
 
         /// <summary>
@@ -98,6 +90,12 @@ namespace AutomationTestingProgram.Backend
         /// When a request object is created, this is the State it is initialized with.
         /// </summary>
         Received,
+
+        /// <summary>
+        /// The request has been rejected.
+        /// This occurs if too many requests are active, or the application is shutting down.
+        /// </summary>
+        Rejected,
 
         /// <summary>
         /// The request is queued i.e. -> Waiting before processing.
@@ -139,6 +137,6 @@ namespace AutomationTestingProgram.Backend
         /// This occurs if, while the request is in some state doing something, it was cancelled via a CANCELREQUEST.
         /// Will return FAILURE.
         /// </summary>
-        Cancelled
+        Cancelled,
     }
 }

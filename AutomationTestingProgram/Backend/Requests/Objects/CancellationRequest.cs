@@ -1,9 +1,4 @@
-﻿using AutomationTestingProgram.ModelsOLD;
-using AutomationTestingProgram.Services.Logging;
-using DocumentFormat.OpenXml.Math;
-using DocumentFormat.OpenXml.Office2016.Excel;
-using Microsoft.Playwright;
-using Org.BouncyCastle.Asn1.Ocsp;
+﻿using AutomationTestingProgram.Services.Logging;
 using System.Text.Json.Serialization;
 
 namespace AutomationTestingProgram.Backend
@@ -102,23 +97,13 @@ namespace AutomationTestingProgram.Backend
                         Logger.LogInformation($"State: {State}\nMessage: {Message}");
                         ResponseSource!.SetResult();
                         break;
+                    case State.Rejected:
+                        Logger.LogInformation($"State: {State}\nMessage: {Message}");
+                        this.Flush();
+                        break;
                     default:
                         Logger.LogInformation($"State: {State}\nMessage: {Message}");
                         break;
-                }
-            }
-        }
-        public string GetStatus()
-        {
-            lock (StateLock)
-            {
-                if (string.IsNullOrEmpty(Message))
-                {
-                    return $"ID: {ID} | State: {State.ToString()}";
-                }
-                else
-                {
-                    return $"ID: {ID} | State: {State.ToString()} | Message: {Message}";
                 }
             }
         }
@@ -131,19 +116,19 @@ namespace AutomationTestingProgram.Backend
 
         public async Task Process()
         {
-            /*
-             * Requests can only be completed either in Validate or Execute.
-             * If Validate, we no longer perform execute.
-             */
-
             try
             {
                 this.Validate();
 
-                if (this.ResponseSource!.Task.IsCompleted)
+                if (this.ResponseSource!.Task.IsCompleted) // Skip Execute if Validate completed request
                     return;
 
                 await this.Execute();
+            }
+            catch (Exception e) // Unexpected exception.
+            {
+                Logger.LogError("Unexpected exception occured.");
+                this.SetStatus(State.Failure, "Unexpected exception", e);
             }
             finally
             {
@@ -242,7 +227,7 @@ namespace AutomationTestingProgram.Backend
                 }
                 catch (OperationCanceledException) // Request successfully canceled
                 {
-                    this.SetStatus(State.Completed, $"Cancellation Request (ID: {this.ID}) completed successfully. Request (ID: {this.CancelRequestID}) cancelled successfully");
+                    this.SetStatus(State.Completed, $"Request (ID: {this.CancelRequestID}) cancelled successfully");
                 }
                 catch (Exception e)
                 {

@@ -111,14 +111,34 @@ namespace AutomationTestingProgram.Backend
             return createContext;
         }
 
-        /// <summary>
-        /// Terminates a context.
-        /// Called by the Context Object once a request finished processing 
-        /// </summary>
-        /// <param name="context">The context to terminate</param>
-        /// <param name="request">The request associated with the context</param>
-        /// <returns></returns>
-        public async Task TerminateContextAsync(Context? context, Request request)
+
+
+        /* Low likeyhood race condition issue:
+         * - ContextManager detects that it wants to close the browser. 
+         * - A new request just comes in
+         * - TerminateBrowserAsync has to wait for lock, taken by processnewrequest
+         * - Request sent to browser manager -> now active.
+         * - Lock is released. TerminateBrowserAsync gets the lock.
+         * - Request terminates immediatelly. Tries to close.
+         * - TerminateBrowserAsync detects that a request is active, just before it terminates and decreases activerequestcount
+         * - TerminateBrowserAsync doesnt close browser. Releases lock
+         * - Request tries to send a new request to terminate, but fails because the lock wasn't yet released
+         * 
+         * To fix this, ContextManagers must await the lock
+         * Issue:
+         * - Possible multiple calls to TerminateBrowserAsync, while the browser is already closed/terminated. This will result in a failure
+         * 
+         * 
+         *//*
+
+/// <summary>
+/// Terminates a context.
+/// Called by the Context Object once a request finished processing 
+/// </summary>
+/// <param name="context">The context to terminate</param>
+/// <param name="request">The request associated with the context</param>
+/// <returns></returns>
+public async Task TerminateContextAsync(Context? context, Request request)
         {   
             await context!.CloseAsync();
             DecrementRequestCount(context, request);

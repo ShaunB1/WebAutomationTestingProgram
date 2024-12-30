@@ -1,5 +1,4 @@
 ﻿using AutomationTestingProgram.Backend;
-// using AutomationTestingProgram.Backend.Managers;
 using AutomationTestingProgram.Services.Logging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Playwright;
@@ -8,13 +7,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace AutomationTestingProgram.ModelsOLD
-{   
+namespace AutomationTestingProgram.Backend
+{
     /// <summary>
     /// Represents an instance of Playwright.
     /// </summary>
     public class PlaywrightObject
-    {   
+    {
         /// <summary>
         /// The IPlaywright Instance linked with this object
         /// </summary>
@@ -23,23 +22,34 @@ namespace AutomationTestingProgram.ModelsOLD
         /// <summary>
         /// Manages browser instances created by this object
         /// </summary>
-        // public BrowserManager? BrowserManager { get; private set; }
+        public BrowserManager BrowserManager { get; private set; }
 
         /// <summary>
         /// Keeps track of the next unique identifier for browser instances created by this object
         /// </summary>
         private int NextBrowserID;
 
+        /* INFO:
+         * - Requests have unique IDs
+         * - Playwright, Browser, Contexts, Pages have unique ID's within their parent
+         *   This means that its possible for two Pages to have ID 1, but originate form different parents.
+         *   Therefore, unique ID of objects per run are:
+         *      Browser -> Browser ID within a run
+         *      Context -> Parent (Browser ID), Context ID within parent
+         *      Page -> Grandparent (Browser ID), Parent (Context ID), Page ID within parent
+         * - Note: Requests and Context folders will link. Therefore, unique ID is more important request side.
+         */
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PlaywrightObject"/> class.
-        /// Instance is associated with a <see cref="AutomationTestingProgram.Backend.Managers.BrowserManager"/> class
+        /// Instance is associated with a <see cref="Backend.Managers.BrowserManager"/> class
         /// to manage <see cref="Browser"/> instances.
         /// </summary>
         public PlaywrightObject()
         {
-            this.Instance = Playwright.CreateAsync().GetAwaiter().GetResult();
-            // this.BrowserManager = new BrowserManager(this);
-            this.NextBrowserID = 0;
+            Instance = Playwright.CreateAsync().GetAwaiter().GetResult();
+            this.BrowserManager = new BrowserManager(this);
+            NextBrowserID = 0;
         }
 
         /// <summary>
@@ -50,15 +60,5 @@ namespace AutomationTestingProgram.ModelsOLD
         {
             return Interlocked.Increment(ref NextBrowserID);
         }
-
-        /// <summary>
-        /// Processes a given request asynchronously using the BrowserManager.
-        /// </summary>
-        /// <param name="request">The processed request after completion (failure or success)</param>
-        /// <returns></returns>
-        /*public async Task<Request> ProcessRequestAsync(Request request)
-        {
-            return await BrowserManager!.ProcessRequestAsync(request);
-        }*/
     }
 }

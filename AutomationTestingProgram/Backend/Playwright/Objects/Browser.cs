@@ -1,4 +1,4 @@
-﻿/*using AutomationTestingProgram.Backend;
+﻿using AutomationTestingProgram.Backend;
 using AutomationTestingProgram.Services.Logging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Playwright;
@@ -25,26 +25,20 @@ namespace AutomationTestingProgram.ModelsOLD
         public IBrowser? Instance { get; private set; }
 
         /// <summary>
-        /// Bool detecting whether a Browser Object is in a 'Terminated' state.
-        /// Used for concurrency issues
-        /// </summary>
-        public bool IsTerminated = false;
-
-        /// <summary>
         /// A unique identifier for this Browser object, specific to the parent Playwright instance.
         /// Note: This ID is not globally unique across all browsers, just those with the same parent.
         /// </summary>
         public int ID { get; }
 
         /// <summary>
-        /// The Type of the Browser
+        /// The Type of Browser
         /// </summary>
         public string Type { get; }
 
         /// <summary>
-        /// The Version of the Browser
+        /// The Version of Browser
         /// </summary>
-        public int Version { get; }
+        public string Version { get; }
 
         /// <summary>
         /// The filepath where the browser's folder is located, including logs and other related data
@@ -54,12 +48,17 @@ namespace AutomationTestingProgram.ModelsOLD
         /// <summary>
         /// Manages context instances created by this object
         /// </summary>
-        public ContextManager? ContextManager { get; private set; }
+        // public ContextManager? ContextManager { get; private set; }
 
         /// <summary>
         /// Keeps track of the next unique idetifier for browser instances created by this object
         /// </summary>
         private int NextContextID;
+
+        /// <summary>
+        /// Keeps track of the # of active requests in this browser object.
+        /// </summary>
+        private int RequestCount;
 
         /// <summary>
         /// The Logger object associated with this class
@@ -74,12 +73,12 @@ namespace AutomationTestingProgram.ModelsOLD
         /// <summary>
         /// Initializes a new instance of the <see cref="Browser"/> class.
         /// This constructor does not launch or initialize the browser, it only sets up the basic properties.
-        /// Please call InitializeAsync() right after the constructor.
+        /// Please call InitializeAsync() to finish set-up.
         /// </summary>
         /// <param name="playwright">The parent Playwright object that manages the browser.</param>
         /// <param name="Type">The type of the browser (e.g., "chrome", "firefox").</param>
         /// <param name="Version">The version of the browser (e.g., 91, 92).</param>
-        public Browser(PlaywrightObject playwright, string Type, int Version)
+        public Browser(PlaywrightObject playwright, string Type, string Version)
         {
             this.Parent = playwright;
             this.ID = playwright.GetNextBrowserID();
@@ -87,6 +86,7 @@ namespace AutomationTestingProgram.ModelsOLD
             this.Type = Type;
             this.Version = Version;
             this.FolderPath = LogManager.CreateBrowserFolder(ID, Type, Version.ToString());
+            this.RequestCount = 0;
 
             CustomLoggerProvider provider = new CustomLoggerProvider(this.FolderPath);
             Logger = provider.CreateLogger<Browser>()!;
@@ -125,27 +125,63 @@ namespace AutomationTestingProgram.ModelsOLD
         /// Sends a request to the Browser Manager for processing. This will initiate the request, but does not wait for completion.
         /// </summary>
         /// <param name="request">The request to process within the browser.</param>
-        public async Task ProcessRequest(Request request)
+        public async Task ProcessRequest(IClientRequest request)
         {
+            IncrementRequestCount(request);
+            // _ = await ContextManager!.ProcessRequestAsync(request);
+
             try
             {
-                request.SetStatus(RequestState.Processing, "Browser Sending Request -> Context Manager");
+                await request.IsCancellationRequested();
+                await Task.Delay(20000);
 
-                if (ContextManager == null)
-                {
-                    throw new ArgumentNullException($"Context Manager for Browser (ID: {this.ID}, Type: {this.Type}, Version: {this.Version}) is null!" +
-                        " Please make sure you call InitializeAsync() before use.");
-                }
-
-                // Just makes sure the context was successfully created/queued. Results in request TaskCompletionSource
-                await ContextManager.ProcessRequestAsync(request);
-
+                request.SetStatus(State.Completed, "Completed in Browser");
+                await request.ResponseSource.Task;
             }
-            catch (Exception e)
+            catch
             {
-                Logger.LogError($"Browser-Level Error encountered\n {e}");
-                request.SetStatus(RequestState.ProcessingFailure, "Browser sending Request -> Context Manager: Failure", e);
+
             }
+            finally
+            {
+                DecrementRequestCount(request);
+
+                // Add a lock.
+                // same as browser manager.
+                // Allow only one request to receive or terminate at a time
+                // So the lock should be used for the int
+                // Thread safe.
+                // Then I can do closing logic
+                //
+                //
+                //
+                //
+            }
+
+
+        }
+
+
+        /// <summary>
+        /// Increment the total # of processing requests
+        /// Called whenever a new request is received
+        /// </summary>
+        public void IncrementRequestCount(IClientRequest request)
+        {
+            Interlocked.Increment(ref RequestCount);
+            Logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received. " +
+                $"-- Total Requests Active: '{RequestCount}'");
+        }
+
+        /// <summary>
+        /// Decrement the total # of processing requests 
+        /// Called whenever a request is terminated
+        /// </summary>
+        public void DecrementRequestCount(IClientRequest request)
+        {
+            Interlocked.Decrement(ref RequestCount);
+            Logger.LogInformation($"Terminating {request.GetType().Name} (ID: {request.ID}) received. " +
+                $"-- Total Requests Active: '{RequestCount}'");
         }
 
         /// <summary>
@@ -159,13 +195,13 @@ namespace AutomationTestingProgram.ModelsOLD
             try
             {   
                 // No active or queued requests, close browser instance
-                if (ContextManager!.SafeToClose())
+                /*if (ContextManager!.SafeToClose())
                 {
                     await Instance!.CloseAsync();
                     Instance = null;
                     closed = true;
                     Logger.LogInformation($"Browser (ID: {this.ID}, Type: {this.Type}, Version: {this.Version}) closed successfully.");
-                }
+                }*/
             }
             catch (Exception e)
             {
@@ -184,9 +220,9 @@ namespace AutomationTestingProgram.ModelsOLD
             return closed;
         }
 
-        *//* AutoUpdater must be written before version can be used.
-         * Once implemented, update below functions to handle version.
-         *//*
+        /*
+         * AutoUpdater must be implemented for Version Handling
+         */
 
         /// <summary>
         /// Creates a browser instance based on the specified browser type and version.
@@ -196,7 +232,7 @@ namespace AutomationTestingProgram.ModelsOLD
         /// <param name="version">The version of the browser to launch.</param>
         /// <returns>The created browser instance.</returns>
         /// <exception cref="ArgumentException">Thrown if the browser type is unsupported.</exception>
-        private async Task<IBrowser> CreateBrowserInstance(IPlaywright playwright, string type, int version)
+        private async Task<IBrowser> CreateBrowserInstance(IPlaywright playwright, string type, string version)
         { 
             switch (type.ToLower())
             {
@@ -213,7 +249,7 @@ namespace AutomationTestingProgram.ModelsOLD
             }
         }
 
-        private async Task<IBrowser> LaunchChrome(IPlaywright playwright, int version)
+        private async Task<IBrowser> LaunchChrome(IPlaywright playwright, string version)
         {
             BrowserTypeLaunchOptions options = new BrowserTypeLaunchOptions
             {
@@ -224,7 +260,7 @@ namespace AutomationTestingProgram.ModelsOLD
             return await playwright.Chromium.LaunchAsync(options);
         }
 
-        private async Task<IBrowser> LaunchEdge(IPlaywright playwright, int version)
+        private async Task<IBrowser> LaunchEdge(IPlaywright playwright, string version)
         {
             BrowserTypeLaunchOptions options = new BrowserTypeLaunchOptions
             {
@@ -235,7 +271,7 @@ namespace AutomationTestingProgram.ModelsOLD
             return await playwright.Chromium.LaunchAsync(options);
         }
 
-        private async Task<IBrowser> LaunchFirefox(IPlaywright playwright, int version)
+        private async Task<IBrowser> LaunchFirefox(IPlaywright playwright, string version)
         {
             BrowserTypeLaunchOptions options = new BrowserTypeLaunchOptions
             {
@@ -246,7 +282,7 @@ namespace AutomationTestingProgram.ModelsOLD
             return await playwright.Firefox.LaunchAsync(options);
         }
 
-        private async Task<IBrowser> LaunchWebKit(IPlaywright playwright, int version)
+        private async Task<IBrowser> LaunchWebKit(IPlaywright playwright, string version)
         {
             BrowserTypeLaunchOptions options = new BrowserTypeLaunchOptions
             {
@@ -258,4 +294,3 @@ namespace AutomationTestingProgram.ModelsOLD
         }
     }
 }
-*/

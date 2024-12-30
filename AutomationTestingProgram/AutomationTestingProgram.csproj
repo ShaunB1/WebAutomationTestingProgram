@@ -20,9 +20,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Backend\Request\Validations\" />
       <Folder Include="client\src\Components\Table\" />
       <Folder Include="client\src\Pages\" />
+      <Folder Include="Models - OLD\Backend\Playwright\" />
       <Folder Include="wwwroot\" />
     </ItemGroup>
 
@@ -70,6 +70,12 @@
         <Isolated>false</Isolated>
         <EmbedInteropTypes>true</EmbedInteropTypes>
       </COMReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Backend\Helpers\environment_list.csv">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

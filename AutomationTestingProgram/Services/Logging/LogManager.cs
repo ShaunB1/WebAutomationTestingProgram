@@ -255,23 +255,37 @@ namespace AutomationTestingProgram.Services.Logging
         /// ONLY CALL AT THE END (no more logs). Else, IO issues may arise.
         /// </summary>
         /// <param name="path">The path to flush</param>
-        public static void Flush(string path, string message = "")
+        public static void Flush(string path, bool removeEntry = true, string message = "")
         {
-            if (!LogBuffer.TryRemove(path, out var logObject))
+            (SemaphoreSlim bufferSemaphore, SemaphoreSlim fileSemaphore, StringBuilder logMessage) logObject;
+            
+            if (removeEntry)
             {
-                return; // Nothing to flush
+                if (!LogBuffer.TryRemove(path, out logObject))
+                {
+                    return; // Nothing to flush
+                }
             }
+            else
+            {
+                if (!LogBuffer.TryGetValue(path, out logObject))
+                {
+                    return; // Nothing to flush
+                }
+            }
+
 
             SemaphoreSlim stringSemaphore = logObject.bufferSemaphore;
             stringSemaphore.Wait();
 
             StringBuilder logMessage = logObject.logMessage;
-            string fileMessage = logMessage.ToString();
-
+            
             if (!string.IsNullOrEmpty(message))
             {
-                fileMessage += $"\n{message}";
+                logMessage.AppendLine(message);
             }
+
+            string fileMessage = logMessage.ToString();
 
             if (!string.IsNullOrEmpty(fileMessage))
             {
@@ -293,16 +307,10 @@ namespace AutomationTestingProgram.Services.Logging
         /// </summary>
         public static void FlushAll(string message)
         {   
-            /* We loop through all entries in the snapshot of LogBuffer
-             * Graceful shutdown: Should wait for all requests to close before FlushAll
-             * Forceful shutdown: Logs may be missed if just newly created. Doesn't really matter though.
-             * 
-             */
-
             foreach (var entry in LogBuffer)
             {
                 string path = entry.Key;
-                Flush(path, message);
+                Flush(path, false, message);
             }
         }
 

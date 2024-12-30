@@ -1,10 +1,11 @@
-﻿/*using AutomationTestingProgram.ModelsOLD;
+﻿using AutomationTestingProgram.ModelsOLD;
 using AutomationTestingProgram.Services.Logging;
 using DocumentFormat.OpenXml.Office2016.Excel;
 using Microsoft.Playwright;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System.Collections.Concurrent;
 
-namespace AutomationTestingProgram.Backend.Managers
+namespace AutomationTestingProgram.Backend
 {   
     /// <summary>
     /// Represents the Manager that manages <see cref="Browser"/> objects.
@@ -17,7 +18,7 @@ namespace AutomationTestingProgram.Backend.Managers
         private readonly PlaywrightObject Playwright;
 
         /// <summary>
-        /// Allows up to '3' browsers to run concurrently at a time, per PlaywrightObject Instance
+        /// Limits the number of browsers that can run concurrently at a time
         /// </summary>
         private readonly SemaphoreSlim BrowserSemaphore;
 
@@ -29,43 +30,31 @@ namespace AutomationTestingProgram.Backend.Managers
         /// <summary>
         /// Dictionary that tracks a list of requests waiting for a specific browser. Used in tandem with BrowserQueue
         /// </summary>
-        private readonly ConcurrentDictionary<(string Type, int Version), List<Request>> QueuedBrowsers;
+        private readonly ConcurrentDictionary<(string Type, string Version), List<IClientRequest>> QueuedRequests;
 
         /// <summary>
         /// Dictionary that tracks all currently active browsers, mapped by browser type/version.
         /// </summary>
-        private readonly ConcurrentDictionary<(string Type, int Version), Browser> ActiveBrowsers;
+        private readonly ConcurrentDictionary<(string Type, string Version), Browser> ActiveBrowsers;
 
         /// <summary>
-        /// Dictionar of semaphores, one for each browser type/version combination.
+        /// Dictionary of semaphores, one for each browser type/version combination.
         /// Ensures that only one request for a particular browser can be processed by BrowserManager at a time
         /// </summary>
-        private readonly ConcurrentDictionary<(string Type, int Version), SemaphoreSlim> BrowserLocks;
-        *//*
-         * The BrowserLocks dictionary is used to prevent concurrency issues when transitioning requests
-         * from the queued to active states, while also allowing new requests to be received simultaneously.
-         * It ensures that requests for the same browser (type/version) are processed sequentially,
-         * while allowing requests for different browsers to run concurrently -> within BrowserManager
+        private readonly ConcurrentDictionary<(string Type, string Version), SemaphoreSlim> BrowserLocks;
+        /* 
+         * Locks are needed for transitioning a browser and linked requests from queued to active.
+         * In this scenario, it is still possible to receive requests for the transitioning browser.
+         * We use locks to solve this concurrency issue.
          * 
          * Potential issue: Entires in the dictionary cannot be removed once created. While this could lead to unecessary
          *                  memory usage, the amount of entires is expected to be small, so this is an insignificant issue.
-         *//*
+         */
 
         /// <summary>
         /// The Logger object associated with this class
         /// </summary>
         private readonly ILogger<BrowserManager> Logger;
-
-        /// <summary>
-        /// Contains the number of queued requests within the BrowserManager class.
-        /// </summary>
-        private int QueuedRequestCount;
-
-        /// <summary>
-        /// Contains the number of 'sent' requests within the BrowserManager class.
-        /// Note: A sent request is not necessarily active -> May be queued in ContextManager
-        /// </summary>
-        private int SentRequestCount;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BrowserManager"/> class.
@@ -75,14 +64,11 @@ namespace AutomationTestingProgram.Backend.Managers
         public BrowserManager(PlaywrightObject playwright)
         {
             Playwright = playwright;
-            BrowserSemaphore = new SemaphoreSlim(3);
+            BrowserSemaphore = new SemaphoreSlim(3); // Current limit of 3 Browser objects active at a time
             BrowserQueue = new ConcurrentQueue<Func<Task<Browser>>>();
-            QueuedBrowsers = new ConcurrentDictionary<(string Type, int Version), List<Request>>();
-            ActiveBrowsers = new ConcurrentDictionary<(string Type, int Version), Browser>();
-            BrowserLocks = new ConcurrentDictionary<(string Type, int Version), SemaphoreSlim>();
-
-            QueuedRequestCount = 0;
-            SentRequestCount = 0;
+            QueuedRequests = new ConcurrentDictionary<(string Type, string Version), List<IClientRequest>>();
+            ActiveBrowsers = new ConcurrentDictionary<(string Type, string Version), Browser>();
+            BrowserLocks = new ConcurrentDictionary<(string Type, string Version), SemaphoreSlim>();
 
             CustomLoggerProvider provider = new CustomLoggerProvider(LogManager.GetRunFolderPath());
             Logger = provider.CreateLogger<BrowserManager>()!;
@@ -94,47 +80,49 @@ namespace AutomationTestingProgram.Backend.Managers
         /// </summary>
         /// <param name="request">The request to process</param>
         /// <returns>The completed request</returns>
-        public async Task<Request> ProcessRequestAsync(Request request)
+        public async Task ProcessRequestAsync(IClientRequest request)
         {
-            // Creating the task completion source, and linking it to the request
-            var requestTask = new TaskCompletionSource<Request>();
-            request.ResponseSource = requestTask;
-            request.SetStatus(RequestState.Processing, "Browser Manager Processing Request");
+            /*
+             * Only for ProcessRequests currently.
+             * Will re-factor if new requests added here.
+             */
+
+            if (!(request is ProcessRequest processRequest)) return;
+
+            await processRequest.IsCancellationRequested();
+            
+            processRequest.SetStatus(State.Processing, "Browser Manager Processing Request");
 
             // Retrieving the browser lock for the request, ensuring no concurrency issues
-            var browserLock = BrowserLocks.GetOrAdd((request.BrowserType, request.BrowserVersion), _ => new SemaphoreSlim(1));
-            await browserLock.WaitAsync(); // Ensures that browsers can only process one request at a time
+            var browserLock = BrowserLocks.GetOrAdd((processRequest.BrowserType, processRequest.BrowserVersion), _ => new SemaphoreSlim(1));
+            await browserLock.WaitAsync();
 
-            // Used to determine whether ProcessNextBrowser() should be called -> Only when queuing a new browser for the first time
-            bool processNextBrowser = false;
+            bool processNextBrowser = false; // Needed to prevent deadlock
 
             try
             {
                 // Check if the browser is currently active
-                if (ActiveBrowsers.TryGetValue((request.BrowserType, request.BrowserVersion), out Browser? browser))
+                if (ActiveBrowsers.TryGetValue((processRequest.BrowserType, processRequest.BrowserVersion), out Browser? browser))
                 {
                     // Should return once successfully started. Completion is kept within request
-                    await ExecuteRequestAsync(browser, request);
+                    await ExecuteRequestAsync(browser, processRequest);
                 }
                 // Else, queue request
                 else
-                {   
-                    processNextBrowser = QueueNewRequest(request);
+                {
+                    processNextBrowser = QueueNewRequest(processRequest);
                 }
             }
             catch (Exception e)
             {
-                request.SetStatus(RequestState.ProcessingFailure, "Browser Manager Processing Request: Failure", e);
+                request.SetStatus(State.Failure, "Browser Manager Failure", e);
             }
             finally
             {
                 browserLock.Release();
-                // If queued for first time, call ProcessNextBrowser()
                 if (processNextBrowser)
                     await ProcessNextBrowser();
-            }            
-
-            return await request.ResponseSource.Task;
+            }
         }
 
         /// <summary>
@@ -143,15 +131,14 @@ namespace AutomationTestingProgram.Backend.Managers
         /// </summary>
         /// <param name="request">The request to queue</param>
         /// <returns>A boolean value determining whether ProcessNextBrowser() should be called</returns>
-        private bool QueueNewRequest(Request request)
+        private bool QueueNewRequest(ProcessRequest request)
         {
-            request.SetStatus(RequestState.Queued, "Browser Manager Queued Request");
-            Interlocked.Increment(ref QueuedRequestCount);
+            request.SetStatus(State.Queued, "Browser Manager Queued Request");
 
             // If Browser already in queue, add request to list
-            if (!QueuedBrowsers.TryAdd((request.BrowserType, request.BrowserVersion), new List<Request> { request }))
+            if (!QueuedRequests.TryAdd((request.BrowserType, request.BrowserVersion), new List<IClientRequest> { request }))
             {
-                QueuedBrowsers.TryGetValue((request.BrowserType, request.BrowserVersion), out List<Request>? requests);
+                QueuedRequests.TryGetValue((request.BrowserType, request.BrowserVersion), out List<IClientRequest>? requests);
                 requests!.Add(request); // Note: Because of the lock, no two requests will add to the list at the same time                
                 return false;
             }
@@ -171,7 +158,7 @@ namespace AutomationTestingProgram.Backend.Managers
         /// <param name="Type">The type of the browser</param>
         /// <param name="Version">The version of the browser</param>
         /// <returns>A task that will initialize a browser and process related queued requests when run</returns>
-        private Func<Task<Browser>> CreateNewBrowserTask(string Type, int Version)
+        private Func<Task<Browser>> CreateNewBrowserTask(string Type, string Version)
         { 
             Func<Task<Browser>> createBrowser = async () =>
             {
@@ -183,43 +170,17 @@ namespace AutomationTestingProgram.Backend.Managers
                 IncrementBrowserCount(browser);
                 try
                 {   
-                    // Initialization possible to fail -> not coding issue. Should I add retry mechanism?? ** ** ** ** ** ** ** ** ** ** ** ** ** **
+                    // Initialization possible to fail if takes too long.. -> retry mechanism??
                     await browser.InitializeAsync();
-                    if (QueuedBrowsers.TryRemove((browser.Type, browser.Version), out List<Request>? requests))
+                    if (QueuedRequests.TryRemove((browser.Type, browser.Version), out List<IClientRequest>? requests))
                     {
-                        foreach (Request request in requests)
+                        foreach (IClientRequest request in requests)
                         {
                             // Should return once successfully started. Completion is kept within request
-                            Interlocked.Decrement(ref QueuedRequestCount);
                             await ExecuteRequestAsync(browser, request);
                         }
                     }                    
                     return browser;
-                }
-                catch (Exception e)
-                {   
-                    *//* Only thing in try block that could fail is InitializeAsync
-                     * This would occur if too heavy a load, and timeout not enough.
-                     * Must test to see if an issue, and if a retry mechasim is needed
-                     * 
-                     * However, if InitializeAsync() fails, we correctly log, remove it from active and release the semaphore.
-                     * Also, as we never removed the requests from the queue, no requests will be stranded.
-                     * Issue -> If fails, only two active browsers will exist, and no 3rd ever. To fix this,
-                     * Process Next Browser should be called.
-                     * 
-                     * !!! Before fixing/working on this, must test load, and see if browsers fail..
-                     * 
-                     * 
-                     *//*
-
-                    Logger.LogError($"Run-Level Error encountered\n {e}");
-                    DecrementBrowserCount(browser);
-                    BrowserSemaphore.Release();
-                    *//*
-                     * await ProcessNextBrowser();
-                     * return null;
-                     *//*
-                    throw;
                 }
                 finally
                 {
@@ -230,55 +191,32 @@ namespace AutomationTestingProgram.Backend.Managers
             return createBrowser;
         }
 
-        *//* Low likeyhood race condition issue:
-         * - ContextManager detects that it wants to close the browser. 
-         * - A new request just comes in
-         * - TerminateBrowserAsync has to wait for lock, taken by processnewrequest
-         * - Request sent to browser manager -> now active.
-         * - Lock is released. TerminateBrowserAsync gets the lock.
-         * - Request terminates immediatelly. Tries to close.
-         * - TerminateBrowserAsync detects that a request is active, just before it terminates and decreases activerequestcount
-         * - TerminateBrowserAsync doesnt close browser. Releases lock
-         * - Request tries to send a new request to terminate, but fails because the lock wasn't yet released
-         * 
-         * To fix this, ContextManagers must await the lock
-         * Issue:
-         * - Possible multiple calls to TerminateBrowserAsync, while the brow is already closed/terminated. This will result in a failure. 
-         * 
-         * 
-         * 
-         *//*
-
 
         /// <summary>
         /// Terminates a browser.
         /// Called by the Context manager of a particular browser
         /// </summary>
         /// <param name="browser"></param>
-        /// <param name="request"></param>
         /// <returns></returns>
         public async Task TerminateBrowserAsync(Browser browser)
         {
             if (BrowserLocks.TryGetValue((browser!.Type, browser!.Version), out SemaphoreSlim? browserLock))
             {
 
-                bool success = false;
+                bool processNextBrowser = false;
 
                 try
                 {
                     await browserLock.WaitAsync();
-                    if (browser.IsTerminated)
-                        return;
 
                     // Successfully closed
                     if (await browser.CloseAsync())
                     {   
                         DecrementBrowserCount(browser);
                         BrowserSemaphore.Release();
-                        success = true;
-                        browser.IsTerminated = true;
+                        processNextBrowser = true;
                     }
-                    // Else a new context was just added (concurrency)
+                    // Else a new request was just received
                 }
                 catch (Exception e)
                 {
@@ -294,38 +232,12 @@ namespace AutomationTestingProgram.Backend.Managers
                         customLogger.Flush();
                     }
 
-                    if (success)
+                    if (processNextBrowser)
                     {
                         await ProcessNextBrowser();
                     }
                 }
             }
-        }
-
-        /// <summary>
-        /// Increment the total # of processing requests RUN LEVEL
-        /// Called whenever a new request is received by ContextManager (queued or active)
-        /// </summary>
-        /// <param name="browser"></param>
-        public void IncrementRequestCount(Browser browser, Request request)
-        {
-            Interlocked.Increment(ref SentRequestCount);
-            Logger.LogInformation($"New Request (ID: {request.ID}) sent to Browser (ID: {browser.ID}, Type: {browser.Type}, Version: {browser.Version}) " +
-                $"-- Total Requests Sent: '{SentRequestCount}' | Queued: '{QueuedRequestCount}'");
-        }
-
-        /// <summary>
-        /// Decrement the total # of processing requests RUN LEVEL
-        /// Called whenever a request is terminated in ContextManager
-        /// Note: BrowserManager does not know when a request terminates. MUST BE CALLED FROM CONTEXT MANAGER
-        /// </summary>
-        /// <param name="browser"></param>
-        /// <param name="successful"></param>
-        public void DecrementRequestCount(Browser browser, Request request)
-        { 
-            Interlocked.Decrement(ref SentRequestCount);
-            Logger.LogInformation($"Terminating Request (ID: {request.ID}, State: {request.State}) in Browser (ID: {browser.ID}, Type: {browser.Type}, Version: {browser.Version}) " +
-                $"-- Total Requests Sent: '{SentRequestCount}' | Queued: '{QueuedRequestCount}'");
         }
 
         /// <summary>
@@ -335,19 +247,9 @@ namespace AutomationTestingProgram.Backend.Managers
         /// <param name="browser">The browser instance that will handle the request</param>
         /// <param name="request">The request to be processed by the browser</param>
         /// <returns></returns>
-        private async Task ExecuteRequestAsync(Browser browser, Request request)
+        private async Task ExecuteRequestAsync(Browser browser, IClientRequest request)
         {
-            try
-            {
-                request.SetStatus(RequestState.Processing, "Browser Manager Sending Request -> Browser");
-                
-                // Send the request to the browser for processing. This initiates the process but does not wait for completion
-                await browser.ProcessRequest(request);
-            }
-            catch (Exception e) // Should not occur
-            {   // Processing failed
-                request.SetStatus(RequestState.ProcessingFailure, "Browser Manager Sending Request -> Browser: Failure", e);
-            }
+            await browser.ProcessRequest(request);
         }
 
         /// <summary>
@@ -396,7 +298,23 @@ namespace AutomationTestingProgram.Backend.Managers
             {
                 Logger.LogInformation($"Queuing Browser -- Browsers Running: '{ActiveBrowsers.Count}' | Queued: '{BrowserQueue.Count}'");
             }
+
+            /*
+             * INFO:
+             * 
+             * ProcessNextBrowser is only called either when a new browser is queued or when a browser
+             * terminates. 
+             * 
+             * In the first case:
+             *  - Needed to start the whole process (if there are no active browsers to terminate)
+             *  - If no slots, it means it stays in the queue, waiting for termination
+             * In the second case:
+             *  - When a browser terminates, we need to start the next one from the queue
+             *  
+             * If multiple terminate at the same time, simply multiple will start at the same time.
+             * If terminate and add at the same time, one queue, one start.
+             *  -> No concurrency issues with Queuing Browser message
+             */
         }
     }
 }
-*/

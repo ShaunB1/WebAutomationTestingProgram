@@ -1,13 +1,12 @@
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Newtonsoft.Json;
-using AutomationTestingProgram.ModelsOLD;
 
-namespace AutomationTestingProgram.Backend.Actions;
+namespace AutomationTestingProgram.Actions;
 
 public class SelectDDL : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         var locator = step.Object;
         var option = step.Value;
@@ -27,24 +26,24 @@ public class SelectDDL : IWebAction
         {
             datapoint = option;
         }
-
+        
         try
         {
             IReadOnlyList<string>? res = null;
             if (match.Success && iteration != -1)
             {
-                res = await element.SelectOptionAsync(new SelectOptionValue { Label = datapoint });
+                res = await element.SelectOptionAsync(new SelectOptionValue { Label = datapoint});
             }
             else
             {
-                res = await element.SelectOptionAsync(new SelectOptionValue { Label = option });
+                res = await element.SelectOptionAsync(new SelectOptionValue { Label = option });   
             }
 
             if (res == null || res.Count == 0)
             {
                 await element.SelectOptionAsync(new SelectOptionValue { Index = 1 });
             }
-
+            
             return true;
         }
         catch (Exception e)

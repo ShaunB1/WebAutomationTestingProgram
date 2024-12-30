@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "AutomationTestingProgram",
+  "version": "3.0.0",
+  "description": "AutomationTestingProgram extension.",
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "sidePanel",
+    "webNavigation",
+    "scripting",
+    "activeTab",
+    "tabs",
+    "cookies",
+    "proxy",
+    "storage",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],  
+  "commands": {
+    "toggle-side-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E"
+      },
+      "description": "Toggle the side panel"
+    }
+  }
+}

@@ -1,12 +1,10 @@
 using Microsoft.Playwright;
-using AutomationTestingProgram.ModelsOLD;
 
-
-namespace AutomationTestingProgram.Backend.Actions;
+namespace AutomationTestingProgram.Actions;
 
 public class NavigateToURL : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         try
         {

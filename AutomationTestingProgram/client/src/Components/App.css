@@ -1,0 +1,11 @@
+body {
+    padding: 0;
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.content-container {
+    padding-left: 30px;
+    padding-right: 30px;
+    margin-top: 75px;
+}

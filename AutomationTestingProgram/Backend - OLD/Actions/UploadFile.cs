@@ -1,21 +1,19 @@
 ﻿using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Newtonsoft.Json;
-using AutomationTestingProgram.ModelsOLD;
 
-
-namespace AutomationTestingProgram.Backend.Actions;
+namespace AutomationTestingProgram.Actions;
 
 public class UploadFile : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         var locator = step.Object;
         var filePath = step.Value;
-        var element = step.Comments == "html id"
-            ? page.Locator($"#{locator}")
-            : step.Comments == "innertext"
-                ? page.Locator($"text={locator}")
+        var element = step.Comments == "html id" 
+            ? page.Locator($"#{locator}") 
+            : step.Comments == "innertext" 
+                ? page.Locator($"text={locator}") 
                 : page.Locator(locator);
 
         try
@@ -28,16 +26,16 @@ public class UploadFile : IWebAction
                 var content = match.Groups[1].Value;
                 var index = int.Parse(content);
                 var datasets = JsonConvert.DeserializeObject<List<List<string>>>(step.Data);
-
+                
                 datapoint = datasets?[iteration][index];
-
+                
                 await element.SetInputFilesAsync(datapoint);
             }
             else
             {
-                await element.SetInputFilesAsync(filePath);
+                await element.SetInputFilesAsync(filePath);                
             }
-
+            
             return true;
         }
         catch (Exception e)

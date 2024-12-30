@@ -1,12 +1,10 @@
 ﻿using Microsoft.Playwright;
-using AutomationTestingProgram.ModelsOLD;
 
-
-namespace AutomationTestingProgram.Backend.Actions;
+namespace AutomationTestingProgram.Actions;
 
 public class CheckAllRadioButtons : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         try
         {
@@ -26,24 +24,10 @@ public class CheckAllRadioButtons : IWebAction
                     {
                         continue;
                     }
-
-                    var groupRadioButtons = await page.QuerySelectorAllAsync($"input[type='radio'][name='{groupName}']");
-                    var isAnyChecked = false;
-
-                    foreach (var button in groupRadioButtons)
-                    {
-                        if (await button.IsEnabledAsync())
-                        {
-                            isAnyChecked = true;
-                            break;
-                        }
-                    }
-
-                    if (!isAnyChecked)
-                    {
-                        await radioButton.CheckAsync();
-                        selectedGroups.Add(groupName);
-                    }
+            
+                    await radioButton.CheckAsync();
+            
+                    selectedGroups.Add(groupName);
                 }
             }
 

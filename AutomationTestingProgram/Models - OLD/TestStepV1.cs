@@ -1,5 +1,4 @@
-namespace AutomationTestingProgram.ModelsOLD;
-public class TestStepV1
+public class TestStep
 {
     public string TestCaseName { get; set; }
     public string TestDescription { get; set; }
@@ -16,7 +15,9 @@ public class TestStepV1
     public string TestStepType { get; set; }
     public int GoToStep { get; set; }
     public string Data { get; set; }
-    
+    public string Cycle { get; set; }
+    public string CycleData { get; set; }
+
     public string Outcome { get; set; }
     public DateTime StartedDate { get; set; }
     public DateTime CompletedDate { get; set; }
@@ -25,4 +26,7 @@ public class TestStepV1
     public string StackTrace { get; set; }
     public int SequenceIndex { get; set; }
 
+    public bool RunSuccessful { get; set; }
+
+    public string Actual { get; set; }
 }

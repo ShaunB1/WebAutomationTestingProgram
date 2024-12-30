@@ -1,11 +1,10 @@
-﻿using AutomationTestingProgram.ModelsOLD;
-using Microsoft.Playwright;
+﻿using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Backend.Actions;
+namespace AutomationTestingProgram.Actions;
 
 public class ExitCondition : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         try
         {

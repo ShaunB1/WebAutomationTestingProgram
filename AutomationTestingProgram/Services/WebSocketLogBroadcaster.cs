@@ -4,9 +4,14 @@ using System.Text;
 
 namespace AutomationTestingProgram.Services;
 
-public class WebSocketLogBroadcaster
+public class WebSocketLogBroadcaster : TextWriter
 {
     private readonly ConcurrentBag<WebSocket> _clients = new();
+
+    public WebSocketLogBroadcaster()
+    {
+        Console.SetOut(this);
+    }
 
     public void AddClient(WebSocket client)
     {
@@ -38,4 +43,12 @@ public class WebSocketLogBroadcaster
         _clients.TryTake(out client);
         Console.WriteLine("Successfully removed websocket client.");
     }
+
+    public override async Task WriteLineAsync(string message)
+    {
+        await base.WriteLineAsync(message);
+        await BroadcastLogAsync(message);
+    }
+    
+    public override Encoding Encoding => Encoding.UTF8;
 }

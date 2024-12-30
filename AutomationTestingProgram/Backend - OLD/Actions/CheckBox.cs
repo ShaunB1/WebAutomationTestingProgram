@@ -1,20 +1,18 @@
 using DocumentFormat.OpenXml.Packaging;
 using Microsoft.Playwright;
-using AutomationTestingProgram.ModelsOLD;
 
-
-namespace AutomationTestingProgram.Backend.Actions;
+namespace AutomationTestingProgram.Actions;
 
 public class CheckBox : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         var locator = step.Object;
         var state = step.Value.ToLower();
-        var element = step.Comments == "html id"
-            ? page.Locator($"#{locator}")
-            : step.Comments == "innertext"
-                ? page.Locator($"text={locator}")
+        var element = step.Comments == "html id" 
+            ? page.Locator($"#{locator}") 
+            : step.Comments == "innertext" 
+                ? page.Locator($"text={locator}") 
                 : page.Locator(locator);
 
         var isChecked = await element.IsCheckedAsync();

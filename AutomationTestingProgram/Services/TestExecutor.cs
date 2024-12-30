@@ -1,14 +1,9 @@
-using System.ComponentModel;
-using System.Diagnostics;
 using AutomationTestingProgram.Services;
-using AutomationTestingProgram.Backend;
+using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Models;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Playwright;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Newtonsoft.Json;
-using AutomationTestingProgram.Backend.Actions;
-using AutomationTestingProgram.ModelsOLD;
+using System.Text.RegularExpressions;
 
 public class TestExecutor
 {
@@ -19,6 +14,8 @@ public class TestExecutor
     private readonly bool _recordVideo = false;
     private readonly ILogger<TestController> _logger;
     private readonly WebSocketLogBroadcaster _broadcaster;
+    private Dictionary<string, string> _envVars = new Dictionary<string, string>();
+    private Dictionary<string, string> _saveParameters = new Dictionary<string, string>();
 
     public TestExecutor(ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
     {
@@ -43,28 +40,36 @@ public class TestExecutor
             { "checkallradiobuttons", new CheckAllRadioButtons() },
             { "checkallboxes", new CheckAllBoxes() },
             { "fillalltextboxes", new FillAllTextBoxes() },
+            { "verifytxtfile", new VerifyTxtFile() },
+            { "comment", new Comment() },
+            { "saveparameter", new SaveParameter() }
         };
-        
     }
 
-    public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStepV1> testSteps, string environment, string fileName, HttpResponse response)
+    public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
     {
-        var testCases = testSteps.GroupBy(s => s.TestCaseName);
-        
         // execute test steps
+        _envVars["environment"] = environment;
         var context = await browser.NewContextAsync();
         var page = await context.NewPageAsync();
-        await page.SetViewportSizeAsync(1920, 1080);
+        //await page.SetViewportSizeAsync(1920, 1080);
         var testResults = new List<TestCaseResultParams>();
-        
-        foreach (var (testCase, index) in testCases.Select((tc, index) => (tc, index)))
+        var testCases = testSteps.Where(s => s.Control != "#").GroupBy(s => s.TestCaseName);
+        var cycleGroups = testSteps.Where(s => s.Cycle != string.Empty).GroupBy(s => s.Cycle);
+        var nonCycleGroups = testSteps.Where(s => s.Cycle == string.Empty).GroupBy(s => s.TestCaseName);
+
+        var cycleDatasets = JsonConvert.DeserializeObject<List<List<string>>>(testCases.First().First().CycleData);
+        var cycleIterations = cycleDatasets?.Count ?? -1;
+        var cycleIteration = 0;
+
+        foreach (var testCase in nonCycleGroups)
         {
             Console.WriteLine($"Executing Test Case: {testCase.Key}");
             var firstStep = testCase.First();
             var datasets = JsonConvert.DeserializeObject<List<List<string>>>(firstStep.Data);
             var iterations = datasets?.Count ?? -1;
             var iteration = 0;
-            
+
             if (page.IsClosed)
             {
                 await context.ClearCookiesAsync();
@@ -72,27 +77,33 @@ public class TestExecutor
                 await page.SetViewportSizeAsync(1920, 1080);
             }
 
-            if (firstStep.ActionOnObject == "exitcondition")
+            if (firstStep.ActionOnObject.ToLower().Replace(" ", "") == "exitcondition")
             {
                 if (_actions.TryGetValue(firstStep.ActionOnObject.ToLower().Replace(" ", ""), out var action))
                 {
-                    var res = await action.ExecuteAsync(page, firstStep, -1);
+                    var res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
                     while (!res)
                     {
-                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, -1);
-                        res = await action.ExecuteAsync(page, firstStep, -1);
+                        Task.Delay(TimeSpan.FromSeconds(15)).Wait();
+                        res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
                         Console.WriteLine($"EXIT CONDITION: {res}");
+
+                        if (!res)
+                        {
+                            await ExecuteTestStepsAsync(page, testCase.ToList(), response, -1);
+                        }
                     }
                 }
 
+                Console.WriteLine($"Moving to the next test case...");
                 continue;
             }
 
             if (datasets == null)
             {
-                await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration=-1);
+                await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration = -1);
             }
-            
+
             while (iterations > 0)
             {
                 Console.WriteLine($"Iteration: {iterations}");
@@ -101,30 +112,102 @@ public class TestExecutor
                 iteration += 1;
             }
         }
+
+        foreach (var cycleGroup in cycleGroups)
+        {
+            while (cycleIterations > 0)
+            {
+                testCases = cycleGroup.GroupBy(s => s.TestCaseName);
+                foreach (var testCase in testCases)
+                {
+
+                    Console.WriteLine($"Executing Test Case: {testCase.Key}");
+                    var firstStep = testCase.First();
+                    var datasets = JsonConvert.DeserializeObject<List<List<string>>>(firstStep.Data);
+                    var iterations = datasets?.Count ?? -1;
+
+                    var iteration = 0;
+
+
+                    if (page.IsClosed)
+                    {
+                        await context.ClearCookiesAsync();
+                        page = await context.NewPageAsync();
+                        await page.SetViewportSizeAsync(1920, 1080);
+                    }
+
+                    if (firstStep.ActionOnObject.ToLower().Replace(" ", "") == "exitcondition")
+                    {
+                        if (_actions.TryGetValue(firstStep.ActionOnObject.ToLower().Replace(" ", ""), out var action))
+                        {
+                            var res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
+                            while (!res)
+                            {
+                                Task.Delay(TimeSpan.FromSeconds(15)).Wait();
+                                res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
+                                Console.WriteLine($"EXIT CONDITION: {res}");
+
+                                if (!res)
+                                {
+                                    await ExecuteTestStepsAsync(page, testCase.ToList(), response, -1);
+                                }
+                            }
+                        }
+
+                        Console.WriteLine($"Moving to the next test case...");
+                        continue;
+                    }
+
+                    if (datasets == null && cycleDatasets == null)
+                    {
+                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration = -1);
+                    }
+
+                    if (cycleDatasets != null)
+                    {
+                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, cycleIteration);
+                    }
+
+                    while (iterations > 0)
+                    {
+                        Console.WriteLine($"Iteration: {iterations}");
+                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration);
+                        iterations -= 1;
+                        iteration += 1;
+                    }
+                }
+
+                cycleIterations -= 1;
+                cycleIteration += 1;
+            }
+        }
     }
-    
-    public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page, List<TestStepV1> testSteps, HttpResponse response, int iteration, int maxAttempts = 2)
+
+    public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page, List<TestStep> testSteps, HttpResponse response, int iteration, int maxAttempts = 2)
     {
         var stepsFailed = new List<(int, string)>();
         var failCount = 0;
         var stackTrace = new List<(int, string)>();
         var endLoop = false;
-        
+
         foreach (var (step, index) in testSteps.Select((step, index) => (step, index)))
         {
             try
             {
                 if (_actions.TryGetValue(step.ActionOnObject.ToLower().Replace(" ", ""), out var action))
                 {
-                    step.SequenceIndex = index+1;
+                    step.SequenceIndex = index + 1;
                     step.Comment = "{COMMENT}";
                     step.StartedDate = DateTime.UtcNow;
-                
-                    _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
+
+                    step.Object = InsertParams(step.Object);
+                    step.Value = InsertParams(step.Value);
+
+                    _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}, {step.Value}");
                     await _broadcaster.BroadcastLogAsync(
                         $"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
-                    
-                    bool success = await RetryActionAsync(async () =>
+
+                    var success = await RetryActionAsync(async () =>
                     {
                         var stepDelay = 0;
                         var timeout = 30000;
@@ -133,25 +216,25 @@ public class TestExecutor
                         {
                             stepDelay = delay;
                         }
-                        
+
                         await Task.Delay(TimeSpan.FromSeconds(stepDelay));
-                        
+
                         if (step.LocalTimeout * 1000 > timeout)
                         {
                             timeout = step.LocalTimeout * 1000;
                         }
-                        
+
                         page.SetDefaultTimeout(timeout);
-                        
-                        var res = await action.ExecuteAsync(page, step, iteration);
-                        
+
+                        var res = await action.ExecuteAsync(page, step, iteration, _envVars, _saveParameters);
+
                         _logger.LogInformation($"TEST RESULT: {res}");
                         await _broadcaster.BroadcastLogAsync($"TEST RESULT: {res}");
                         return res;
                     }, maxAttempts);
-                
+
                     step.CompletedDate = DateTime.UtcNow;
-                
+
                     if (!success)
                     {
                         // _logger.LogInformation($"FAILED: {step.Object}");
@@ -160,7 +243,7 @@ public class TestExecutor
                         stepsFailed.Add((step.SequenceIndex, step.TestDescription));
                         failCount++;
                         stackTrace.Add(
-                            (index+1, $"ACTION: [{step.ActionOnObject}] OBJECT: [{step.Object}], VALUE: [{step.Value}], COMMENT: [{step.Comments}]"));
+                            (index + 1, $"ACTION: [{step.ActionOnObject}] OBJECT: [{step.Object}], VALUE: [{step.Value}], COMMENT: [{step.Comments}]"));
                     }
                     else
                     {
@@ -173,10 +256,10 @@ public class TestExecutor
                 // _logger.LogInformation(e.ToString());
                 await _broadcaster.BroadcastLogAsync(e.ToString());
                 var indexedStackTrace = new List<(int, string)>();
-                
+
                 // return ("Failed", stepsFailed, new List<(int, string)>(index+1, e.StackTrace?.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)));
             }
-            
+
         }
         return failCount == 0 ? ("Passed", stepsFailed, stackTrace) : ("Failed", stepsFailed, stackTrace);
         async Task<bool> RetryActionAsync(Func<Task<bool>> action, int maxAttempts)
@@ -200,5 +283,27 @@ public class TestExecutor
 
             return false;
         }
+    }
+
+    // Replace parameters between "{" and "}" with the Saved Parameters. To be used with Object or Value string. 
+    public string InsertParams(string input)
+    {
+        string pattern = @"\{([^}]+)\}";
+
+        var matches = Regex.Matches(input, pattern);
+
+        foreach (Match match in matches)
+        {
+            string key = match.Groups[1].Value;
+            if (_saveParameters.ContainsKey(key))
+            {
+                input = input.Replace(match.Value, _saveParameters[key]);
+            }
+            else
+            {
+                Console.WriteLine($"Input parameter {key} does not exist in Save Parameters");
+            }
+        }
+        return input;
     }
 }

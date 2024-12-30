@@ -1,14 +1,12 @@
 ﻿using Microsoft.Playwright;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.Process.WebApi.Models;
-using AutomationTestingProgram.ModelsOLD;
 
-
-namespace AutomationTestingProgram.Backend.Actions;
+namespace AutomationTestingProgram.Actions;
 
 public class ChooseAllDDL : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration)
+    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         try
         {
@@ -18,14 +16,14 @@ public class ChooseAllDDL : IWebAction
             {
                 var isVisible = await selectElement.IsVisibleAsync();
                 var isEnabled = await selectElement.IsEnabledAsync();
-
+                
                 if (isVisible && isEnabled)
                 {
                     var selectValue = await selectElement.InputValueAsync();
-                    if (!string.IsNullOrEmpty(selectValue))
+                    if (string.IsNullOrEmpty(selectValue))
                     {
                         var options = await selectElement.QuerySelectorAllAsync("option");
-
+                
                         if (options.Count > 0)
                         {
                             var firstOption = await options[0].GetAttributeAsync("value");

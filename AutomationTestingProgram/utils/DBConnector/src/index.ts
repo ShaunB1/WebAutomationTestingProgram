@@ -17,7 +17,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/workers", workerRoutes);
 app.use("/api/completed_tasks", completedTaskRoutes);
 
-const PORT = parseInt(process.env.PORT || "5000", 10);
+const PORT = parseInt((process.env.PORT as string), 10) || 5000;
 const options = {
     key: fs.readFileSync("../private.key"),
     cert: fs.readFileSync("../certificate.crt"),

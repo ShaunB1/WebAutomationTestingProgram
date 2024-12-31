@@ -62,4 +62,20 @@ router.delete("/", async (req: Request, res: Response) => {
     }
 });
 
+router.patch("/", async (req: Request, res: Response) => {
+    const { draggable_id, name, description } = req.body;
+    console.log(req.body);
+
+    try {
+        const result = await pool.query(
+            "UPDATE tasks SET name = $1, description = $2 WHERE draggable_id = $3 RETURNING *",
+            [name, description, draggable_id]
+        );
+        res.json(result.rows);
+    } catch (e) {
+        console.log(e);
+        res.status(500).send("Server Error");
+    }
+})
+
 export default router;

@@ -27,4 +27,17 @@ router.post("/", async (req: Request, res: Response) => {
     }
 });
 
+router.delete("/", async (req: Request, res: Response) => {
+    try {
+        const { name } = req.body;
+        const result = await pool.query(
+            "DELETE FROM workers WHERE name = $1 RETURNING *",
+            [name]
+        );
+        res.json(result.rows);
+    } catch (e) {
+        
+    }
+});
+
 export default router;

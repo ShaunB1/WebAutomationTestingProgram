@@ -5,7 +5,7 @@ import {
     Box,
     Button, Collapse, Drawer, IconButton,
     List,
-    ListItem, Menu, MenuItem,
+    ListItem, Menu, MenuItem, Modal,
     TextField,
     Typography
 } from "@mui/material";
@@ -16,6 +16,10 @@ import "./Taskboard.css";
 import CheckIcon from "@mui/icons-material/Check";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import DOMPurify from "dompurify";
+import EditIcon from "@mui/icons-material/Edit";
 
 interface Task {
     draggableId: string;
@@ -36,7 +40,7 @@ const TaskBoard = () => {
     const [newTask, setNewTask] = useState<string>("");
     const [workerName, setWorkerName] = useState<string>("");
     const [workers, setWorkers] = useState<Worker[]>([]);
-    
+
     useEffect(() => {
         const fetchData = async () => {
             const [tasksResponse, workersResponse] = await Promise.all([
@@ -217,6 +221,7 @@ const TaskBoard = () => {
         setTasks(updatedTasks);
         setNewTask("");
         setDescription("");
+        setOpen(false);
 
         await fetch(`https://${import.meta.env.VITE_DB_HOST}/api/tasks`, {
             method: "POST",
@@ -268,7 +273,7 @@ const TaskBoard = () => {
             fetch(`https://${import.meta.env.VITE_DB_HOST}/api/completed_tasks`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: worker.name, task: task.name, start_date: task.startDate, end_date: endDate }),
+                body: JSON.stringify({ name: worker.name, task: task.name, description: task.description, start_date: task.startDate, end_date: endDate }),
             }),
             fetch(`https://${import.meta.env.VITE_DB_HOST}/api/tasks`, {
                 method: "DELETE",
@@ -299,8 +304,128 @@ const TaskBoard = () => {
         setTasks(prevTasks => prevTasks.filter(task => task.draggableId !== draggableId));
     }
 
+    const handleDeleteWorker = async (worker: Worker) => {
+        if (worker.tasks.length === 0) {
+            await fetch(`https://${import.meta.env.VITE_DB_HOST}/api/workers`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: worker.name })
+            });
+
+            setWorkers(prevWorkers => prevWorkers.filter(prevWorker => prevWorker.name !== worker.name));
+        } else {
+            alert("Please reassign existing tasks prior to deletion.")
+        }
+    }
+
+    const [open, setOpen] = useState(false)
+    const [openEdit, setOpenEdit] = useState(false);
+    const [editDescription, setEditDescription] = useState("");
+    const [editTaskName, setEditTaskName] = useState("");
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+
+    const handleOpen = () => setOpen(true);
+
+    const handleClose = () => setOpen(false);
+
+    const handleOpenEdit = (task: Task) => {
+        setSelectedTask(task);
+        setEditDescription(task.description);
+        setEditTaskName(task.name);
+        setOpenEdit(true);
+    }
+
+    const handleCloseEdit = () => setOpenEdit(false);
+
+    const handleEditTask = async (task: Task | null) => {
+        if (task) {
+            task.description = editDescription;
+            task.name = editTaskName;
+
+            await fetch(`https://${import.meta.env.VITE_DB_HOST}/api/tasks`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ draggable_id: task.draggableId, name: task.name, description: task.description }),
+            })
+
+            setOpenEdit(false);
+            setEditDescription("");
+            setEditTaskName("");
+        }
+    }
+
     return (
         <>
+            <Modal
+                open={openEdit}
+                onClose={handleCloseEdit}
+            >
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 1000,
+                        height: 600,
+                        boxShadow: 24,
+                        padding: 1,
+                        borderRadius: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        flexDirection: "column",
+                        background: "lightgray",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            overflow: "hidden",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            borderRadius: 1,
+                            background: "white",
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                width: "95%",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                                mt: 1,
+                                padding: "10px 0",
+                            }}
+                        >
+                            <Typography>Title</Typography>
+                            <TextField
+                                label="Task Name..."
+                                value={editTaskName}
+                                onChange={(e) => setEditTaskName(e.target.value)}
+                                sx={{ width: "95%" }}
+                            />
+                        </Box>
+                        <Box sx={{ width: "95%", height: "75%", mb: 2 }}>
+                            <Typography gutterBottom>Description</Typography>
+                            <ReactQuill
+                                theme="snow"
+                                placeholder="Description..."
+                                value={editDescription}
+                                onChange={(value) => setEditDescription(value)}
+                                style={{
+                                    width: "100%",
+                                    height: "80%",
+                                }}
+                            />
+                        </Box>
+                        <Box sx={{ width: "95%", display: "flex", justifyContent: "flex-end" }}>
+                            <Button variant="contained" onClick={() => handleEditTask(selectedTask)}>Edit Task</Button>
+                        </Box>
+                    </Box>
+                </Box>
+            </Modal>
             <Box sx={{
                 width: "100%",
                 mb: 2,
@@ -324,17 +449,74 @@ const TaskBoard = () => {
                     alignItems: "center",
                     gap: 2,
                 }}>
-                    <TextField
-                        label="Enter a task..."
-                        value={newTask}
-                        onChange={(e) => setNewTask(e.target.value)}
-                    />
-                    <TextField
-                        label="Enter a description..."
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                    />
-                    <Button variant="contained" onClick={handleAddTask}>Add Task</Button>
+                    <Button variant="contained" onClick={handleOpen}>Add Task</Button>
+                    <Modal open={open} onClose={handleClose}>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                width: 1000,
+                                height: 600,
+                                boxShadow: 24,
+                                padding: 1,
+                                borderRadius: 2,
+                                display: "flex",
+                                alignItems: "center",
+                                flexDirection: "column",
+                                background: "lightgray",
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    overflow: "hidden",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    borderRadius: 1,
+                                    background: "white",
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: "95%",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 2,
+                                        mt: 1,
+                                        padding: "10px 0",
+                                    }}
+                                >
+                                    <Typography>Title</Typography>
+                                    <TextField
+                                        label="Task Name..."
+                                        value={newTask}
+                                        onChange={(e) => setNewTask(e.target.value)}
+                                        sx={{ width: "95%" }}
+                                    />
+                                </Box>
+                                <Box sx={{ width: "95%", height: "75%", mb: 2 }}>
+                                    <Typography gutterBottom>Description</Typography>
+                                    <ReactQuill
+                                        theme="snow"
+                                        placeholder="Description..."
+                                        value={description}
+                                        onChange={(value) => setDescription(value)}
+                                        style={{
+                                            width: "100%",
+                                            height: "80%",
+                                        }}
+                                    />
+                                </Box>
+                                <Box sx={{ width: "95%", display: "flex", justifyContent: "flex-end" }}>
+                                    <Button variant="contained" onClick={handleAddTask}>Add Task</Button>
+                                </Box>
+                            </Box>
+                        </Box>
+                    </Modal>
                 </Box>
             </Box>
             <Box display="flex" sx={{ width: "100%", gap: 2}}>
@@ -362,6 +544,9 @@ const TaskBoard = () => {
                                     }}
                                 >
                                     {worker.name}
+                                    <IconButton onClick={() => handleDeleteWorker(worker)}>
+                                        <DeleteIcon sx={{ color: "#F95454" }}/>
+                                    </IconButton>
                                 </Typography>
                                 <Box sx={{ height: "95%", padding: 1 }}>
                                     <Droppable droppableId={worker.droppableId}>
@@ -407,10 +592,12 @@ const TaskBoard = () => {
                                                                                 </Typography>
                                                                             </AccordionSummary>
                                                                             <AccordionDetails>
-                                                                                <Typography>{task.description}</Typography>
+                                                                                <Typography
+                                                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+                                                                                />
                                                                             </AccordionDetails>
                                                                         </Accordion>
-                                                                        <Box display="flex" sx={{ alignItems: "center", gap: 2, ml: 2 }}>
+                                                                        <Box display="flex" sx={{ alignItems: "center", gap: 1, ml: 2 }}>
                                                                             <Typography style={{ width: "50px", display: "flex", justifyContent: "center", color: "#333333"}}>
                                                                                 {(() => {
                                                                                     const currentDate = new Date().toLocaleDateString("en-US", {
@@ -422,6 +609,9 @@ const TaskBoard = () => {
                                                                                     return `Day ${days}`
                                                                                 })()}
                                                                             </Typography>
+                                                                            <IconButton sx={{ m: 0, p: 1 }} onClick={() => handleOpenEdit(task)}>
+                                                                                <EditIcon />
+                                                                            </IconButton>
                                                                             <IconButton color="primary" onClick={() => handleCompleteTask(task, worker)}>
                                                                                 <CheckIcon />
                                                                             </IconButton>
@@ -493,6 +683,7 @@ const TaskBoard = () => {
                                                         <Accordion sx={{
                                                             width: "90%",
                                                             background: "#f0f0f0",
+                                                            mr: 1,
                                                         }}>
                                                             <AccordionSummary>
                                                                 <Typography
@@ -502,9 +693,14 @@ const TaskBoard = () => {
                                                                 </Typography>
                                                             </AccordionSummary>
                                                             <AccordionDetails>
-                                                                <Typography>{task.description}</Typography>
+                                                                <Typography
+                                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+                                                                />
                                                             </AccordionDetails>
                                                         </Accordion>
+                                                        <IconButton sx={{ m: 0, p: 1 }} onClick={() => handleOpenEdit(task)}>
+                                                            <EditIcon />
+                                                        </IconButton>
                                                         <IconButton onClick={() => handleDeleteTask(task.draggableId)}>
                                                             <DeleteIcon />
                                                         </IconButton>

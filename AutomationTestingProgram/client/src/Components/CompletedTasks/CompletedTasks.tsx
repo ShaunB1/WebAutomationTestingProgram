@@ -5,6 +5,7 @@ import {ColDef} from "ag-grid-community";
 
 interface Task {
     task: string,
+    description: string,
     start_date: string,
     end_date: string,
     days: string,
@@ -14,6 +15,7 @@ interface Task {
 const CompletedTasks = () => {
     const [colDefs] = useState<ColDef[]>([
         { field: "task", headerName: "Task", sortable: true, filter: true },
+        { field: "description", headerName: "Description", sortable: true, filter: true },
         { field: "start_date", headerName: "Start Date", sortable: true, filter: true },
         { field: "end_date", headerName: "End Date", sortable: true, filter: true },
         { field: "days", headerName: "Days Taken", sortable: true, filter: true },
@@ -28,7 +30,7 @@ const CompletedTasks = () => {
             const dbTasks = await completedTasks.json();
             dbTasks.forEach((task: any) => {
                 task.days = calculateDays(task.start_date, task.end_date);
-            }); 1290
+            });
 
             setCompletedTasks(dbTasks);
         }

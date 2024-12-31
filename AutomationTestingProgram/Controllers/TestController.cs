@@ -1,9 +1,6 @@
 using AutomationTestingProgram.Backend;
 using AutomationTestingProgram.Models;
-
-
-// using AutomationTestingProgram.Backend.Managers;
-using AutomationTestingProgram.ModelsOLD;
+using Microsoft.AspNetCore.Authorization;
 using AutomationTestingProgram.Services;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +17,7 @@ public class TestController : ControllerBase
     private readonly ILogger<TestController> _logger;
     //private readonly WebSocketLogBroadcaster _broadcaster;
 
-    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
+    public TestController(ILogger<TestController> logger)
     {
         //_azureDevOpsSettings = azureDevOpsSettings.Value;
         //_planHandler = new HandleTestPlan();
@@ -74,10 +71,11 @@ public class TestController : ControllerBase
     /// <summary>
     /// Receives api requests to retrieve all active requests.
     /// </summary>
+    [Authorize]
     [HttpPost("retrieve")]
     public async Task<IActionResult> GetActiveRequests() // Maybe add options for different types of retrievals??
     {
-        RetrievalRequest request = new RetrievalRequest();
+        RetrievalRequest request = new RetrievalRequest(HttpContext.User);
         return await HandleRequest<RetrievalRequest>(request);        
     }
 
@@ -85,6 +83,7 @@ public class TestController : ControllerBase
     /// <summary>
     /// Receives api requests to stop execution of another request
     /// </summary>
+    [Authorize]
     [HttpPost("stop")]
     public async Task<IActionResult> StopRequest([FromBody] CancellationRequestModel model)
     {
@@ -93,13 +92,14 @@ public class TestController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        CancellationRequest request = new CancellationRequest(model.ID);
+        CancellationRequest request = new CancellationRequest(HttpContext.User, model.ID);
         return await HandleRequest<CancellationRequest>(request);
     }
 
     /// <summary>
     /// Receives api requests to validate files
     /// </summary>
+    [Authorize]
     [HttpPost("validate")] 
     public async Task<IActionResult> ValidateRequest([FromForm] ValidationRequestModel model)
     {
@@ -108,13 +108,14 @@ public class TestController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        ValidationRequest request = new ValidationRequest(model.File);
+        ValidationRequest request = new ValidationRequest(HttpContext.User, model.File);
         return await HandleRequest<ValidationRequest>(request);
     }
-    
+
     /// <summary>
     /// Receives api requests to process files
     /// </summary>
+    [Authorize]
     [HttpPost("run")] 
     public async Task<IActionResult> RunRequest([FromForm] ProcessRequestModel model)
     {
@@ -123,7 +124,7 @@ public class TestController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        ProcessRequest request = new ProcessRequest(model.File, model.Type, model.Version, model.Environment);
+        ProcessRequest request = new ProcessRequest(HttpContext.User, model.File, model.Type, model.Version, model.Environment);
         return await HandleRequest<ProcessRequest>(request);
     }
 

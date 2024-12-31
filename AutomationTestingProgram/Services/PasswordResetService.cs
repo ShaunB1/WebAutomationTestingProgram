@@ -9,33 +9,44 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Graph.Models;
 using System.Text.Json;
 using System.Globalization;
+using AutomationTestingProgram.Models.Settings;
 
 namespace AutomationTestingProgram.Services
 {
     public class PasswordResetService
     {
-        private static readonly HttpClient _client;
-        private static readonly string _graphClientId;
-        private static readonly string _graphTenantId;
-        private static readonly string _graphEmail;
-        private static readonly string _graphPassword;
+        private readonly string _graphClientId;
+        private readonly string _graphTenantId;
+        private readonly string _graphEmail;
+        private readonly string _graphPassword;
+        private readonly HttpClient _httpClient;
 
-        static PasswordResetService()
+        AzureKeyVaultService _azureKeyVaultService;
+
+        /*
+         *  Concurrency issues -> what if resetting the same email at the same time??
+         *  To fix: Must add thread safety
+         *  
+         *  Complete PasswordResetService and AzureKeyVaultService once working on login.cs
+         * 
+         */
+
+        public PasswordResetService(IOptions<MicrosoftGraphSettings> microsoftGraphSettings, HttpClient httpClient, AzureKeyVaultService azureKeyVaultService)
         {
-            var graphConfig = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build();
-            _graphClientId = graphConfig["MicrosoftGraph:GraphClientId"];
-            _graphTenantId = graphConfig["MicrosoftGraph:GraphTenantId"];
-            _graphEmail = graphConfig["MicrosoftGraph:GraphEmail"];
-            _graphPassword = graphConfig["MicrosoftGraph:GraphPassword"];
+            var graphConfig = microsoftGraphSettings.Value;
+            _graphClientId = graphConfig.GraphClientId;
+            _graphTenantId = graphConfig.GraphTenantId;
+            _graphEmail = graphConfig.GraphEmail;
+            _graphPassword = graphConfig.GraphPassword;
 
-            _client = new HttpClient();
-            _client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
+            _httpClient = httpClient;
+
+            _azureKeyVaultService = azureKeyVaultService;
         }
 
-        public static async Task<(bool success, string message)> ResetPassword(string email)
+        public async Task<(bool success, string message)> ResetPassword(string email)
         {
-            var result = await AzureKeyVaultService.CheckAzureKVAccount(email);
-            Console.WriteLine($"{result.message}");
+            var result = await _azureKeyVaultService.CheckAzureKVAccount(email);
             if (!result.success)
             {
                 return (false, result.message);
@@ -43,7 +54,6 @@ namespace AutomationTestingProgram.Services
 
             string emailTime = DateTime.UtcNow.ToString("O");
             result = await RequestOTP(email);
-            Console.WriteLine($"{result.message}");
             if (!result.success)
             {
                 return (false, result.message);
@@ -67,7 +77,7 @@ namespace AutomationTestingProgram.Services
             {
                 return (false, result.message);
             }
-
+            Console.WriteLine($"Updating Azure Key Vault secret key for {secretName}");
             result = await AzureKeyVaultService.UpdateKvSecret(email);
             Console.WriteLine($"{result.message}");
             if (!result.success)

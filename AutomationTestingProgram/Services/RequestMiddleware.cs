@@ -1,11 +1,12 @@
-﻿namespace AutomationTestingProgram.Services
+﻿using AutomationTestingProgram.Backend;
+
+namespace AutomationTestingProgram.Services
 {
     /// <summary>
     /// Middleware used to limit total # of active requests
     /// </summary>
     public class RequestMiddleware
     {
-        private static readonly SemaphoreSlim _maxRequests = new SemaphoreSlim(10);
 
         private readonly RequestDelegate _next;
         private readonly ILogger<RequestMiddleware> _logger;
@@ -20,7 +21,7 @@
         // Handles request limiting
         public async Task InvokeAsync(HttpContext context)
         {
-            if (!_maxRequests.Wait(0))
+            if (!RequestHandler.TryAcquireRequestSlot())
             {
                 context.Response.StatusCode = 503;
                 _logger.LogError($"Too many requests. Please try again later.");
@@ -34,18 +35,8 @@
             }
             finally
             {
-                _maxRequests.Release();
+                RequestHandler.ReleaseRequestSlot();
             }
         }
-
-        public static async Task ReadyForTermination()
-        {
-            while (_maxRequests.CurrentCount != 10)
-            {
-                await Task.Delay(100);
-            }
-        }
-
-
     }
 }

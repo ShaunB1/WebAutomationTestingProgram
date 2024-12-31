@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Security.Claims;
+using System.Text.Json.Serialization;
 
 namespace AutomationTestingProgram.Backend
 {
@@ -11,6 +12,11 @@ namespace AutomationTestingProgram.Backend
         /// The unique identifier of the request
         /// </summary>
         string ID { get; }
+
+        /// <summary>
+        /// Reference to the User that sent the request
+        /// </summary>
+        ClaimsPrincipal User { get; }
 
         /// <summary>
         /// The TaskCompletionSource associated with this request.

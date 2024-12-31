@@ -15,38 +15,37 @@ namespace AutomationTestingProgram.Services.Logging
     public static class LogManager
     {
         /* INFO:
-         * - All logs kept in C Drive for Development Purposes.
-         * - There is a log.txt file inside each folder. This is where logs are written to, depending on level.
-         * - Inside each Request Folder, provided the request is a ProcessRequest, a link to the associated Context folder will be provided
-         * - Inside each Context Folder, a link to its associated request will be provided.
          * 
-         * - Browser, Context and Page all have incremental unique ids based on their parent. However, it does not guarantee unique id between children of different parents
-         * - Requests are always guaranteed to have a unique ID
+         * 1. All logs are kept in C Drive
+         * 2. Inside each folder, there is a log.txt file. All logs are written to these files.
+         * 3. Logs are written to their own log.txt file depending on level.
+         * 4. Two main folders: Requests and Browser. Links are used to connect between them if needed.
+         * 5. Requests are always guaranteed to have a unique ID
+         * 6. Browser, Context and Page all have incremental unique ids based on their parent.
+         *    However, it does not guarantee unique ids between different runs.
+         *    
          * 
          */
 
-        private static readonly string BasePath = @"C:\TestingLogs\_runs"; // Base Path (from C Drive)
+        // Major folders
+        private static readonly string BasePath = @"C:\AutomationTestingProgramLogs\_runs"; // Base Path (from C Drive)
         private static readonly string RequestPath = "_requests"; // Request folder. Each request gets its own folder.
         private static readonly string BrowserPath = "_browsers"; // Browser folder. Each browser gets its own folder.
         private static readonly string ContextPath = "_contexts"; // Context folder. Each context gets its own folder within a browser folder.
         private static readonly string PagePath = "_pages"; // Page folder. Each page gets its own folder within a context folder.
 
-        // Page Folder Directories
-        public static readonly string DownloadPath = "_downloads"; // The path to downloaded files for playwright automation
-        public static readonly string ResultsPath = "_results"; // Any result files produced throughout a test
-        public static readonly string ScreenShotPath = "_screenshots"; // Folder for screenshots
-        public static readonly string TempFilePath = "_tempFiles"; // The path for named downloaded files for playwright automation
+        // Subfolders within Page Folder
+        public static readonly string DownloadPath = "_downloads"; // The path for downloaded files during playwright automation.
+        public static readonly string ResultsPath = "_results"; // The path for any result files produced throughout a run
+        public static readonly string ScreenShotPath = "_screenshots"; // The path for screenshots during a run
+        public static readonly string TempFilePath = "_tempFiles"; // The path for named downloaded files during playwright automation
 
-        private static string RunFolderPath = ""; // Base Path (from C Drive) of the run folder-> Each run is unique
+        private static string RunFolderPath = ""; // Base Path (from C Drive) of the run folder-> Each run has unique id/name
 
+        // First semaphore used to update stringbuilder. Second to write to file.
         private static readonly ConcurrentDictionary<string, (SemaphoreSlim bufferSemaphore, SemaphoreSlim fileSemaphore, StringBuilder logMessage)> LogBuffer = new ConcurrentDictionary<string, (SemaphoreSlim, SemaphoreSlim, StringBuilder)>();
         private static readonly int MaxCharSize = 1000; // Used to limit # of I/O operations. Flush is used to ensure its written when something ends/closes.
 
-        /// <summary>
-        /// Initializes an instance of the <see cref="LogManager"/> class.
-        /// Instance manages all logs RUN-WIDE.
-        /// Only one instance should exist at a time.
-        /// </summary>
         static LogManager()
         {
             Initialize();
@@ -58,7 +57,7 @@ namespace AutomationTestingProgram.Services.Logging
         /// - Requests Directory
         /// - Browsers Directory
         /// </summary>
-        public static void Initialize()
+        private static void Initialize()
         {
             if (!Directory.Exists(BasePath))
             {
@@ -258,7 +257,8 @@ namespace AutomationTestingProgram.Services.Logging
         public static void Flush(string path, bool removeEntry = true, string message = "")
         {
             (SemaphoreSlim bufferSemaphore, SemaphoreSlim fileSemaphore, StringBuilder logMessage) logObject;
-            
+
+            // We dont remove entry for shutdown -> only case when flushing too early
             if (removeEntry)
             {
                 if (!LogBuffer.TryRemove(path, out logObject))
@@ -270,16 +270,15 @@ namespace AutomationTestingProgram.Services.Logging
             {
                 if (!LogBuffer.TryGetValue(path, out logObject))
                 {
-                    return; // Nothing to flush
+                    return;
                 }
             }
-
 
             SemaphoreSlim stringSemaphore = logObject.bufferSemaphore;
             stringSemaphore.Wait();
 
             StringBuilder logMessage = logObject.logMessage;
-            
+
             if (!string.IsNullOrEmpty(message))
             {
                 logMessage.AppendLine(message);
@@ -294,7 +293,7 @@ namespace AutomationTestingProgram.Services.Logging
 
                 SemaphoreSlim fileSemaphore = logObject.fileSemaphore;
                 fileSemaphore.Wait();
-                _ = WriteLog(path, fileMessage, fileSemaphore);
+                WriteLog(path, fileMessage, fileSemaphore);
             }
             else
             {
@@ -349,7 +348,7 @@ namespace AutomationTestingProgram.Services.Logging
 
                 SemaphoreSlim fileSemaphore = logObject.fileSemaphore;
                 fileSemaphore.Wait();
-                _ = WriteLog(path, fileMessage, fileSemaphore);
+                WriteLog(path, fileMessage, fileSemaphore);
             }
             else
             {
@@ -365,12 +364,12 @@ namespace AutomationTestingProgram.Services.Logging
         /// <param name="message">The message to write</param>
         /// <param name="semaphore">Semaphore to release once writing is complete</param>
         /// <returns></returns>
-        private static async Task WriteLog(string path, string message, SemaphoreSlim semaphore)
-        { // Should this be async? Then calling thread will continue...
+        private static void WriteLog(string path, string message, SemaphoreSlim semaphore)
+        { 
             try
             {
                 string filePath = Path.Combine(path, "log.txt"); // All folders have a log.txt created and appended to from here
-                await System.IO.File.AppendAllTextAsync(filePath, message);
+                System.IO.File.AppendAllText(filePath, message);
             }
             finally
             {

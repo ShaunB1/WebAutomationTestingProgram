@@ -1,4 +1,5 @@
-﻿using AutomationTestingProgram.Models;
+﻿using AutomationTestingProgram.Backend;
+using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,11 +12,38 @@ using System.Text.Json;
 [Route("api/[controller]")]
 public class EnvironmentsController : ControllerBase
 {
-    private readonly string _keychainFilePath;
+    private readonly ILogger<EnvironmentsController> _logger;
 
-    public EnvironmentsController()
+    public EnvironmentsController(ILogger<EnvironmentsController> logger)
     {
-        _keychainFilePath = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build()["KeychainFilePath"];
+        //_keychainFilePath = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build()["KeychainFilePath"];
+        _logger = logger;
+    }
+
+    private async Task<IActionResult> HandleRequest<TRequest>(TRequest request) where TRequest : IClientRequest
+    {
+        try
+        {
+            _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received.");
+
+            await RequestHandler.ProcessRequestAsync(request);
+
+            // If request succeeds
+            _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) successfully completed.");
+            return Ok(new { Message = $"{request.GetType().Name} (ID: {request.ID}) Complete.", Request = request });
+        }
+        catch (OperationCanceledException e)
+        {
+            // If request cancelled
+            _logger.LogWarning($"{request.GetType().Name} (ID: {request.ID}) cancelled.\nMessage: '{e.Message}'");
+            return StatusCode(500, new { Error = e.Message, Request = request });
+        }
+        catch (Exception e)
+        {
+            // If request fails
+            _logger.LogError($"{request.GetType().Name} (ID: {request.ID}) failed.\nError: '{e.Message}'");
+            return StatusCode(500, new { Error = e.Message, Request = request });
+        }
     }
 
     //[Authorize]

@@ -1,6 +1,7 @@
 ﻿using AutomationTestingProgram.Services.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 namespace AutomationTestingProgram.Backend
@@ -11,6 +12,8 @@ namespace AutomationTestingProgram.Backend
     public class ValidationRequest : IClientRequest
     {
         public string ID { get; }
+        [JsonIgnore]
+        public ClaimsPrincipal User { get; }
         [JsonIgnore]
         public TaskCompletionSource ResponseSource { get; }
         public State State { get; private set; }
@@ -38,9 +41,10 @@ namespace AutomationTestingProgram.Backend
         /// Instance is associated with a file.
         /// </summary>
         /// <param name="File">The file to be validated in the request.</param>
-        public ValidationRequest(IFormFile File)
+        public ValidationRequest(ClaimsPrincipal User, IFormFile File)
         {
             ID = Guid.NewGuid().ToString();
+            this.User = User;
             this.File = File;
             ResponseSource = new TaskCompletionSource();
             State = State.Received;

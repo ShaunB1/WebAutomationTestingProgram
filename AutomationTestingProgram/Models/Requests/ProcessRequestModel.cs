@@ -7,7 +7,7 @@ namespace AutomationTestingProgram.Models
     /// Used by API Requests to create a ProcessRequest
     /// </summary>
     public class ProcessRequestModel
-    {
+    {   
         [Required(ErrorMessage = "A file must be provided.")]
         [AllowedFileExtensions(new[] { ".xls", ".xlsx", ".xlsm", ".csv", ".txt", ".json" })]
         public IFormFile File { get; set; }

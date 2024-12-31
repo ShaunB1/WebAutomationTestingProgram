@@ -1,4 +1,5 @@
 ﻿using AutomationTestingProgram.Services.Logging;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 namespace AutomationTestingProgram.Backend
@@ -10,6 +11,8 @@ namespace AutomationTestingProgram.Backend
     public class CancellationRequest : IClientRequest
     {
         public string ID { get; }
+        [JsonIgnore]
+        public ClaimsPrincipal User { get; }
         [JsonIgnore]
         public TaskCompletionSource ResponseSource { get; }
         public State State { get; private set; }
@@ -42,9 +45,10 @@ namespace AutomationTestingProgram.Backend
         /// Instance is associated with the ID of the request to cancel.
         /// </summary>
         /// <param name="ID">The unique identifier of the request to cancel.</param>
-        public CancellationRequest(string ID)
+        public CancellationRequest(ClaimsPrincipal User, string ID)
         {
             this.ID = Guid.NewGuid().ToString();
+            this.User = User;
             CancelRequestID = ID;
             ResponseSource = new TaskCompletionSource();
             State = State.Received;
@@ -65,7 +69,7 @@ namespace AutomationTestingProgram.Backend
                     return; // DO nothing if already complete
 
                 if (responseType == State.Cancelled)
-                    throw new Exception("Cannot cancel a Cancellation Request!");
+                    throw new Exception("Cannot cancel this Request!");
 
                 State = responseType; // Set the State
 
@@ -166,8 +170,7 @@ namespace AutomationTestingProgram.Backend
                 this.SetStatus(State.Validating, $"Validating Request to Cancel");
                 this.CancelRequest = RequestHandler.RetrieveRequest(this.CancelRequestID);
 
-                if (this.CancelRequest is CancellationRequest)
-                    throw new Exception($"Request to cancel (ID: {this.CancelRequestID}) cannot be a CancellationRequest.");
+                this.ValidateRequestType(this.CancelRequest);
 
                 // Validate permissions to cancel request
                 this.SetStatus(State.Validating, $"Validating User Permissions - Request to Cancel");
@@ -178,6 +181,27 @@ namespace AutomationTestingProgram.Backend
                 this.SetStatus(State.Failure, "Validation Failure", e);
             }
 
+        }
+
+        /// <summary>
+        /// Validates whether the Request to Cancel is an appropriate type
+        /// </summary>
+        /// <param name="request"></param>
+        private void ValidateRequestType(IClientRequest request)
+        {
+            Type type = request.GetType();
+            
+            switch (type)
+            {
+                case Type when type == typeof(CancellationRequest):
+                    throw new Exception($"Request to cancel (ID: {this.CancelRequestID}) cannot be a CancellationRequest.");
+
+                case Type when type == typeof(KeyChainRetrievalRequest):
+                case Type when type == typeof(CancellationRequest):
+                    throw new Exception($"Request to cancel (ID: {this.CancelRequestID}) cannot be cancelled (invalid type).");
+
+
+            }
         }
 
         /// <summary>

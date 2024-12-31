@@ -1,4 +1,5 @@
 ﻿using AutomationTestingProgram.Services.Logging;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 namespace AutomationTestingProgram.Backend
@@ -9,6 +10,8 @@ namespace AutomationTestingProgram.Backend
     public class ProcessRequest : IClientRequest
     {
         public string ID { get; }
+        [JsonIgnore]
+        public ClaimsPrincipal User { get; }
         [JsonIgnore]
         public TaskCompletionSource ResponseSource { get; }
         public State State { get; private set; }
@@ -54,9 +57,10 @@ namespace AutomationTestingProgram.Backend
         /// <param name="File">The file to be processed in the request.</param>
         /// <param name="Type">The type of the browser (e.g., "Chrome", "Firefox") that will handle the request.</param>
         /// <param name="Version">The version of the browser (e.g., "91", "93") that will be used to process the request.</param>
-        public ProcessRequest(IFormFile File, string Type, string Version, string Environment)
+        public ProcessRequest(ClaimsPrincipal User, IFormFile File, string Type, string Version, string Environment)
         {
             ID = Guid.NewGuid().ToString();
+            this.User = User;
             this.File = File;
             BrowserType = Type;
             BrowserVersion = Version;

@@ -1,130 +1,221 @@
 using System.Net.WebSockets;
 using System.Text;
-using AutomationTestingProgram.ModelsOLD;
+using DotNetEnv;
+using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
 using AutomationTestingProgram.Services.Logging;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-
-/*
- * Maybe add request limiting here instead
- * 
- */
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication;
+using Newtonsoft.Json;
+using Microsoft.Identity.Web;
+using AutomationTestingProgram.Models.Settings;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
-builder.Logging.ClearProviders();
-builder.Logging.AddProvider(new CustomLoggerProvider(LogManager.GetRunFolderPath()));
+DotNetEnv.Env.Load();
 
-builder.Services.Configure<AzureDevOpsSettings>(builder.Configuration.GetSection("AzureDevops"));
-builder.Services.AddSingleton<WebSocketLogBroadcaster>();
-builder.Services.Configure<FormOptions>(options =>
-{
-    options.MultipartBodyLengthLimit = 15 * 1024 * 1024; // 15 MB limit total
-    options.ValueLengthLimit = 10 * 1024 * 1024; // 10 MB limit per individual file
-    options.MultipartHeadersCountLimit = 100; // Limit the number of headers
-});
-
-builder.Services.AddControllers();
-builder.Services.AddSingleton<CustomService>();
+ConfigureServices(builder);
 
 var app = builder.Build(); // represents configured web app
 
-var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-var myService = app.Services.GetRequiredService<CustomService>();
-lifetime.ApplicationStopping.Register(myService.OnApplicationStopping);
+ConfigureApplicationLifetime(app);
 
-if (!app.Environment.IsDevelopment())
+ConfigureMiddleware(app);
+
+app.Run();
+
+void ConfigureServices(WebApplicationBuilder builder)
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts(); // (HTTP Strict Transport Security) browsers interact with server only over HTTPS
+    // Authentication Setup (AAD)
+    ConfigureAuthentication(builder);
+
+    // Culture Setup
+    ConfigureCulture(builder);
+
+    // Logging Setup
+    ConfigureLogging(builder);
+
+    // Settings Setup
+    ConfigureAppSettings(builder);
+
+    // File Upload Setup
+    ConfigureFileUpload(builder);
+
+    // Services Setup
+    RegisterServices(builder);
+
+    // Controllers + other stuff
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+
 }
 
-app.UseHttpsRedirection(); // client and server comms encrypted
-app.UseStaticFiles(); // can request static assets for frontend
-
-app.UseMiddleware<RequestMiddleware>();
-
-app.UseWebSockets();
-
-app.Use(async (HttpContext context, Func<Task> next) =>
+void ConfigureAuthentication(WebApplicationBuilder builder)
 {
-    if (context.Request.Path == "/ws/logs" && context.WebSockets.IsWebSocketRequest)
+    // AAD Authentication
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+}
+
+void ConfigureCulture(WebApplicationBuilder builder)
+{
+    // Currently only en-CA
+    var cultureConfig = builder.Configuration.GetSection("Culture");
+    var defaultCulture = cultureConfig["Default"];
+    var supportedCultures = cultureConfig.GetValue<string[]>("Supported");
+    var supportedCultureInfo = supportedCultures!.Select(c => new CultureInfo(c)).ToList();
+
+    builder.Services.Configure<RequestLocalizationOptions>(options =>
     {
-        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        var broadcaster = app.Services.GetRequiredService<WebSocketLogBroadcaster>();
+        options.DefaultRequestCulture = new RequestCulture(defaultCulture);
+        options.SupportedCultures = supportedCultureInfo;
+        options.SupportedUICultures = supportedCultureInfo;
 
-        broadcaster.AddClient(webSocket);
+        options.RequestCultureProviders.Insert(0, new AcceptLanguageHeaderRequestCultureProvider());
+    });
+}
 
-        try
-        {
-            var buffer = new byte[1024 * 4];
+void ConfigureLogging(WebApplicationBuilder builder)
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddProvider(new CustomLoggerProvider(LogManager.GetRunFolderPath()));
+}
 
-            while (webSocket.State == WebSocketState.Open)
-            {
-                Console.WriteLine("WebSocket Opened");
-                await Task.Delay(1000);
-                
-                var res = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                if (res.MessageType == WebSocketMessageType.Close)
-                {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by client.", CancellationToken.None);
-                }
-            }
-            Console.WriteLine("WebSocket Closed");
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-        finally
-        {
-            broadcaster.RemoveClient(webSocket);
-        }
-    }
-    else if (context.Request.Path == "/ws/desktop" && context.WebSockets.IsWebSocketRequest)
+void ConfigureAppSettings(WebApplicationBuilder builder)
+{
+    // Configuring models with data from appsettings.json
+    builder.Services.Configure<AzureDevOpsSettings>(builder.Configuration.GetSection("AzureDevops"));
+    builder.Services.Configure<AzureKeyVaultSettings>(builder.Configuration.GetSection("AzureKeyVault"));
+    builder.Services.Configure<MicrosoftGraphSettings>(builder.Configuration.GetSection("MicrosoftGraph"));
+    builder.Services.Configure<RequestSettings>(builder.Configuration.GetSection("Request"));
+    builder.Services.Configure<BrowserSettings>(builder.Configuration.GetSection("Browser"));
+    builder.Services.Configure<ContextSettings>(builder.Configuration.GetSection("Context"));
+    builder.Services.Configure<PageSettings>(builder.Configuration.GetSection("Page"));
+}
+
+void ConfigureFileUpload(WebApplicationBuilder builder)
+{
+    builder.Services.Configure<FormOptions>(options =>
     {
-        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        Console.WriteLine("Electron WebSocket connected.");
+        options.MultipartBodyLengthLimit = 15 * 1024 * 1024; // 15 MB limit total
+        options.ValueLengthLimit = 10 * 1024 * 1024; // 10 MB limit per individual file
+        options.MultipartHeadersCountLimit = 100; // Limit the number of headers
+    });
+}
 
-        try
-        {
-            var buffer = new byte[1024 * 4];
+void RegisterServices(WebApplicationBuilder builder)
+{
+    builder.Services.AddSingleton<WebSocketLogBroadcaster>();
+    builder.Services.AddHttpClient("HttpClient", client =>
+    {
+        client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.Add("User-Agent", "WebAutomationTestingFramework/1.0");
+    });
+    builder.Services.AddSingleton<AzureKeyVaultService>();
+    builder.Services.AddSingleton<PasswordResetService>();
 
-            while (webSocket.State == WebSocketState.Open)
-            {
-                var res = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+    builder.Services.AddSingleton<ShutDownService>();
+}
 
-                if (res.MessageType == WebSocketMessageType.Text || res.MessageType == WebSocketMessageType.Binary)
-                {
-                    var responseMsg = Encoding.UTF8.GetBytes("Message received by ASP.NET server.");
-                    await webSocket.SendAsync(new ArraySegment<byte>(responseMsg), WebSocketMessageType.Text, true, CancellationToken.None);
-                }
-                
-                if (res.MessageType == WebSocketMessageType.Close)
-                {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by client.", CancellationToken.None);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
+void ConfigureApplicationLifetime(WebApplication app)
+{
+    var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+    var myService = app.Services.GetRequiredService<ShutDownService>();
+    lifetime.ApplicationStopping.Register(myService.OnApplicationStopping);
+}
+
+void ConfigureMiddleware(WebApplication app)
+{
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseExceptionHandler("/Home/Error");
+        app.UseHsts(); // (HTTP Strict Transport Security) browsers interact with server only over HTTPS
     }
     else
     {
-        await next();
+        app.UseDeveloperExceptionPage();
+        app.UseSwagger();
+        app.UseSwaggerUI();
     }
-});
 
-app.UseRouting(); // adds routing capabilities
+    app.UseHttpsRedirection(); // client and server comms encrypted
+    app.UseStaticFiles(); // can request static assets for frontend
 
-app.MapControllers();
+    app.UseRequestLocalization();
+    app.UseMiddleware<RequestMiddleware>();
 
-app.MapFallbackToFile("index.html"); // fallback to index.html for SPA routes
+    app.UseWebSockets();
+    WebSocketHandling(app);
 
-app.Run();
+    app.UseRouting(); // adds routing capabilities
+
+    app.UseAuthentication(); // Add authentication middleware
+    app.UseAuthorization(); // Add authorization middleware
+
+    app.MapControllers();
+
+    app.MapFallbackToFile("index.html"); // fallback to index.html for SPA routes
+}
+
+void WebSocketHandling(WebApplication app)
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.WebSockets.IsWebSocketRequest)
+        {
+            var path = context.Request.Path;
+            var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+            if (path == "/ws/logs")
+            {
+                await HandleLogsCommunication(webSocket, context);
+            }
+            else
+            {
+                await webSocket.CloseAsync(WebSocketCloseStatus.ProtocolError, "Invalid endpoint.", CancellationToken.None);
+            }
+        }
+        else
+        {
+            await next();
+        }
+    });
+}
+
+async Task HandleLogsCommunication(WebSocket webSocket, HttpContext context)
+{
+    var broadcaster = context.RequestServices.GetRequiredService<WebSocketLogBroadcaster>();
+    broadcaster.AddClient(webSocket);
+
+    try
+    {
+        var buffer = new byte[1024 * 4];
+
+        while (webSocket.State == WebSocketState.Open)
+        {
+            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+            if (result.MessageType == WebSocketMessageType.Close)
+            {
+                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by client.", CancellationToken.None);
+            }
+            else
+            {
+                var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                Console.WriteLine($"Received from logs client: {message}");
+            }
+        }
+    }
+    catch (Exception exception)
+    {
+        Console.WriteLine(exception);
+        throw;
+    }
+}

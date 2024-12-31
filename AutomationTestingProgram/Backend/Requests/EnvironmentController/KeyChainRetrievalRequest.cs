@@ -1,15 +1,17 @@
 ﻿using AutomationTestingProgram.Services.Logging;
-using Microsoft.Playwright;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 namespace AutomationTestingProgram.Backend
-{   
+{
     /// <summary>
-    /// Request to retrieve a list of all active requests
+    /// Request to process a test file using playwright
     /// </summary>
-    public class RetrievalRequest : IClientRequest
+    public class KeyChainRetrievalRequest : IClientRequest
     {
         public string ID { get; }
+        [JsonIgnore]
+        public ClaimsPrincipal User { get; }
         [JsonIgnore]
         public TaskCompletionSource ResponseSource { get; }
         public State State { get; private set; }
@@ -24,14 +26,16 @@ namespace AutomationTestingProgram.Backend
         /// The Logger object associated with this request
         /// </summary>
         [JsonIgnore]
-        public ILogger<RetrievalRequest> Logger { get; }
+        public ILogger<ProcessRequest> Logger { get; }
+
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="RetrievalRequest"/> class.
+        /// Initializes a new instance of the <see cref="KeyChainRetrievalRequest"/> class.
         /// </summary>
-        public RetrievalRequest() // Can maybe add option to retrieve only a certain # of requests (based on location??)
+        public KeyChainRetrievalRequest(ClaimsPrincipal User)
         {
             ID = Guid.NewGuid().ToString();
+            this.User = User;
             ResponseSource = new TaskCompletionSource();
             State = State.Received;
             StateLock = new object();
@@ -40,7 +44,7 @@ namespace AutomationTestingProgram.Backend
             FolderPath = LogManager.CreateRequestFolder(ID);
 
             CustomLoggerProvider provider = new CustomLoggerProvider(FolderPath);
-            Logger = provider.CreateLogger<RetrievalRequest>()!;
+            Logger = provider.CreateLogger<ProcessRequest>()!;
         }
 
         public void SetStatus(State responseType, string message = "", Exception? e = null)
@@ -50,6 +54,9 @@ namespace AutomationTestingProgram.Backend
 
                 if (ResponseSource!.Task.IsCompleted)
                     return; // DO nothing if already complete
+
+                if (responseType == State.Cancelled)
+                    throw new Exception("Cannot cancel this Request!");
 
                 State = responseType; // Set the State
 
@@ -92,45 +99,26 @@ namespace AutomationTestingProgram.Backend
             }
         }
 
-        public string GetStatus()
-        {
-            lock (StateLock)
-            {
-                if (string.IsNullOrEmpty(Message))
-                {
-                    return $"ID: {ID} | State: {State.ToString()}";
-                }
-                else
-                {
-                    return $"ID: {ID} | State: {State.ToString()} | Message: {Message}";
-                }
-            }
-        }
-
         public async Task IsCancellationRequested()
         {
-            if (this.CancellationTokenSource.IsCancellationRequested)
-            {
-                this.SetStatus(State.Cancelled, "Request Cancelled");
-                await this.ResponseSource.Task;
-            }
+            await Task.CompletedTask;
         }
 
         public async Task Process()
         {
-            /*
-             * Requests can only be completed either in Validate or Execute.
-             * If Validate, we no longer perform execute.
-             */
-
             try
             {
                 await this.Validate();
 
-                if (this.ResponseSource!.Task.IsCompleted)
+                if (this.ResponseSource!.Task.IsCompleted) // Skip Execute if Validate completed request
                     return;
 
                 await this.Execute();
+            }
+            catch (Exception e) // Unexpected exception.
+            {
+                Logger.LogError("Unexpected exception occured.");
+                this.SetStatus(State.Failure, "Unexpected exception", e);
             }
             finally
             {
@@ -140,7 +128,7 @@ namespace AutomationTestingProgram.Backend
         }
 
         /// <summary>
-        /// Validate the <see cref="RetrievalRequest"/>.
+        /// Validate the <see cref="KeyChainRetrievalRequest"/>.
         /// View inner documentation on specifics.  
         /// </summary>
         private async Task Validate()
@@ -149,16 +137,30 @@ namespace AutomationTestingProgram.Backend
              * VALIDATION:
              * - User has permission to access application
              * - User has permission to access application section (requets sent from sections in the application)
+             * - Values are all valid:
+             *      -> Environment is valid
+             *      -> File is valid 
              */
 
             try
             {
-                Logger.LogInformation($"Validating Retrieval Request (ID: {ID})");
+                Logger.LogInformation($"Validating Process Request (ID: {ID}, BrowserType: {BrowserType}," +
+                    $" BrowserVersion: {BrowserVersion}, Environment: {Environment})");
 
                 await this.IsCancellationRequested();
 
                 // Validate permission to access application
                 this.SetStatus(State.Validating, $"Validating User Permissions - Application");
+
+                await this.IsCancellationRequested();
+
+                // Validate Environment
+                this.SetStatus(State.Validating, $"Validating Environment");
+
+                await this.IsCancellationRequested();
+
+                // Validate File
+                this.SetStatus(State.Validating, $"Validating File");
 
             }
             catch (Exception e)
@@ -168,26 +170,29 @@ namespace AutomationTestingProgram.Backend
         }
 
         /// <summary>
-        /// Execute the <see cref="RetrievalRequest"/>.
+        /// Execute the <see cref="ProcessRequest"/>.
         /// View inner documentation on specifics.  
         /// </summary>
         private async Task Execute()
         {
             try
             {
-                Logger.LogInformation($"Processing Retrieval Request (ID: {ID})");
+                Logger.LogInformation($"Processing Process Request (ID: {ID}, BrowserType: {BrowserType}," +
+                    $" BrowserVersion: {BrowserVersion}, Environment: {Environment})");
 
                 await this.IsCancellationRequested();
 
                 for (int i = 0; i <= 5; i++)
                 {
                     // Check if cancellation requested
+
                     await this.IsCancellationRequested();
                     await Task.Delay(20000);
                     Logger.LogInformation($"{i}");
                 }
 
-                this.SetStatus(State.Completed, $"Retrieval Request (ID: {ID}) completed successfully");
+                this.SetStatus(State.Completed, $"Process Request (ID: {ID}, BrowserType: {BrowserType}," +
+                    $" BrowserVersion: {BrowserVersion}, Environment: {Environment}) completed successfully");
             }
             catch (Exception e)
             {
@@ -200,7 +205,7 @@ namespace AutomationTestingProgram.Backend
         /// </summary>
         private void Flush()
         {
-            if (Logger is CustomLogger<RetrievalRequest> customLogger)
+            if (Logger is CustomLogger<ProcessRequest> customLogger)
             {
                 customLogger.Flush();
             }

@@ -103,8 +103,9 @@ public class Login : IWebAction
                         Console.WriteLine("Login failed - Attempted to reset password but failed");
                         return false;
                     }
-                    
+
                     // The new password is updated in Azure Key Vault, fetch it
+                    Console.WriteLine($"Getting Azure Key Vault secret key for {secretName}");
                     result = await AzureKeyVaultService.GetKvSecret(username);
                     if (result.success)
                     {

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -79,8 +79,28 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="StaticFiles\environment_list.csv" CopyToOutputDirectory="Always" />
+	  <None Remove="Backend\Helpers\environment_list.csv" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- This copies the file without the folder structure. -->
+		<None Include="Backend\Helpers\environment_list.csv">
+				<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+				<TargetPath>environment_list.csv</TargetPath>
+		</None>
 		<Content Include="StaticFiles\KeychainAccounts2023.xls" CopyToOutputDirectory="Always" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<COMReference Include="IWshRuntimeLibrary">
+			<WrapperTool>tlbimp</WrapperTool>
+			<VersionMinor>0</VersionMinor>
+			<VersionMajor>1</VersionMajor>
+			<Guid>f935dc20-1cf0-11d0-adb9-00c04fd58a0b</Guid>
+			<Lcid>0</Lcid>
+			<Isolated>false</Isolated>
+			<EmbedInteropTypes>true</EmbedInteropTypes>
+		</COMReference>
 	</ItemGroup>
 
 </Project>

@@ -5,7 +5,7 @@ import {
     Box,
     Button, Collapse, Drawer, IconButton,
     List,
-    ListItem, Menu, MenuItem, Modal,
+    ListItem, Menu, MenuItem, Modal, Select,
     TextField,
     Typography
 } from "@mui/material";
@@ -36,20 +36,29 @@ interface Worker {
 
 const TaskBoard = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [socket, setSocket] = useState<any>(`ws://${import.meta.env.VITE_HOST}/ws/tasks`);
     const [newTask, setNewTask] = useState<string>("");
     const [workerName, setWorkerName] = useState<string>("");
     const [workers, setWorkers] = useState<Worker[]>([]);
+    const [completedTasks, setCompletedTasks] = useState<Worker[]>([]);
 
     useEffect(() => {
         const fetchData = async () => {
-            const [tasksResponse, workersResponse] = await Promise.all([
+            const [tasksResponse, workersResponse, completedTasksResponse] = await Promise.all([
                 fetch(`https://${import.meta.env.VITE_DB_HOST}/api/tasks`),
                 fetch(`https://${import.meta.env.VITE_DB_HOST}/api/workers`),
+                fetch(`https://${import.meta.env.VITE_DB_HOST}/api/completed_tasks`),
             ])
 
             const dbTasks: any[] = await tasksResponse.json();
             const dbWorkers: any[] = await workersResponse.json();
+            const dbCompletedTasks: any[] = await completedTasksResponse.json();
+
+            // const workersCompletedTasks = dbCompletedTasks.reduce((map, item) => {
+            //     const groupKey = String(item[key]);
+            //     if () {
+            //
+            //     }
+            // });
 
             const savedWorkers: Worker[] = []
             dbWorkers.forEach(dbWorker => {
@@ -354,6 +363,19 @@ const TaskBoard = () => {
         }
     }
 
+    const currentDate = new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
+    const workersWithDays = workers.map((worker) => ({
+        ...worker,
+        tasks: worker.tasks.map((task) => ({
+            ...task,
+            days: calculateDays(task.startDate, currentDate),
+        })),
+    }));
+
     return (
         <>
             <Modal
@@ -529,27 +551,47 @@ const TaskBoard = () => {
                                 width: "45%",
                                 background: "#F5F5F5",
                             }}>
-                                <Typography
-                                    variant="h6"
-                                    color="textSecondary"
+                                <Box
                                     sx={{
-                                        width: "100%",
                                         display: "flex",
-                                        justifyContent: "center",
-                                        alignItems: "center",
+                                        width: "100%",
+                                        height: "40px",
                                         background: "#313d4f",
                                         borderRadius: 1,
-                                        height: "40px",
-                                        color: "white",
+                                        justifyContent: "center",
+                                        alignItems: "center",
                                     }}
                                 >
-                                    {worker.name}
+                                    <Typography
+                                        variant="h6"
+                                        color="textSecondary"
+                                        sx={{
+                                            width: "100%",
+                                            color: "white",
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        {worker.name}
+                                    </Typography>
+                                    <Box
+                                        sx={{
+                                            width: "100%",
+                                            height: "80%",
+                                            background: "white",
+                                            borderRadius: 1,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-evenly",
+                                        }}
+                                    >
+                                        <Typography sx={{ color: "black" }}>{`Tasks: ${worker.tasks.length}`}</Typography>
+                                    </Box>
                                     <IconButton onClick={() => handleDeleteWorker(worker)}>
                                         <DeleteIcon sx={{ color: "#F95454" }}/>
                                     </IconButton>
-                                </Typography>
-                                <Box sx={{ height: "95%", padding: 1 }}>
-                                    <Droppable droppableId={worker.droppableId}>
+                                </Box>
+                                <Box sx={{height: "95%", padding: 1}}>
+                                <Droppable droppableId={worker.droppableId}>
                                         {(provided: any): any => (
                                             <Box display="flex" sx={{ height: "90%", flexDirection: "column", alignItems: "space-between", justifyContent: "space-between" }}>
                                                 <List
@@ -557,7 +599,7 @@ const TaskBoard = () => {
                                                     ref={provided.innerRef}
                                                     style={{listStyle: "none", padding: 0, width: "100%", height: "100%", overflow: "auto"}}
                                                 >
-                                                    {workers[index].tasks?.map((task: any, index: any) => (
+                                                    {workersWithDays[index].tasks?.map((task: any, index: any) => (
                                                         <Draggable key={task.draggableId} draggableId={task.draggableId} index={index}>
                                                             {(provided) => (
                                                                 <ListItem
@@ -567,7 +609,12 @@ const TaskBoard = () => {
                                                                     style={{
                                                                         padding: '10px 0px',
                                                                         margin: '4px 0',
-                                                                        backgroundColor: '#C4DAD2',
+                                                                        backgroundColor:
+                                                                            task.days <= 4 ? '#C4DAD2' :
+                                                                            task.days >= 5 && task.days <= 6 ? "#F6995C" :
+                                                                            task.days === 7 ? "#FF0000" :
+                                                                            task.days > 7 ? "black" : "purple"
+                                                                        ,
                                                                         borderRadius: '4px',
                                                                         ...provided.draggableProps.style,
                                                                     }}
@@ -598,19 +645,18 @@ const TaskBoard = () => {
                                                                             </AccordionDetails>
                                                                         </Accordion>
                                                                         <Box display="flex" sx={{ alignItems: "center", gap: 1, ml: 2 }}>
-                                                                            <Typography style={{ width: "50px", display: "flex", justifyContent: "center", color: "#333333"}}>
-                                                                                {(() => {
-                                                                                    const currentDate = new Date().toLocaleDateString("en-US", {
-                                                                                        year: "numeric",
-                                                                                        month: "long",
-                                                                                        day: "numeric",
-                                                                                    });
-                                                                                    const days = calculateDays(task.startDate, currentDate);
-                                                                                    return `Day ${days}`
-                                                                                })()}
+                                                                            <Typography style={{
+                                                                                width: "50px",
+                                                                                display: "flex",
+                                                                                justifyContent: "center",
+                                                                                color: task.days > 7 ? "white" : "#333333",
+                                                                            }}>
+                                                                                {`Day ${task.days}`}
                                                                             </Typography>
                                                                             <IconButton sx={{ m: 0, p: 1 }} onClick={() => handleOpenEdit(task)}>
-                                                                                <EditIcon />
+                                                                                <EditIcon sx={{
+                                                                                    color: task.days > 7 ? "white" : "default" }}
+                                                                                />
                                                                             </IconButton>
                                                                             <IconButton color="primary" onClick={() => handleCompleteTask(task, worker)}>
                                                                                 <CheckIcon />

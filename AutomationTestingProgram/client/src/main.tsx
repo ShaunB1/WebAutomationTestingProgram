@@ -1,4 +1,3 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./Components/App.tsx";
 
@@ -10,8 +9,6 @@ const msalInstance = new PublicClientApplication(msalConfig);
 
 createRoot(document.getElementById("root")!).render(
   <MsalProvider instance={msalInstance}>
-    <StrictMode>
       <App />
-    </StrictMode>
   </MsalProvider>
 );

@@ -48,6 +48,12 @@ const NavBar = () => {
                         <Button component={Link} to={"/pivottable"} color="inherit" className="button">
                             Pivot Table
                         </Button>
+                        <Button component={Link} to={"/taskboard"} color="inherit" className="button">
+                            Tasks
+                        </Button>
+                        <Button component={Link} to={"/completedtasks"} color="inherit" className="button">
+                            Completed Tasks
+                        </Button>
                         <Button onClick={handleLogout} color="inherit" className="button">
                             Logout
                         </Button>

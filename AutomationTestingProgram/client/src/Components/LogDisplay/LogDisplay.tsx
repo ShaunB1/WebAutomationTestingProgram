@@ -7,7 +7,7 @@ const LogDisplay = () => {
     const host = process.env.NODE_ENV === "production" ? process.env.VITE_HOST : process.env.LOCAL_HOST;
 
     useEffect(() => {
-        const socket = new WebSocket(`ws://${host}/ws/logs`);
+        const socket = new WebSocket(`wss://${host}/ws/logs`);
         console.log(`WS Host: ${host}`);
         
         socket.onopen = (event) => {

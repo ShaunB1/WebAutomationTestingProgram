@@ -6,6 +6,8 @@ import PivotTable from "./PivotTable/PivotTable.tsx";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { MsalAuthenticationTemplate } from "@azure/msal-react";
 import { InteractionType } from "@azure/msal-browser";
+import TaskBoard from "./TaskBoard/TaskBoard.tsx";
+import CompletedTasks from "./CompletedTasks/CompletedTasks.tsx";
 
 function App() {
     // Kenny implemented this fallback element but this can be removed/updated
@@ -13,7 +15,7 @@ function App() {
     /*
     Fallback element first determines if requested URL is signin-oidc, and if not then
     catches all requests and reroutes it back to home page.
-  
+
     /signin-oidc is the default redirect for Azure AAD to post the login token for
     the authenticated user.
     */
@@ -38,11 +40,29 @@ function App() {
                                 }
                             />
                             <Route
-                                path="pivottable"
+                                path="/pivottable"
                                 element={
                                     <MsalAuthenticationTemplate
                                         interactionType={InteractionType.Redirect}>
                                         <PivotTable />
+                                    </MsalAuthenticationTemplate>
+                                }
+                            />
+                            <Route
+                                path="/taskboard"
+                                element={
+                                    <MsalAuthenticationTemplate
+                                        interactionType={InteractionType.Redirect}>
+                                        <TaskBoard />
+                                    </MsalAuthenticationTemplate>
+                                }
+                            />
+                            <Route
+                                path="/completedtasks"
+                                element={
+                                    <MsalAuthenticationTemplate
+                                        interactionType={InteractionType.Redirect}>
+                                        <CompletedTasks />
                                     </MsalAuthenticationTemplate>
                                 }
                             />

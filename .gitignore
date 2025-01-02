@@ -90,6 +90,8 @@ node_modules/
 *.orig
 *.gitignore.swp
 
-
 .vs/
 .idea/
+
+dist/
+wwwroot/

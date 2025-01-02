@@ -24,6 +24,20 @@ const NavBar = () => {
     // TSX conditionally renders AuthenticatedTemplate if user is logged in,
     // and Unauthenticated template otherwise.
 
+    const handleDownloadExtension = () => {
+        try {
+            const url = `${import.meta.env.BASE_URL}manifest.zip`;
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "manifest.zip");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
     return (
         <>
             <AppBar position="fixed">
@@ -57,6 +71,7 @@ const NavBar = () => {
                         <Button onClick={handleLogout} color="inherit" className="button">
                             Logout
                         </Button>
+                        <Button color="inherit" className="button" onClick={handleDownloadExtension}>Download Extension</Button>
                     </Toolbar>
                 </AuthenticatedTemplate>
                 <UnauthenticatedTemplate>

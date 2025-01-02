@@ -8,6 +8,7 @@ import { MsalAuthenticationTemplate } from "@azure/msal-react";
 import { InteractionType } from "@azure/msal-browser";
 import TaskBoard from "./TaskBoard/TaskBoard.tsx";
 import CompletedTasks from "./CompletedTasks/CompletedTasks.tsx";
+import ChatBot from "./ChatBot/ChatBot.tsx";
 
 function App() {
     // Kenny implemented this fallback element but this can be removed/updated

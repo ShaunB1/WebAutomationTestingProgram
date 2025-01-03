@@ -1,4 +1,4 @@
-namespace AutomationTestingProgram.Models;
+namespace AutomationTestingProgram.Models.Settings;
 
 public class AzureDevOpsSettings
 {

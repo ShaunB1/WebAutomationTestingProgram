@@ -1,3 +1,4 @@
+using AutomationTestingProgram.Models.Exceptions;
 using AutomationTestingProgram.Services;
 using Microsoft.Graph.Reports.GetPrinterArchivedPrintJobsWithPrinterIdWithStartDateTimeWithEndDateTime;
 using Microsoft.Playwright;
@@ -6,7 +7,7 @@ namespace AutomationTestingProgram.Actions;
 
 public class Login : IWebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public async Task<bool> ExecuteAsync(IPage page, TestStepV1 step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         string username = step.Object;
         string password = step.Value;
@@ -14,7 +15,7 @@ public class Login : IWebAction
         // If password is blank, attempt to get from Azure Key Vault
         if (password == string.Empty)
         {
-            var result = await AzureKeyVaultService.GetKvSecret(username);
+            /*var result = await AzureKeyVaultService.GetKvSecret(username);
             if (result.success)
             {
                 Console.WriteLine($"Password for {username} successfully fetched from Azure Key Vault, proceeding with Login");
@@ -24,7 +25,7 @@ public class Login : IWebAction
             {
                 Console.WriteLine("Login step failed - Password could not be fetched from Azure Key Vault");
                 return false;
-            }
+            }*/
         }
 
         try
@@ -46,7 +47,7 @@ public class Login : IWebAction
             if (step.Object.Contains("ontario.ca"))
             {
                 Console.WriteLine("Login via AAD.");
-                url = CSVEnvironmentGetter.GetAdURL(environment);
+               /* url = CSVEnvironmentGetter.GetAdURL(environment);
                 try
                 {
                     await page.GotoAsync(url);
@@ -54,7 +55,7 @@ public class Login : IWebAction
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Failed to navigate to url {url}: {ex.Message}");
-                }
+                }*/
 
                 ILocator usernameInput = page.Locator("//*[@id=\"i0116\"]");
                 ILocator passwordInput = page.Locator("//*[@id=\"i0118\"]");
@@ -69,7 +70,7 @@ public class Login : IWebAction
             else if (step.Object.Contains("ontarioemail.ca"))
             {
                 Console.WriteLine("Login via OPS BPS.");
-                url = CSVEnvironmentGetter.GetOpsBpsURL(environment);
+                /*url = CSVEnvironmentGetter.GetOpsBpsURL(environment);
                 try
                 {
                     await page.GotoAsync(url);
@@ -77,7 +78,7 @@ public class Login : IWebAction
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Failed to navigate to url {url}: {ex.Message}");
-                }
+                }*/
 
                 ILocator usernameInput = page.Locator("//*[@id=\"username\"]");
                 ILocator passwordInput = page.Locator("//*[@id=\"password\"]");
@@ -96,8 +97,27 @@ public class Login : IWebAction
 
                 if (isInvalid || isExpired || isLocked)
                 {
-                    // If password triggered any of the above, then called PasswordResetService
-                    var result = await PasswordResetService.ResetPassword(username);
+                    /*// If password triggered any of the above, then called PasswordResetService
+                    try
+                    {
+                        await PasswordResetService.ResetPassword(Logger, username);
+                    }
+                    catch (PasswordResetLimitException e)
+                    {
+                        *//* Password alreayd reset today.
+                         * Likely caused by concurrency issue where multiple password resets may occur
+                         * at the same time.
+                         * 
+                         * This will cause 
+                         *//*
+
+                    }
+                    catch (Exception e)
+                    {
+
+                    }
+
+                    var result =
                     if (!result.success)
                     {
                         Console.WriteLine("Login failed - Attempted to reset password but failed");
@@ -125,7 +145,7 @@ public class Login : IWebAction
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Failed to navigate to url {url}: {ex.Message}");
-                    }
+                    }*/
 
                     await usernameInput.FillAsync(username);
                     await passwordInput.FillAsync(password);

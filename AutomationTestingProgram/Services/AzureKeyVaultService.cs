@@ -1,60 +1,74 @@
-﻿using AutomationTestingProgram.Models;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Azure.Core.Pipeline;
+﻿using Azure.Core.Pipeline;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
-using Microsoft.Playwright;
-using NPOI.SS.Formula.Functions;
 using System.Globalization;
 using AutomationTestingProgram.Models.Settings;
-using System.Net.Http;
+using AutomationTestingProgram.Models.Exceptions;
+using AutomationTestingProgram.Backend.Helpers;
+using Microsoft.Graph.Models;
 
 namespace AutomationTestingProgram.Services;
 
-public class AzureKeyVaultService
+public static class AzureKeyVaultService
 {
-    private readonly string _vault;
-    private readonly string _clientId;
-    private readonly string _tenantId;
-    private readonly string _clientSecret;
-    private readonly HttpClient _httpClient;
+    private static readonly AzureKeyVaultSettings _settings;
+    private static HttpClient _httpClient;
 
-    public AzureKeyVaultService(IOptions<AzureKeyVaultSettings> azureKeyVaultSettings, HttpClient httpClient)
+    static AzureKeyVaultService()
     {
-        var azureConfig = azureKeyVaultSettings.Value;
-        _vault = azureConfig.CredentialVault;
-        _clientId = azureConfig.KeyVaultClientId;
-        _tenantId = azureConfig.KeyVaultTenantId;
-        _clientSecret = azureConfig.KeyVaultClientSecret;
+        _settings = AppConfiguration.GetSection<AzureKeyVaultSettings>("AzureKeyVault");
+    }
 
+    public static void Initialize(HttpClient httpClient)
+    {
         _httpClient = httpClient;
     }
 
-    public async Task<(bool success, string message)> GetKvSecret(string secretName)
+    /// <summary>
+    /// Retrieves a KeyVault secret as a string.
+    /// </summary>
+    /// <param name="secretName">The name of the secret to retrieve</param>
+    /// <returns>A string secret or an error</returns>
+    public static async Task<string> GetKvSecret<T>(ILogger<T> Logger, string secretName)
     {
         try
         {
+            Logger.LogInformation($"Retrieving KeyVault secret for {secretName}.");
+
             var clientOptions = new SecretClientOptions
             {
                 Transport = new HttpClientTransport(_httpClient),
+                Diagnostics =
+                {
+                    IsLoggingEnabled = false, 
+                    IsDistributedTracingEnabled = false 
+                }
             };
 
             SecretClient client = GetAzureClient(clientOptions);
 
             KeyVaultSecret secret = await client.GetSecretAsync(secretName.Replace("@", "--").Replace(".", "-").Replace("_", "---").ToLower());
-            return (true, secret.Value);
+
+            Logger.LogInformation($"KeyVault secret retrieved successfully");
+            return secret.Value;
         }
         catch (Exception ex)
         {
-            return (false, $"Error retrieving secret: {ex.Message}\n{ex.StackTrace}");
+            throw new Exception($"Error retrieving secret: {ex.Message}");
         }
     }
 
-    public async Task<(bool success, string message)> UpdateKvSecret(string secretName)
+    /// <summary>
+    /// Updates a KeyVault Secret.
+    /// </summary>
+    /// <param name="secretName">The name of the secret to update</param>
+    /// <returns></returns>
+    public static async Task UpdateKvSecret<T>(ILogger<T> Logger, string secretName)
     {
         try
         {
+            Logger.LogInformation($"Updating KeyVault secret for {secretName}.");
+            
             var clientOptions = new SecretClientOptions
             {
                 Transport = new HttpClientTransport(_httpClient),
@@ -64,19 +78,21 @@ public class AzureKeyVaultService
 
             KeyVaultSecret secret = await client.SetSecretAsync(secretName.Replace("@", "--").Replace(".", "-").Replace("_", "---").ToLower(),
                                                      $"OPS{DateTime.Now.ToString("ddMMMyyyy", CultureInfo.InvariantCulture)}!");
-            return (true, "Successfully updated secret key for " + secretName);
+            Logger.LogInformation("Successfully updated secret key");
         }
         catch (Exception ex)
         {
-            return (false, $"Error updating secret: {ex.Message}\n{ex.StackTrace}");
+            throw new Exception($"Error updating secret: {ex.Message}");
         }
     }
 
     // Before updating a password on OPS BPS, use this function to check that the account is enabled first and also verify connection with Key Vault
-    public async Task<(bool success, string message)> CheckAzureKVAccount(string secretName)
+    public static async Task CheckAzureKVAccount<T>(ILogger<T> Logger, string secretName)
     {
         try
         {
+            Logger.LogInformation($"Verifying account: {secretName} and KeyVault connection");
+
             var clientOptions = new SecretClientOptions
             {
                 Transport = new HttpClientTransport(_httpClient),
@@ -88,36 +104,36 @@ public class AzureKeyVaultService
 
             if (secret.Value == "OPS" + DateTime.Now.ToString("ddMMMyyyy", CultureInfo.InvariantCulture) + "!")
             {
-                return (false, $"Error: Password for {secretName} was already updated today");
+                throw new PasswordResetLimitException($"Password for {secretName} was already updated today. Please try again tomorrow.");
             }
 
             if (secret.Properties.Enabled == true)
             {
-                return (true, $"Successfully verified that {secretName} is enabled in Azure Key Vault. Proceeding with password reset");
+                Logger.LogInformation($"Successfully verified that {secretName} is enabled in Azure Key Vault. Proceeding with password reset");
             }
             else if (secret.Properties.Enabled == false)
             {
-                return (false, $"Error: {secretName} is disabled in Azure Key Vault");
+                throw new Exception($"{secretName} is disabled in Azure Key Vault");
             }
             else
             {
-                return (false, $"Error: The status of {secretName} is unknown (enabled property is null)");
+                throw new Exception($"The status of {secretName} is unknown (enabled property is null)");
             }
 
         }
         catch (Exception ex)
         {
-            return (false, $"Error connecting to Azure Key Vault: {ex.Message}\n{ex.StackTrace}");
+            throw new Exception($"Error connecting to Azure Key Vault: {ex.Message}\n{ex.StackTrace}");
         }
     }
 
-    private SecretClient GetAzureClient(SecretClientOptions clientOptions)
+    private static SecretClient GetAzureClient(SecretClientOptions clientOptions)
     {
-        string keyVaultUrl = $"https://{_vault}.vault.azure.net/";
+        string keyVaultUrl = $"https://{_settings.CredentialVault}.vault.azure.net/";
 
         try
         {
-            SecretClient client = new SecretClient(new Uri(keyVaultUrl), new ClientSecretCredential(_tenantId, _clientId, _clientSecret), clientOptions);
+            SecretClient client = new SecretClient(new Uri(keyVaultUrl), new ClientSecretCredential(_settings.KeyVaultTenantId, _settings.KeyVaultClientId, _settings.KeyVaultClientSecret), clientOptions);
             return client;
         }
         catch (Exception ex)

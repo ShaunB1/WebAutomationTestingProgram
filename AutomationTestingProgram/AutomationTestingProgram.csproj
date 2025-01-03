@@ -79,19 +79,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Remove="Backend\Helpers\environment_list.csv" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<!-- This copies the file without the folder structure. -->
-		<None Include="Backend\Helpers\environment_list.csv">
-				<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-				<TargetPath>environment_list.csv</TargetPath>
-		</None>
-		<Content Include="StaticFiles\KeychainAccounts2023.xls" CopyToOutputDirectory="Always" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<COMReference Include="IWshRuntimeLibrary">
 			<WrapperTool>tlbimp</WrapperTool>
 			<VersionMinor>0</VersionMinor>
@@ -101,6 +88,17 @@
 			<Isolated>false</Isolated>
 			<EmbedInteropTypes>true</EmbedInteropTypes>
 		</COMReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="Backend\Files\environment_list.csv">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<TargetPath>environment_list.csv</TargetPath>
+		</None>
+		<None Include="Backend\Files\KeychainAccounts2023.xls">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<TargetPath>KeychainAccounts2023.xls</TargetPath>
+		</None>
 	</ItemGroup>
 
 </Project>

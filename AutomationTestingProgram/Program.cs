@@ -1,19 +1,22 @@
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 using DotNetEnv;
 using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
 using AutomationTestingProgram.Services.Logging;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication;
-using Newtonsoft.Json;
 using Microsoft.Identity.Web;
 using AutomationTestingProgram.Models.Settings;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Diagnostics;
+using DocumentFormat.OpenXml.Features;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
@@ -68,7 +71,7 @@ void ConfigureCulture(WebApplicationBuilder builder)
     // Currently only en-CA
     var cultureConfig = builder.Configuration.GetSection("Culture");
     var defaultCulture = cultureConfig["Default"];
-    var supportedCultures = cultureConfig.GetValue<string[]>("Supported");
+    var supportedCultures = cultureConfig.GetSection("Supported").Get<string[]>();
     var supportedCultureInfo = supportedCultures!.Select(c => new CultureInfo(c)).ToList();
 
     builder.Services.Configure<RequestLocalizationOptions>(options =>
@@ -117,9 +120,7 @@ void RegisterServices(WebApplicationBuilder builder)
         client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
         client.DefaultRequestHeaders.Add("Accept", "application/json");
         client.DefaultRequestHeaders.Add("User-Agent", "WebAutomationTestingFramework/1.0");
-    });
-    builder.Services.AddSingleton<AzureKeyVaultService>();
-    builder.Services.AddSingleton<PasswordResetService>();
+    }); 
 
     builder.Services.AddSingleton<ShutDownService>();
 }
@@ -128,11 +129,89 @@ void ConfigureApplicationLifetime(WebApplication app)
 {
     var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
     var myService = app.Services.GetRequiredService<ShutDownService>();
-    lifetime.ApplicationStopping.Register(myService.OnApplicationStopping);
+
+    lifetime.ApplicationStarted.Register(() =>
+    {
+        var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
+        var httpClient = httpClientFactory.CreateClient("HttpClient");
+
+        AzureKeyVaultService.Initialize(httpClient);
+        PasswordResetService.Initialize(httpClient);
+    });
+
+    lifetime.ApplicationStopping.Register(() => myService.OnApplicationStopping().GetAwaiter().GetResult());
 }
 
 void ConfigureMiddleware(WebApplication app)
-{
+{   
+    // Handles error responses
+    app.Use(async (context, next) =>
+    {
+        await next();
+
+        if (context.Response.HasStarted)
+            return;
+
+        if (context.Response.StatusCode == 401)
+        {
+            var errorMessage = new { message = "Unauthorized access. Please provide a valid token." };
+            context.Response.ContentType = "application/json";
+            string json = JsonSerializer.Serialize(errorMessage);
+            await context.Response.WriteAsync(json);
+        }
+        else if (context.Response.StatusCode == 403)
+        {
+            var errorMessage = new { message = "Forbidden access. You do not have permission." };
+            context.Response.ContentType = "application/json";
+            string json = JsonSerializer.Serialize(errorMessage);
+            await context.Response.WriteAsync(json);
+        }
+        else if (context.Response.StatusCode == 400)
+        {
+            var errorMessage = new { message = "Bad request. Please check your input." };
+            context.Response.ContentType = "application/json";
+            string json = JsonSerializer.Serialize(errorMessage);
+            await context.Response.WriteAsync(json);
+        }
+        else if (context.Response.StatusCode == 404)
+        {
+            var errorMessage = new { message = "Resource not found." };
+            context.Response.ContentType = "application/json";
+            string json = JsonSerializer.Serialize(errorMessage);
+            await context.Response.WriteAsync(json);
+        }
+        else if (context.Response.StatusCode == 405)
+        {
+            var errorMessage = new { message = "Method not allowed." };
+            context.Response.ContentType = "application/json";
+            string json = JsonSerializer.Serialize(errorMessage);
+            await context.Response.WriteAsync(json);
+        }
+    });
+
+    // This is used to catch unhandled exceptions. These are logged as cirical (problem with pipeline)
+    app.UseExceptionHandler(options =>
+    {
+        options.Run(async context =>
+        {
+            var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+            var errorMessage = new { message = "An unexpected error occurred. Please try again later." };
+            
+            if (exception != null)
+            {
+                var customLogger = context.RequestServices.GetRequiredService<ILogger>();
+                customLogger.LogCritical($"An unexpected error occured. Exception: {exception.Message}\n{exception.StackTrace}");
+            }
+
+            string json = JsonSerializer.Serialize(errorMessage);
+            await context.Response.WriteAsync(json);
+        });
+    });
+
+
     if (!app.Environment.IsDevelopment())
     {
         app.UseExceptionHandler("/Home/Error");

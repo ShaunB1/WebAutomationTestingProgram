@@ -13,12 +13,12 @@ namespace AutomationTestingProgram.Backend
         /// <summary>
         /// The Playwright Object used to precess requests using playwright automation
         /// </summary>
-        public static readonly PlaywrightObject _playwright;
+        private static readonly PlaywrightObject _playwright;
 
         /// <summary>
         /// Settings used for Requests
         /// </summary>
-        public static readonly RequestSettings _requestSettings;
+        private static readonly RequestSettings _requestSettings;
 
         /// <summary>
         /// Semaphore used to limit total # of active requests
@@ -50,27 +50,32 @@ namespace AutomationTestingProgram.Backend
         /// </summary>
         /// <param name="request">The request to process</param>
         /// <returns>The result of the request</returns>
-        public static async Task ProcessRequestAsync(IClientRequest request)
+        public static async Task ProcessAsync(IClientRequest request)
         {
-            _requests.TryAdd(request.ID, request);
+            try
+            {
+                _requests.TryAdd(request.ID, request);
 
-            request.SetStatus(State.Received, $"{request.GetType().Name} (ID: {request.ID}) received.");
+                request.SetStatus(State.Received, $"{request.GetType().Name} (ID: {request.ID}) received.");
 
-            await request.Process();
-            await request.ResponseSource.Task;
-            // If an exception, caught by controller
-
-            _requests.TryRemove(request.ID, out var value);
+                await request.Process();
+                await request.ResponseSource.Task;
+                // If an exception, caught by controller
+            }
+            finally
+            {
+                _requests.TryRemove(request.ID, out var value);
+            }
         }
 
         /// <summary>
         /// Tries to access a slot for a request to be processed
         /// </summary>
         /// <returns></returns>
-        public static bool TryAcquireRequestSlot()
+        public static async Task<bool> TryAcquireSlotAsync(int timeout = 30000) // 30 seconds
         {
-            if (!_tokenSource.IsCancellationRequested && _maxRequests.Wait(0))
-                return true;
+            if (!_tokenSource.IsCancellationRequested)
+                return await _maxRequests.WaitAsync(timeout);
 
             return false;
         }
@@ -78,7 +83,7 @@ namespace AutomationTestingProgram.Backend
         /// <summary>
         /// Releases a slot for other requests to start processing
         /// </summary>
-        public static void ReleaseRequestSlot()
+        public static void ReleaseSlot()
         {
             _maxRequests.Release();
         }
@@ -107,7 +112,7 @@ namespace AutomationTestingProgram.Backend
             _tokenSource.Cancel(); // Cancels the token source
 
             // Waits for all requests to be in the dictionary (concurrency issues)
-            while (_maxRequests.CurrentCount != _requests.Count)
+            while (_maxRequests.CurrentCount != _requestSettings.Limit - _requests.Count)
             {
                 await Task.Delay(100);
             }

@@ -46,7 +46,7 @@ public class TestExecutor
         };
     }
 
-    public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
+    /*public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStepV1> testSteps, string environment, string fileName, HttpResponse response)
     {
         // execute test steps
         _envVars["environment"] = environment;
@@ -283,7 +283,7 @@ public class TestExecutor
 
             return false;
         }
-    }
+    }*/
 
     // Replace parameters between "{" and "}" with the Saved Parameters. To be used with Object or Value string. 
     public string InsertParams(string input)

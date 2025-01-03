@@ -1,10 +1,7 @@
 using AutomationTestingProgram.Backend;
 using AutomationTestingProgram.Models;
 using Microsoft.AspNetCore.Authorization;
-using AutomationTestingProgram.Services;
-using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -47,7 +44,7 @@ public class TestController : ControllerBase
         {
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received.");
 
-            await RequestHandler.ProcessRequestAsync(request);
+            await RequestHandler.ProcessAsync(request);
 
             // If request succeeds
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) successfully completed.");
@@ -87,11 +84,6 @@ public class TestController : ControllerBase
     [HttpPost("stop")]
     public async Task<IActionResult> StopRequest([FromBody] CancellationRequestModel model)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         CancellationRequest request = new CancellationRequest(HttpContext.User, model.ID);
         return await HandleRequest<CancellationRequest>(request);
     }
@@ -103,11 +95,6 @@ public class TestController : ControllerBase
     [HttpPost("validate")] 
     public async Task<IActionResult> ValidateRequest([FromForm] ValidationRequestModel model)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         ValidationRequest request = new ValidationRequest(HttpContext.User, model.File);
         return await HandleRequest<ValidationRequest>(request);
     }
@@ -167,7 +154,7 @@ public class TestController : ControllerBase
             {
                 Console.WriteLine(e);
                 return StatusCode(500, new { Error = e.Message });
-            }*/
+            }
         public IActionResult SaveTestSteps([FromForm] List<TestStepV1> testSteps)
     {
         using (var workbook = new XLWorkbook())
@@ -188,5 +175,5 @@ public class TestController : ControllerBase
                 return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Testing.xlsx");
             }
         }
-    }
+    }*/
 }

@@ -20,13 +20,29 @@ public class EnvironmentsController : ControllerBase
         _logger = logger;
     }
 
+    /* API Request Examples:
+     * - KeychainAccounts
+     * curl -X GET -H "Content-Type: application/json" http://localhost:5223/api/environments/keychainAccounts
+     * - SecretKey
+     * curl -X GET -H "Content-Type: application/json" http://localhost:5223/api/environments/secretKey?email=example@example.com
+     * - VALIDATE
+     *   curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\Schools Table.xlsx" http://localhost:5223/api/test/validate
+     * - PROCESS
+     * curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\Schools Table.xlsx" -F "Type=Chrome" -F "Version=92" -F "Environment=TestEnv" http://localhost:5223/api/test/run
+     * - GETACTIVEREQUESTS
+     * curl -X POST -H "Content-Type: application/json" http://localhost:5223/api/test/retrieve
+     * 
+     * Test commands:
+     * for /l %i in (1,1,10) do start /b curl -X POST -H "Content-Type: application/json" http://localhost:5223/api/test/retrieve
+     */
+
     private async Task<IActionResult> HandleRequest<TRequest>(TRequest request) where TRequest : IClientRequest
     {
         try
         {
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received.");
 
-            await RequestHandler.ProcessRequestAsync(request);
+            await RequestHandler.ProcessAsync(request);
 
             // If request succeeds
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) successfully completed.");
@@ -46,70 +62,27 @@ public class EnvironmentsController : ControllerBase
         }
     }
 
-    //[Authorize]
+    [Authorize]
     [HttpGet("keychainAccounts")]
     public async Task<IActionResult> GetKeychainAccounts()
     {
-        string baseDirectory = AppContext.BaseDirectory;
-        string filepath = _keychainFilePath.Replace("%PROJECT_ROOT%", baseDirectory);
-        Console.WriteLine(filepath);
-
-        var keychainRows = new List<object>();
-        try
-        {
-            await using (FileStream fs = new FileStream(filepath, FileMode.Open, FileAccess.Read))
-            {
-                IWorkbook workbook = new HSSFWorkbook(fs);
-                ISheet sheet = workbook.GetSheetAt(0);
-
-                for (int rowIdx = 1; rowIdx <= sheet.LastRowNum; rowIdx++)
-                {
-                    IRow row = sheet.GetRow(rowIdx);
-                    if (row != null)
-                    {
-                        keychainRows.Add(new
-                        {
-                            email = row.GetCell(14)?.StringCellValue ?? string.Empty,
-                            role = row.GetCell(18)?.StringCellValue ?? string.Empty,
-                            organization = row.GetCell(19)?.StringCellValue ?? string.Empty
-                        });
-                    }
-                }
-            }
-            Console.WriteLine("Successfully read Keychain file");
-            string json = JsonSerializer.Serialize(keychainRows);
-            return Ok(json);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = ex.Message });
-        }
+        KeyChainRetrievalRequest request = new KeyChainRetrievalRequest(HttpContext.User);
+        return await HandleRequest<KeyChainRetrievalRequest>(request);
     }
 
-    //[Authorize]
+    [AllowAnonymous]
     [HttpGet("secretKey")]
-    public async Task<IActionResult> GetSecretKey([FromQuery] string email)
+    public async Task<IActionResult> GetSecretKey([FromQuery] SecretKeyRetrievalRequestModel model)
     {
-        var result = await AzureKeyVaultService.GetKvSecret(email);
-        Console.WriteLine(result.message);
-        if (!result.success)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = result.message });
-        }
-        return Ok(new { result.message });
+        SecretKeyRetrievalRequest request = new SecretKeyRetrievalRequest(HttpContext.User, model.Email);
+        return await HandleRequest<SecretKeyRetrievalRequest>(request);
     }
 
     [Authorize]
     [HttpPost("resetPassword")]
-    public async Task<IActionResult> ResetPassword([FromBody] string email)
+    public async Task<IActionResult> ResetPassword([FromBody] PasswordResetRequestModel model)
     {
-
-        var result = await PasswordResetService.ResetPassword(email);
-        if (!result.success)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = result.message, email = email, success = false });
-        }
-        return Ok(new { message = result.message, email = email, success = true });
+        PasswordResetRequest request = new PasswordResetRequest(HttpContext.User, model.Email);
+        return await HandleRequest<PasswordResetRequest>(request);
     }
 }

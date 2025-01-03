@@ -2,7 +2,7 @@ using ClosedXML.Excel;
 
 public class ExcelReader
 {
-    public List<TestStep> ReadTestSteps(IFormFile file)
+    public List<TestStepV1> ReadTestSteps(IFormFile file)
     {
         if (file == null || file.Length == 0)
         {
@@ -15,7 +15,7 @@ public class ExcelReader
             throw new ArgumentException("Invalid file extension. Only .xlsx and .xls are accepted.");
         }
         
-        var testSteps = new List<TestStep>();
+        var testSteps = new List<TestStepV1>();
 
         using (var stream = new MemoryStream())
         {
@@ -28,7 +28,7 @@ public class ExcelReader
 
             if (rows == null) return testSteps;
             
-            testSteps.AddRange(rows.Select(row => new TestStep()
+            testSteps.AddRange(rows.Select(row => new TestStepV1()
             {
                 TestCaseName = row.Cell(1).TryGetValue(out string testCaseName) ? testCaseName.Trim() : string.Empty,
                 TestDescription = row.Cell(2).TryGetValue(out string testDescription) ? testDescription.Trim() : string.Empty,

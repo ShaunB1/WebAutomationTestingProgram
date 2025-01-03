@@ -1,27 +1,19 @@
-﻿using System.Text.Json.Nodes;
-using System.Text;
-using AutomationTestingProgram.Models;
-using Microsoft.Extensions.Options;
+﻿using System.Text;
 using Azure.Identity;
 using Microsoft.Graph;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Graph.Models;
 using System.Text.Json;
 using System.Globalization;
 using AutomationTestingProgram.Models.Settings;
+using AutomationTestingProgram.Backend.Helpers;
 
 namespace AutomationTestingProgram.Services
 {
-    public class PasswordResetService
+    public static class PasswordResetService
     {
-        private readonly string _graphClientId;
-        private readonly string _graphTenantId;
-        private readonly string _graphEmail;
-        private readonly string _graphPassword;
-        private readonly HttpClient _httpClient;
-
-        AzureKeyVaultService _azureKeyVaultService;
+        private static readonly MicrosoftGraphSettings _settings;
+        private static readonly LockManager<string> _lockManager;
+        private static HttpClient _httpClient;
 
         /*
          *  Concurrency issues -> what if resetting the same email at the same time??
@@ -31,67 +23,59 @@ namespace AutomationTestingProgram.Services
          * 
          */
 
-        public PasswordResetService(IOptions<MicrosoftGraphSettings> microsoftGraphSettings, HttpClient httpClient, AzureKeyVaultService azureKeyVaultService)
+        static PasswordResetService()
         {
-            var graphConfig = microsoftGraphSettings.Value;
-            _graphClientId = graphConfig.GraphClientId;
-            _graphTenantId = graphConfig.GraphTenantId;
-            _graphEmail = graphConfig.GraphEmail;
-            _graphPassword = graphConfig.GraphPassword;
-
-            _httpClient = httpClient;
-
-            _azureKeyVaultService = azureKeyVaultService;
+            _settings = AppConfiguration.GetSection<MicrosoftGraphSettings>("MicrosoftGraph");
+            _lockManager = new LockManager<string>();
         }
 
-        public async Task<(bool success, string message)> ResetPassword(string email)
+        public static void Initialize(HttpClient httpClient)
         {
-            var result = await _azureKeyVaultService.CheckAzureKVAccount(email);
-            if (!result.success)
-            {
-                return (false, result.message);
-            }
+            _httpClient = httpClient;
+        }
 
-            string emailTime = DateTime.UtcNow.ToString("O");
-            result = await RequestOTP(email);
-            if (!result.success)
+        public static async Task ResetPassword<T>(ILogger<T> Logger, string email)
+        {
+            try
             {
-                return (false, result.message);
-            }
+                Logger.LogInformation("Waiting to start Password Reset");
+                await _lockManager.AquireLockAsync(email);
 
-            // Wait 20 seconds for reset email to be sent
-            Console.WriteLine($"Waiting for 20 seconds for reset email");
-            await Task.Delay(20000);
+                await AzureKeyVaultService.CheckAzureKVAccount(Logger, email);
 
-            result = await GetOTPFromEmail(email, emailTime);
-            Console.WriteLine($"{result.message}");
-            if (!result.success)
-            {
-                return (false, result.message);
-            }
-            string OTP = result.message;
+                string emailTime = DateTime.UtcNow.ToString("O");
+                await RequestOTP(Logger, email);
 
-            result = await RequestPasswordReset(email, OTP);
-            Console.WriteLine($"{result.message}");
-            if (!result.success)
-            {
-                return (false, result.message);
+                // Wait 20 seconds for reset email to be sent
+                Logger.LogInformation($"Waiting for 20 seconds for reset email");
+                await Task.Delay(20000);
+
+                string OTP = await GetOTPFromEmail(Logger, email, emailTime);
+
+                await RequestPasswordReset(Logger, email, OTP);
+
+                try
+                {
+                    await AzureKeyVaultService.UpdateKvSecret(Logger, email);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("Password successfully updated in OPS BPS but failed to update in Azure Key Vault\n" +
+                            "Suggestion: Sync passwords manually if necessary.\n" + e.Message);
+                }
+
+                Logger.LogInformation("Password successfully reset in OPS BPS and updated in Azure Key Vault.");
             }
-            Console.WriteLine($"Updating Azure Key Vault secret key for {secretName}");
-            result = await AzureKeyVaultService.UpdateKvSecret(email);
-            Console.WriteLine($"{result.message}");
-            if (!result.success)
+            finally
             {
-                return (false, "Password successfully updated in OPS BPS but failed to update in Azure Key Vault\n" +
-                        "Suggestion: Sync passwords manually if necessary.\n" + result.message);
-            }
-            return (true, "Password successfully reset in OPS BPS and updated in Azure Key Vault.");
+                _lockManager.ReleaseLock(email);
+            }            
         }
 
         // Make a password reset request on OPS BPS
-        private static async Task<(bool success, string message)> RequestOTP(string email)
+        private static async Task RequestOTP<T>(ILogger<T> Logger, string email)
         {
-            Console.WriteLine($"Requesting OTP from OPS BPS");
+            Logger.LogInformation($"Requesting OTP from OPS BPS");
             string forgotPasswordURL = "https://stage.login.security.gov.on.ca/ciam/bps/public/forgotpassword/";
 
             var jsonBody = $"{{\"email\":\"{email}\"}}";
@@ -99,35 +83,37 @@ namespace AutomationTestingProgram.Services
 
             try
             {
-                HttpResponseMessage response = await _client.PostAsync(forgotPasswordURL, content);
+                HttpResponseMessage response = await _httpClient.PostAsync(forgotPasswordURL, content);
                 string responseBody = await response.Content.ReadAsStringAsync();
 
                 var responseObject = JsonSerializer.Deserialize<PasswordResetResponse>(responseBody);
 
                 if (response.IsSuccessStatusCode && responseObject != null && responseObject.result == 0)
                 {
-                    return (true, $"OTP request successful\nResponse:{responseBody}");
+                    Logger.LogInformation($"OTP request successful\nResponse:{responseBody}");
                 }
                 else
                 {
-                    return (false, $"OTP request failed with status code {response.StatusCode}\n{responseBody}");
+                    throw new Exception($"OTP request failed with status code {response.StatusCode}\n{responseBody}");
                 }
             }
             catch (Exception ex)
             {
-                return (false, $"OTP request failed. {ex.Message}\n{ex.StackTrace}");
+                throw new Exception($"OTP request failed. {ex.Message}\n{ex.StackTrace}");
             }
         }
 
         // Retrieve one-time password from uft@ontario.ca
-        private static async Task<(bool success, string message)> GetOTPFromEmail(string email, string emailTime)
+        private static async Task<string> GetOTPFromEmail<T>(ILogger<T> Logger, string email, string emailTime)
         {
             string emailText = string.Empty;
 
             // Find the email containing the OTP
             try
             {
-                UsernamePasswordCredential credential = new UsernamePasswordCredential(_graphEmail, _graphPassword, _graphTenantId, _graphClientId);
+                Logger.LogInformation("Retrieving PIN from reset email");
+                
+                UsernamePasswordCredential credential = new UsernamePasswordCredential(_settings.GraphEmail, _settings.GraphPassword, _settings.GraphTenantId, _settings.GraphClientId);
                 GraphServiceClient graphClient = new GraphServiceClient(credential, new[] { "https://graph.microsoft.com/.default" });
 
                 // Get the top 20 most recent emails that were sent after emailTime - the time we requested OTP
@@ -154,13 +140,13 @@ namespace AutomationTestingProgram.Services
                 }
                 if (emailText == string.Empty)
                 {
-                    return (false, "No reset password email was found");
+                    throw new Exception("No reset password email was found");
                 }
-                Console.WriteLine($"Password reset email text:\n{emailText}");
+                Logger.LogInformation($"Password reset email text:\n{emailText}");
             }
             catch (Exception ex)
             {
-                return (false, $"Failed to find email containing OTP. {ex.Message}\n{ex.StackTrace}");
+                throw new Exception($"Failed to find email containing OTP. {ex.Message}\n{ex.StackTrace}");
             }
 
             // Find OTP from the email text. Searches for 5 digits or more in between bodies of text
@@ -175,22 +161,23 @@ namespace AutomationTestingProgram.Services
                 }
                 if (string.IsNullOrEmpty(pin))
                 {
-                    return (false, "Pin was not found in email");
+                    throw new Exception("Pin was not found in email");
                 }
                 else
                 {
-                    return (true, pin);
+                    Logger.LogInformation("PIN successfully retrieved.");
+                    return pin;
                 }
             }
             catch (Exception ex)
             {
-                return (false, $"Failed to find OTP in email. {ex.Message}\n{ex.StackTrace}");
+                throw new Exception($"Failed to find OTP in email. {ex.Message}\n{ex.StackTrace}");
             }
         }
 
-        private static async Task<(bool success, string message)> RequestPasswordReset(string email, string OTP)
+        private static async Task RequestPasswordReset<T>(ILogger<T> Logger, string email, string OTP)
         {
-            Console.WriteLine($"Requesting password reset from OPS BPS");
+            Logger.LogInformation($"Requesting password reset from OPS BPS");
             string resetPasswordURL = "https://stage.login.security.gov.on.ca/ciam/bps/public/passwordreset/";
 
             string newPassword = $"OPS{DateTime.Now.ToString("ddMMMyyyy", CultureInfo.InvariantCulture)}!";
@@ -199,23 +186,23 @@ namespace AutomationTestingProgram.Services
 
             try
             {
-                HttpResponseMessage response = await _client.PostAsync(resetPasswordURL, content);
+                HttpResponseMessage response = await _httpClient.PostAsync(resetPasswordURL, content);
                 string responseBody = await response.Content.ReadAsStringAsync();
 
                 var responseObject = JsonSerializer.Deserialize<PasswordResetResponse>(responseBody);
 
                 if (response.IsSuccessStatusCode && responseObject != null && responseObject.result == 0)
                 {
-                    return (true, $"Password reset request successful\nResponse:{responseBody}");
+                    Logger.LogInformation($"Password reset request successful\nResponse:{responseBody}");
                 }
                 else
                 {
-                    return (false, $"Password reset request failed with status code {response.StatusCode}\n{responseBody}");
+                    throw new Exception($"Password reset request failed with status code {response.StatusCode}\n{responseBody}");
                 }
             }
             catch (Exception ex)
             {
-                return (false, $"Password reset request failed. {ex.Message}\n{ex.StackTrace}");
+                throw new Exception($"Password reset request failed. {ex.Message}\n{ex.StackTrace}");
             }
         }
 

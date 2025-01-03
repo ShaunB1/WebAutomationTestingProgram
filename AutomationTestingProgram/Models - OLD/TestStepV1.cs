@@ -1,4 +1,4 @@
-public class TestStep
+public class TestStepV1
 {
     public string TestCaseName { get; set; }
     public string TestDescription { get; set; }

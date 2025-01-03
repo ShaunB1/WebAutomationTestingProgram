@@ -165,11 +165,8 @@ namespace AutomationTestingProgram.Backend
         {
             /*
              * VALIDATION:
-             * - User has permission to access application
-             * - User has permission to access application section (requets sent from sections in the application)
-             * - Values are all valid:
-             *      -> Environment is valid
-             *      -> File is valid 
+             * - User has permission to access application: Validated with Authorize
+             * - User has permission to access application team/group
              */
 
             try
@@ -177,20 +174,8 @@ namespace AutomationTestingProgram.Backend
                 Logger.LogInformation($"Validating Process Request (ID: {ID}, BrowserType: {BrowserType}," +
                     $" BrowserVersion: {BrowserVersion}, Environment: {Environment})");
 
-                await this.IsCancellationRequested();
-
-                // Validate permission to access application
-                this.SetStatus(State.Validating, $"Validating User Permissions - Application");
-
-                await this.IsCancellationRequested();
-
-                // Validate Environment
-                this.SetStatus(State.Validating, $"Validating Environment");
-
-                await this.IsCancellationRequested();
-
-                // Validate File
-                this.SetStatus(State.Validating, $"Validating File");
+                // Validate permission to access team
+                this.SetStatus(State.Validating, $"Validating User Permissions - Team");
 
             }
             catch (Exception e)

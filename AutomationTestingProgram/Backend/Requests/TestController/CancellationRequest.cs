@@ -149,22 +149,22 @@ namespace AutomationTestingProgram.Backend
         {
             /*
              * VALIDATION:
-             * - User has permission to access application
-             * - User has permission to access application section (requests sent from sections in the application)'
+             * - User has permission to access application: Validated with Authorize
+             * - User has permission to access application team/group
              * - Request to cancel exists
              * - Request to cancel must not be a Cancellation Request
              * - User has permission to cancel the Request to cancel:
              *      -> If SuperUser: allowed
-             *      -> If Admin: Request to Cancel must be within admin's section
-             *      -> If User: Request to Cancel must be within user's section, and own request
+             *      -> If Admin: Request to Cancel must be within admin's group
+             *      -> If User: Request to Cancel must be within user's group, and own request
              */
 
             try
             {
                 this.SetStatus(State.Validating, $"Validating Cancellation Request (ID {this.ID}, CancelID {this.CancelRequestID})");
 
-                // Validate permission to access application
-                this.SetStatus(State.Validating, $"Validating User Permissions - Application");
+                // Validate permission to access team
+                this.SetStatus(State.Validating, $"Validating User Permissions - Team");
 
                 // Validate Request to Cancel
                 this.SetStatus(State.Validating, $"Validating Request to Cancel");

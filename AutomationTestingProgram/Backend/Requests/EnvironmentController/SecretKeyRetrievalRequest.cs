@@ -1,4 +1,5 @@
-﻿using AutomationTestingProgram.Services.Logging;
+﻿using AutomationTestingProgram.Services;
+using AutomationTestingProgram.Services.Logging;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using System.Security.Claims;
@@ -7,9 +8,9 @@ using System.Text.Json.Serialization;
 namespace AutomationTestingProgram.Backend
 {
     /// <summary>
-    /// Request to retrieve keychain accounts
+    /// Request to retrieve secret keys
     /// </summary>
-    public class KeyChainRetrievalRequest : IClientRequest
+    public class SecretKeyRetrievalRequest : IClientRequest
     {
         public string ID { get; }
         [JsonIgnore]
@@ -28,18 +29,23 @@ namespace AutomationTestingProgram.Backend
         /// The Logger object associated with this request
         /// </summary>
         [JsonIgnore]
-        public ILogger<KeyChainRetrievalRequest> Logger { get; }
+        public ILogger<SecretKeyRetrievalRequest> Logger { get; }
 
         /// <summary>
-        /// List of all accounts found with this request
+        /// The email linked with the request
         /// </summary>
-        public List<Object> Accounts { get; private set; }
+        public string Email { get; }
+
+        /// <summary>
+        /// The secret found with this request
+        /// </summary>
+        public string SecretKey { get; private set; }
 
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="KeyChainRetrievalRequest"/> class.
+        /// Initializes a new instance of the <see cref="SecretKeyRetrievalRequest"/> class.
         /// </summary>
-        public KeyChainRetrievalRequest(ClaimsPrincipal User)
+        public SecretKeyRetrievalRequest(ClaimsPrincipal User, string Email)
         {
             ID = Guid.NewGuid().ToString();
             this.User = User;
@@ -51,9 +57,9 @@ namespace AutomationTestingProgram.Backend
             FolderPath = LogManager.CreateRequestFolder(ID);
 
             CustomLoggerProvider provider = new CustomLoggerProvider(FolderPath);
-            Logger = provider.CreateLogger<KeyChainRetrievalRequest>()!;
+            Logger = provider.CreateLogger<SecretKeyRetrievalRequest>()!;
 
-            Accounts = new List<object>();
+            this.Email = Email;
         }
 
         public void SetStatus(State responseType, string message = "", Exception? e = null)
@@ -135,9 +141,9 @@ namespace AutomationTestingProgram.Backend
             }
 
         }
-        
+
         /// <summary>
-        /// Validate the <see cref="KeyChainRetrievalRequest"/>.
+        /// Validate the <see cref="SecretKeyRetrievalRequest"/>.
         /// View inner documentation on specifics.  
         /// </summary>
         private void Validate()
@@ -150,14 +156,14 @@ namespace AutomationTestingProgram.Backend
 
             try
             {
-                Logger.LogInformation($"Validating KeyChainRetrieval Request (ID: {ID})");
+                Logger.LogInformation($"Validating SecretKeyRetrieval Request (ID: {ID}, Email: {Email})");
 
                 // Validate permission to access application
                 this.SetStatus(State.Validating, $"Validating User Permissions - Team");
 
                 /*
-                 * Later implementation: Validates what emails the user has access to.
-                 * Only those emails are returned.
+                 * Later implementation:
+                 * Validate whether the user has permission to access the email account.
                  */
 
             }
@@ -168,52 +174,26 @@ namespace AutomationTestingProgram.Backend
         }
 
         /// <summary>
-        /// Execute the <see cref="KeyChainRetrievalRequest"/>.
+        /// Execute the <see cref="SecretKeyRetrievalRequest"/>.
         /// View inner documentation on specifics.  
         /// </summary>
         private async Task Execute()
-        {   
+        {
             try
             {
-                Logger.LogInformation($"Processing KeyChainRetrieval Request (ID: {ID})");                
+                Logger.LogInformation($"Processing SecretKeyRetrieval Request (ID: {ID}, Email: {Email})");
 
-                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "KeychainAccounts2023.xls");
-
-                if (!File.Exists(filePath))
-                {
-                    Console.WriteLine("KeychainAccounts2023.xls FILE NOT FOUND! INVESTIGATE!!");
-                    throw new Exception("KeychainFile not found!");
-                }
 
                 await IOManager.TryAquireSlotAsync();
-                await using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    IWorkbook workbook = new HSSFWorkbook(fs);
-                    ISheet sheet = workbook.GetSheetAt(0);
+                SecretKey = await AzureKeyVaultService.GetKvSecret(Logger, Email);
 
-                    for (int rowIdx = 1; rowIdx <= sheet.LastRowNum; rowIdx++)
-                    {
-                        IRow row = sheet.GetRow(rowIdx);
-                        if (row != null)
-                        {
-                            Accounts.Add(new
-                            {
-                                email = row.GetCell(14)?.StringCellValue ?? string.Empty,
-                                role = row.GetCell(18)?.StringCellValue ?? string.Empty,
-                                organization = row.GetCell(19)?.StringCellValue ?? string.Empty
-                            });
-                        }
-                    }
-                }
-
-
-                this.SetStatus(State.Completed, $"KeyChainRetrieval Request (ID: {ID}) completed successfully");
+                this.SetStatus(State.Completed, $"SecretKeyRetrieval Request (ID: {ID}, Email: {Email}) completed successfully");
             }
             catch (Exception e)
             {
                 this.SetStatus(State.Failure, "Processing Failure", e);
             }
-            finally
+            finally 
             {
                 IOManager.ReleaseSlot();
             }
@@ -224,7 +204,7 @@ namespace AutomationTestingProgram.Backend
         /// </summary>
         private void Flush()
         {
-            if (Logger is CustomLogger<KeyChainRetrievalRequest> customLogger)
+            if (Logger is CustomLogger<SecretKeyRetrievalRequest> customLogger)
             {
                 customLogger.Flush();
             }

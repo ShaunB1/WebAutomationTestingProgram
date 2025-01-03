@@ -7,7 +7,9 @@
     using System.IO;
     using System.Linq;
     using System.Reflection;
+    using AutomationTestingProgram.Backend;
     using NPOI.SS.UserModel;
+    using System.Text;
 
     /// <summary>
     /// Class to get environment information from environment_list.csv
@@ -35,100 +37,99 @@
         /// </summary>
         /// <param name="env">The environment to verify</param>
         /// <returns></returns>
-        public static string GetEnvironmentName(string env)
+        public static async Task<string> GetEnvironmentName(string env)
         {
-            return GetColumnValue(env, ENVIRONMENT_NAME_COL);
+            return await GetColumnValue(env, ENVIRONMENT_NAME_COL);
         }
 
         /// <summary>
         /// Tries to grab the OPS BPS Environment URL from the environment url csv file.
         /// </summary>
         /// <returns>The provided URL for the environment given.</returns>
-        public static string GetOpsBpsURL(string env)
+        public static async Task<string> GetOpsBpsURL(string env)
         {
-            return GetColumnValue(env, URL_COL);
+            return await GetColumnValue(env, URL_COL);
         }
 
         /// <summary>
         /// Tries to grab the AAD Environment URL from the environment url csv file.
         /// </summary>
         /// <returns>The provided URL for the environment given.</returns>
-        public static string GetAdURL(string env)
+        public static async Task<string> GetAdURL(string env)
         {
-            return GetColumnValue(env, URL2_COL);
+            return await GetColumnValue(env, URL2_COL);
         }
 
         /// <summary>
         /// Tries to grab the host from the environment csv file.
         /// </summary>
         /// <returns>The provided password for the environment given.</returns>
-        public static string GetHost(string env)
+        public static async Task<string> GetHost(string env)
         {
-            return GetColumnValue(env, HOST_COL);
+            return await GetColumnValue(env, HOST_COL);
         }
 
         /// <summary>
         /// Tries to grab the port from the environment url csv file.
         /// </summary>
         /// <returns>The provided password for the environment given.</returns>
-        public static string GetPort(string env)
+        public static async Task<string> GetPort(string env)
         {
-            return GetColumnValue(env, PORT_COL);
+            return await GetColumnValue(env, PORT_COL);
         }
 
         /// <summary>
         /// Tries to determine if encrypted from the environment list csv file.
         /// </summary>
         /// <returns>The provided password for the environment given.</returns>
-        public static string GetIsEncrypted(string env)
+        public static async Task<string> GetIsEncrypted(string env)
         {
-            return GetColumnValue(env, IS_ENCRYPTED_COL);
+            return await GetColumnValue(env, IS_ENCRYPTED_COL);
         }
 
         /// <summary>
         /// Tries to grab the username from the environment url csv file.
         /// </summary>
         /// <returns>The provided password for the environment given.</returns>
-        public static string GetUsername(string env)
+        public static async Task<string> GetUsername(string env)
         {
-            return GetColumnValue(env, USERNAME_COL);
+            return await GetColumnValue(env, USERNAME_COL);
         }
 
         /// <summary>
         /// Tries to grab the db name from the environment url csv file.
         /// </summary>
         /// <returns>The provided password for the environment given.</returns>
-        public static string GetDBName(string env)
+        public static async Task<string> GetDBName(string env)
         {
-            return GetColumnValue(env, DB_NAME_COL);
+            return await GetColumnValue(env, DB_NAME_COL);
         }
 
         /// <summary>
         /// Tries to grab the passowrd from the environment url csv file.
         /// </summary>
         /// <returns>The provided password for the environment given.</returns>
-        public static string GetPassword(string env)
+        public static async Task<string> GetPassword(string env)
         {
-            return GetColumnValue(env, PASSWORD_COL);
+            return await GetColumnValue(env, PASSWORD_COL);
         }
 
         /// <summary>
         /// Tries to grab the passowrd from the environment url csv file.
         /// </summary>
         /// <returns>The provided password for the environment given.</returns>
-        public static string GetApplicationType(string env)
+        public static async Task<string> GetApplicationType(string env)
         {
-            return GetColumnValue(env, APP_TYPE_COL);
+            return await GetColumnValue(env, APP_TYPE_COL);
         }        
 
         /// <summary>
         /// Returns the column value for the given environment name and column.
         /// </summary>
         /// <returns>The provided column for the environment.</returns>
-        private static string GetColumnValue(string environment, int columnIndex)
+        private static async Task<string> GetColumnValue(string environment, int columnIndex)
         {
-            string envFilePath = Path.Combine(Path.Combine("Backend", "Helpers"), "environment_list.csv");
-            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, envFilePath);
+            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "environment_list.csv");
 
             if (!File.Exists(filePath))
             {
@@ -136,31 +137,37 @@
                 return string.Empty;
             }
 
-            // open a stream reading to read the environments list
-            StreamReader reader = new StreamReader(filePath);
-
-            while (!reader.EndOfStream)
+            try
             {
-                var line = reader.ReadLine();
-                List<string> values = line.Split(',').ToList();
+                // Wait until allowed to read from file
+                await IOManager.TryAquireSlotAsync();
 
-                if (values.Count > columnIndex)
+                using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (StreamReader reader = new StreamReader(fileStream, Encoding.UTF8))
                 {
-                    if (values[0].Trim() == environment)
+                    while (!reader.EndOfStream)
                     {
-                        // for debugging purposes
-                        // Logger.Info("Value at index " + values[columnIndex]);
-                        return values[columnIndex];
+                        var line = reader.ReadLine();
+                        List<string> values = line.Split(',').ToList();
+
+                        if (values.Count > columnIndex)
+                        {
+                            if (values[0].Trim() == environment)
+                            {
+                                // for debugging purposes
+                                // Logger.Info("Value at index " + values[columnIndex]);
+                                return values[columnIndex];
+                            }
+                        }
                     }
                 }
-                else
-                {
-                    // for debug
-                    // Logger.Warn("GetColumnValue() not enough values available to index");
-                }
-            }
 
-            throw new Exception("Value not found in CSVEnvironmentGetter!");
+                throw new Exception($"Value (ENV: {environment}, COL: {columnIndex}) not found in CSVEnvironmentGetter!");
+            }
+            finally
+            {
+                IOManager.ReleaseSlot();
+            }
         }
     }
 }

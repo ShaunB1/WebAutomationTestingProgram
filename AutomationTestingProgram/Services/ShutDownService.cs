@@ -19,7 +19,7 @@ namespace AutomationTestingProgram.Services
             CustomLoggerProvider provider = new CustomLoggerProvider(LogManager.GetRunFolderPath());
             _logger = provider.CreateLogger<ShutDownService>();
         }
-        public async void OnApplicationStopping()
+        public async Task OnApplicationStopping()
         {
             _logger.LogInformation("Application is stopping -- (Graceful shutdown)");
 

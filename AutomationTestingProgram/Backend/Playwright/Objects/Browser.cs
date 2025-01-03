@@ -234,6 +234,15 @@ namespace AutomationTestingProgram.ModelsOLD
         /// <exception cref="ArgumentException">Thrown if the browser type is unsupported.</exception>
         private async Task<IBrowser> CreateBrowserInstance(IPlaywright playwright, string type, string version)
         { 
+            /* "Automation/Browsers/{type}-{version}/{type}-win64/{type}.exe"
+                all lowercase for types. No subversions (just main version for now)
+
+                Chrome: Automation/Browsers/chrome-{version}/chrome-win64/chome.exe
+                Edge:   Ignore -> Playwright already uses latest
+                Firefox:Automation/Browsers/firefox-{version}/firefox.exe
+                Safari: Ignore -> Playwright already uses latest                
+             
+             */ 
             switch (type.ToLower())
             {
                 case "chrome":

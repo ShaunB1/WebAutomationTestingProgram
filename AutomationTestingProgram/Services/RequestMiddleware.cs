@@ -21,11 +21,11 @@ namespace AutomationTestingProgram.Services
         // Handles request limiting
         public async Task InvokeAsync(HttpContext context)
         {
-            if (!RequestHandler.TryAcquireRequestSlot())
+            if (!await RequestHandler.TryAcquireSlotAsync(0)) // 5 min timeout?
             {
                 context.Response.StatusCode = 503;
-                _logger.LogError($"Too many requests. Please try again later.");
-                await context.Response.WriteAsync("Too many requests. Please try again later");
+                _logger.LogError($"Server Busy: Too many requests. Please try again later.");
+                await context.Response.WriteAsync("Server Busy: Too many requests. Please try again later");
                 return;
             }
 
@@ -35,7 +35,7 @@ namespace AutomationTestingProgram.Services
             }
             finally
             {
-                RequestHandler.ReleaseRequestSlot();
+                RequestHandler.ReleaseSlot();
             }
         }
     }

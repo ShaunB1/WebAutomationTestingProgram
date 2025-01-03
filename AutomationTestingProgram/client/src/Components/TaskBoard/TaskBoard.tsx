@@ -32,6 +32,19 @@ interface Worker {
     name: string,
     tasks: Task[],
     droppableId: string,
+    stats: WorkerStats | null,
+}
+
+interface Stats {
+    all_tasks: Task[];
+    monthly_tasks: Task[];
+}
+
+interface WorkerStats {
+    all_tasks: Task[];
+    monthly_tasks: Task[];
+    avg_completion_time_monthly: number;
+    avg_completion_time_all: number;
 }
 
 const TaskBoard = () => {
@@ -39,7 +52,20 @@ const TaskBoard = () => {
     const [newTask, setNewTask] = useState<string>("");
     const [workerName, setWorkerName] = useState<string>("");
     const [workers, setWorkers] = useState<Worker[]>([]);
-    const [completedTasks, setCompletedTasks] = useState<Worker[]>([]);
+    const [stats, setStats] = useState<Stats>({
+        all_tasks: [],
+        monthly_tasks: [],
+    });
+
+    const calculateDays = (startDate: string, endDate: string) => {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        const timeDifference = end.getTime() - start.getTime();
+        const daysDifference = timeDifference / (1000 * 60 * 60 *24);
+
+        return Math.round(daysDifference);
+    }
 
     useEffect(() => {
         const fetchData = async () => {
@@ -49,24 +75,32 @@ const TaskBoard = () => {
                 fetch(`https://${import.meta.env.VITE_DB_HOST}/api/completed_tasks`),
             ])
 
+            const date = new Date();
+            const month = new Intl.DateTimeFormat("en-US", { month: "long" }).format(date);
+            const monthlyTasks: any = [];
+            const allTasks: any = [];
+
             const dbTasks: any[] = await tasksResponse.json();
             const dbWorkers: any[] = await workersResponse.json();
             const dbCompletedTasks: any[] = await completedTasksResponse.json();
 
-            // const workersCompletedTasks = dbCompletedTasks.reduce((map, item) => {
-            //     const groupKey = String(item[key]);
-            //     if () {
-            //
-            //     }
-            // });
-
             const savedWorkers: Worker[] = []
+
             dbWorkers.forEach(dbWorker => {
+                const workerStats: WorkerStats = {
+                    all_tasks: [],
+                    monthly_tasks: [],
+                    avg_completion_time_monthly: 0,
+                    avg_completion_time_all: 0,
+                }
                 const tasks: Task[] = [];
+                const taskDurationsMonth: number[] = [];
+                const taskDurationsAll: number[] = [];
                 const workerObj: Worker = {
                     name: dbWorker.name,
                     tasks: tasks,
                     droppableId: dbWorker.droppable_id,
+                    stats: workerStats,
                 };
                 dbTasks.forEach(task => {
                     if (task.droppable_id === dbWorker.droppable_id) {
@@ -77,6 +111,27 @@ const TaskBoard = () => {
                             description: task.description,
                         }
                         tasks.push(taskObj);
+                    }
+                })
+                dbCompletedTasks.forEach(task => {
+                    if (dbWorker.name === task.worker) {
+                        const difference = calculateDays(task.start_date, task.end_date);
+                        workerObj.stats?.all_tasks.push(task);
+                        if (task.end_date.includes(month)) {
+                            monthlyTasks.push(task);
+                            workerObj.stats?.monthly_tasks.push(task);
+                            taskDurationsMonth.push(difference);
+                            const monthlySum = taskDurationsMonth?.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+                            if (workerObj.stats) {
+                                workerObj.stats.avg_completion_time_monthly = monthlySum / taskDurationsMonth.length;
+                            }
+                        }
+                        allTasks.push(task);
+                        taskDurationsAll.push(difference);
+                        const totalSum = taskDurationsAll?.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+                        if (workerObj.stats) {
+                            workerObj.stats.avg_completion_time_all = totalSum / taskDurationsAll.length;
+                        }
                     }
                 })
                 savedWorkers.push(workerObj);
@@ -94,7 +149,11 @@ const TaskBoard = () => {
                     savedTasks.push(taskObj);
                 }
             })
-
+            setStats(prevStats => ({
+                ...prevStats,
+                all_tasks: dbCompletedTasks,
+                monthly_tasks: monthlyTasks,
+            }))
             setTasks(savedTasks);
             setWorkers(savedWorkers);
         }
@@ -246,6 +305,7 @@ const TaskBoard = () => {
             name: workerName,
             tasks: [],
             droppableId: Date.now().toString(),
+            stats: null,
         }
 
         try {
@@ -290,16 +350,6 @@ const TaskBoard = () => {
                 body: JSON.stringify({ droppable_id: droppableId, draggable_id: draggableId }),
             }),
         ]);
-    }
-
-    const calculateDays = (startDate: string, endDate: string) => {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-
-        const timeDifference = end.getTime() - start.getTime();
-        const daysDifference = timeDifference / (1000 * 60 * 60 *24);
-
-        return Math.round(daysDifference);
     }
 
     const [description, setDescription] = useState("");
@@ -541,140 +591,244 @@ const TaskBoard = () => {
                     </Modal>
                 </Box>
             </Box>
-            <Box display="flex" sx={{ width: "100%", gap: 2}}>
+            <Box display="flex" sx={{ width: "100%", gap: 2 }}>
                 <DragDropContext onDragEnd={handleDragEnd}>
-                    <Box display="flex" sx={{ width: "75%", gap: 2, flexWrap: "wrap" }}>
-                        {workers.map((worker, index) => (
-                            <Box key={index}  sx={{
-                                height: "400px",
-                                borderRadius: 2,
-                                width: "45%",
-                                background: "#F5F5F5",
-                            }}>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        width: "100%",
-                                        height: "40px",
-                                        background: "#313d4f",
-                                        borderRadius: 1,
-                                        justifyContent: "center",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    <Typography
-                                        variant="h6"
-                                        color="textSecondary"
-                                        sx={{
-                                            width: "100%",
-                                            color: "white",
-                                            textAlign: "center",
-                                        }}
-                                    >
-                                        {worker.name}
-                                    </Typography>
+                    <Box sx={{ width: "80%" }}>
+                        <Box
+                            sx={{
+                                width: "91%",
+                                height: "20%",
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                mb: 2,
+                                background: "#313d4f",
+                                borderRadius: 1,
+                                flexWrap: "wrap",
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: "100%",
+                                    height: "5%",
+                                    display: "flex",
+                                    pt: 2,
+                                    justifyContent: "space-around",
+                                    alignItems: "center",
+                                }}
+                            >
+                                <Typography sx={{ color: "white" }}>{`Tasks Completed (Month): ${stats.monthly_tasks.length}`}</Typography>
+                                <Typography sx={{ color: "white" }}>{`Tasks Completed (All): ${stats.all_tasks.length}`}</Typography>
+                            </Box>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    width: "100%",
+                                    height: "75%",
+                                    flexWrap: "wrap",
+                                    justifyContent: "space-evenly",
+                                    alignItems: "center",
+                                }}
+                            >
+                                {workers.map((worker, index) => (
                                     <Box
                                         sx={{
-                                            width: "100%",
-                                            height: "80%",
-                                            background: "white",
-                                            borderRadius: 1,
                                             display: "flex",
+                                            gap: 2,
+                                            justifyContent: "space-between",
+                                            width: "45%",
+                                            height: "30%",
                                             alignItems: "center",
-                                            justifyContent: "space-evenly",
                                         }}
                                     >
-                                        <Typography sx={{ color: "black" }}>{`Tasks: ${worker.tasks.length}`}</Typography>
-                                    </Box>
-                                    <IconButton onClick={() => handleDeleteWorker(worker)}>
-                                        <DeleteIcon sx={{ color: "#F95454" }}/>
-                                    </IconButton>
-                                </Box>
-                                <Box sx={{height: "95%", padding: 1}}>
-                                <Droppable droppableId={worker.droppableId}>
-                                        {(provided: any): any => (
-                                            <Box display="flex" sx={{ height: "90%", flexDirection: "column", alignItems: "space-between", justifyContent: "space-between" }}>
-                                                <List
-                                                    {...provided.droppableProps}
-                                                    ref={provided.innerRef}
-                                                    style={{listStyle: "none", padding: 0, width: "100%", height: "100%", overflow: "auto"}}
-                                                >
-                                                    {workersWithDays[index].tasks?.map((task: any, index: any) => (
-                                                        <Draggable key={task.draggableId} draggableId={task.draggableId} index={index}>
-                                                            {(provided) => (
-                                                                <ListItem
-                                                                    ref={provided.innerRef}
-                                                                    {...provided.draggableProps}
-                                                                    {...provided.dragHandleProps}
-                                                                    style={{
-                                                                        padding: '10px 0px',
-                                                                        margin: '4px 0',
-                                                                        backgroundColor:
-                                                                            task.days <= 4 ? '#C4DAD2' :
-                                                                            task.days >= 5 && task.days <= 6 ? "#F6995C" :
-                                                                            task.days === 7 ? "#FF0000" :
-                                                                            task.days > 7 ? "black" : "purple"
-                                                                        ,
-                                                                        borderRadius: '4px',
-                                                                        ...provided.draggableProps.style,
-                                                                    }}
-                                                                >
-                                                                    <IconButton sx={{ cursor: "grab" }}>
-                                                                        <MoreVertIcon />
-                                                                    </IconButton>
-                                                                    <Box display="flex" sx={{
-                                                                        width: "100%",
-                                                                        justifyContent: "space-between",
-                                                                        alignItems: "center",
-                                                                    }}>
-                                                                        <Accordion sx={{
-                                                                            width: "100%",
-                                                                            background: "#f0f0f0",
-                                                                        }}>
-                                                                            <AccordionSummary>
-                                                                                <Typography
-                                                                                    sx={{ color: "#333333" }}
-                                                                                >
-                                                                                    {task.name}
-                                                                                </Typography>
-                                                                            </AccordionSummary>
-                                                                            <AccordionDetails>
-                                                                                <Typography
-                                                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
-                                                                                />
-                                                                            </AccordionDetails>
-                                                                        </Accordion>
-                                                                        <Box display="flex" sx={{ alignItems: "center", gap: 1, ml: 2 }}>
-                                                                            <Typography style={{
-                                                                                width: "50px",
-                                                                                display: "flex",
-                                                                                justifyContent: "center",
-                                                                                color: task.days > 7 ? "white" : "#333333",
-                                                                            }}>
-                                                                                {`Day ${task.days}`}
-                                                                            </Typography>
-                                                                            <IconButton sx={{ m: 0, p: 1 }} onClick={() => handleOpenEdit(task)}>
-                                                                                <EditIcon sx={{
-                                                                                    color: task.days > 7 ? "white" : "default" }}
-                                                                                />
-                                                                            </IconButton>
-                                                                            <IconButton color="primary" onClick={() => handleCompleteTask(task, worker)}>
-                                                                                <CheckIcon />
-                                                                            </IconButton>
-                                                                        </Box>
-                                                                    </Box>
-                                                                </ListItem>
-                                                            )}
-                                                        </Draggable>
-                                                    ))}
-                                                    {provided.placeholder}
-                                                </List>
+                                        <Box sx={{ width: "0px" }}>
+                                            <Typography sx={{ color: "white" }}>{worker.name}</Typography>
+                                        </Box>
+                                        <Box
+                                            sx={{
+                                                width: "600px",
+                                                display: "flex",
+                                                justifyContent: "flex-end",
+                                                gap: 1,
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    width: "15%",
+                                                    height: 40,
+                                                    background: "white",
+                                                    borderRadius: 1,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "space-evenly",
+                                                    p: "4px",
+                                                }}
+                                            >
+                                                <Typography sx={{ color: "black", fontSize: "15px", textAlign: "center" }}>{`Tasks: ${worker.tasks.length}`}</Typography>
                                             </Box>
-                                        )}
-                                    </Droppable>
-                                </Box>
+                                            <Box
+                                                sx={{
+                                                    width: "30%",
+                                                    height: 40,
+                                                    background: "white",
+                                                    borderRadius: 1,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "space-evenly",
+                                                    p: "4px",
+                                                }}
+                                            >
+                                                <Typography sx={{ color: "black", fontSize: "15px", textAlign: "center" }}>
+                                                    {`Tasks Completed`}
+                                                    <br />
+                                                    {`Month: ${worker.stats?.monthly_tasks.length} | All: ${worker.stats?.all_tasks.length}`}
+                                                </Typography>
+
+                                            </Box>
+                                            <Box
+                                                sx={{
+                                                    width: "35%",
+                                                    height: 40,
+                                                    background: "white",
+                                                    borderRadius: 1,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "space-evenly",
+                                                    p: "4px",
+                                                }}
+                                            >
+                                                <Typography sx={{ color: "black", fontSize: "15px", textAlign: "center" }}>
+                                                    {"Avg Time Taken (Days)"}
+                                                    <br />
+                                                    {`Month: ${(worker.stats?.avg_completion_time_monthly.toFixed(1))} | All: ${(worker.stats?.avg_completion_time_all.toFixed(1))}`}
+                                                </Typography>
+
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                ))}
                             </Box>
-                        ))}
+                        </Box>
+                        <Box sx={{ width: "100%", display: "flex", flexWrap: "wrap", gap: 2 }}>
+                            {workers.map((worker, index) => (
+                                <Box key={index}  sx={{
+                                    height: "400px",
+                                    borderRadius: 2,
+                                    width: "45%",
+                                    background: "#F5F5F5",
+                                }}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            width: "100%",
+                                            height: "40px",
+                                            background: "#313d4f",
+                                            borderRadius: 1,
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="h6"
+                                            color="textSecondary"
+                                            sx={{
+                                                width: "25%",
+                                                color: "white",
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            {worker.name}
+                                        </Typography>
+                                        <IconButton onClick={() => handleDeleteWorker(worker)}>
+                                            <DeleteIcon sx={{ color: "#F95454" }}/>
+                                        </IconButton>
+                                    </Box>
+                                    <Box sx={{height: "95%", padding: 1}}>
+                                        <Droppable droppableId={worker.droppableId}>
+                                            {(provided: any): any => (
+                                                <Box display="flex" sx={{ height: "90%", flexDirection: "column", alignItems: "space-between", justifyContent: "space-between" }}>
+                                                    <List
+                                                        {...provided.droppableProps}
+                                                        ref={provided.innerRef}
+                                                        style={{listStyle: "none", padding: 0, width: "100%", height: "100%", overflow: "auto"}}
+                                                    >
+                                                        {workersWithDays[index].tasks?.map((task: any, index: any) => (
+                                                            <Draggable key={task.draggableId} draggableId={task.draggableId} index={index}>
+                                                                {(provided) => (
+                                                                    <ListItem
+                                                                        ref={provided.innerRef}
+                                                                        {...provided.draggableProps}
+                                                                        {...provided.dragHandleProps}
+                                                                        style={{
+                                                                            padding: '10px 0px',
+                                                                            margin: '4px 0',
+                                                                            backgroundColor:
+                                                                                task.days <= 4 ? '#C4DAD2' :
+                                                                                    task.days >= 5 && task.days <= 6 ? "#F6995C" :
+                                                                                        task.days === 7 ? "#FF0000" :
+                                                                                            task.days > 7 ? "black" : "purple"
+                                                                            ,
+                                                                            borderRadius: '4px',
+                                                                            ...provided.draggableProps.style,
+                                                                        }}
+                                                                    >
+                                                                        <IconButton sx={{ cursor: "grab" }}>
+                                                                            <MoreVertIcon />
+                                                                        </IconButton>
+                                                                        <Box display="flex" sx={{
+                                                                            width: "100%",
+                                                                            justifyContent: "space-between",
+                                                                            alignItems: "center",
+                                                                        }}>
+                                                                            <Accordion sx={{
+                                                                                width: "100%",
+                                                                                background: "#f0f0f0",
+                                                                            }}>
+                                                                                <AccordionSummary>
+                                                                                    <Typography
+                                                                                        sx={{ color: "#333333" }}
+                                                                                    >
+                                                                                        {task.name}
+                                                                                    </Typography>
+                                                                                </AccordionSummary>
+                                                                                <AccordionDetails>
+                                                                                    <Typography
+                                                                                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+                                                                                    />
+                                                                                </AccordionDetails>
+                                                                            </Accordion>
+                                                                            <Box display="flex" sx={{ alignItems: "center", gap: 1, ml: 2 }}>
+                                                                                <Typography style={{
+                                                                                    width: "50px",
+                                                                                    display: "flex",
+                                                                                    justifyContent: "center",
+                                                                                    color: task.days > 7 ? "white" : "#333333",
+                                                                                }}>
+                                                                                    {`Day ${task.days}`}
+                                                                                </Typography>
+                                                                                <IconButton sx={{ m: 0, p: 1 }} onClick={() => handleOpenEdit(task)}>
+                                                                                    <EditIcon sx={{
+                                                                                        color: task.days > 7 ? "white" : "default" }}
+                                                                                    />
+                                                                                </IconButton>
+                                                                                <IconButton color="primary" onClick={() => handleCompleteTask(task, worker)}>
+                                                                                    <CheckIcon />
+                                                                                </IconButton>
+                                                                            </Box>
+                                                                        </Box>
+                                                                    </ListItem>
+                                                                )}
+                                                            </Draggable>
+                                                        ))}
+                                                        {provided.placeholder}
+                                                    </List>
+                                                </Box>
+                                            )}
+                                        </Droppable>
+                                    </Box>
+                                </Box>
+                            ))}
+                        </Box>
                     </Box>
                     <Box sx={{
                         width: "25%",

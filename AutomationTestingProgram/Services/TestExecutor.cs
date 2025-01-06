@@ -1,4 +1,3 @@
-using AutomationTestingProgram.Services;
 using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Models;
 using Microsoft.Playwright;
@@ -21,29 +20,23 @@ public class TestExecutor
     {
         _logger = logger;
         _broadcaster = broadcaster;
-        _actions = new Dictionary<string, IWebAction>
-        {
-            { "clickwebelement", new ClickWebElement() },
-            { "populatewebelement", new PopulateWebElement() },
-            { "navigatetourl", new NavigateToURL() },
-            { "verifywebelementavailability", new VerifyWebElementAvailability() },
-            { "checkbox", new CheckBox() },
-            { "login", new Login() },
-            { "presskey", new PressKey() },
-            { "selectddl", new SelectDDL() },
-            { "runsqlscript", new RunSQLScript() },
-            { "uploadfile", new UploadFile() },
-            { "closewindow", new CloseWindow() },
-            { "waitinseconds", new WaitInSeconds() },
-            { "exitcondition", new ExitCondition() },
-            { "chooseallddl", new ChooseAllDDL() },
-            { "checkallradiobuttons", new CheckAllRadioButtons() },
-            { "checkallboxes", new CheckAllBoxes() },
-            { "fillalltextboxes", new FillAllTextBoxes() },
-            { "verifytxtfile", new VerifyTxtFile() },
-            { "comment", new Comment() },
-            { "saveparameter", new SaveParameter() }
-        };
+        
+        var jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StaticFiles\\actions.json");
+        var jsonContent = File.ReadAllText(jsonFilePath);
+        var actionTypes = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent);
+
+        _actions = actionTypes.ToDictionary(
+            kvp => kvp.Key,
+            kvp =>
+            {
+                Type actionType = Type.GetType(kvp.Value);
+                if (actionType == null)
+                {
+                    throw new InvalidOperationException($"Action type '{kvp.Value}' not found.");
+                }
+                return (IWebAction)Activator.CreateInstance(actionType);
+            }
+        );
     }
 
     public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)

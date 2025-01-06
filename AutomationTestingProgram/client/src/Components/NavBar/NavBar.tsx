@@ -72,6 +72,9 @@ const NavBar = () => {
                             Logout
                         </Button>
                         <Button color="inherit" className="button" onClick={handleDownloadExtension}>Download Extension</Button>
+                        <Button component={Link} to={"/filevalidation"} color="inherit" className="button">
+                            File Validation
+                        </Button>
                     </Toolbar>
                 </AuthenticatedTemplate>
                 <UnauthenticatedTemplate>

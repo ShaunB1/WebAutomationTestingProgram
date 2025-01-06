@@ -1,13 +1,14 @@
 using System.Net.WebSockets;
 using System.Text;
+using AutomationTestingProgram.Actions;
 using DotNetEnv;
 using AutomationTestingProgram.Models;
-using AutomationTestingProgram.Services;
 using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.WebSockets;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Identity.Web;
 using Newtonsoft.Json;
 
@@ -47,7 +48,13 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection(); // client and server comms encrypted
-app.UseStaticFiles(); // can request static assets for frontend
+app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles")),
+    RequestPath = "/static"
+});
 
 app.UseWebSockets();
 

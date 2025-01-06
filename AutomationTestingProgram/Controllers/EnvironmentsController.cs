@@ -1,5 +1,5 @@
 ﻿using AutomationTestingProgram.Models;
-using AutomationTestingProgram.Services;
+using AutomationTestingProgram.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;

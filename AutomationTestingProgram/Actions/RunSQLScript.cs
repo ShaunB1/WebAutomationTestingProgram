@@ -7,7 +7,7 @@ using Microsoft.PowerShell.Commands;
 using Newtonsoft.Json;
 using Console = System.Console;
 
-namespace AutomationTestingProgram.Services;
+namespace AutomationTestingProgram.Actions;
 
 public class RunSQLScript : IWebAction
 {

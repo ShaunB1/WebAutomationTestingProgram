@@ -1,11 +1,12 @@
 using AutomationTestingProgram.Models;
-using AutomationTestingProgram.Services;
+using AutomationTestingProgram.Actions;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class TestController : ControllerBase

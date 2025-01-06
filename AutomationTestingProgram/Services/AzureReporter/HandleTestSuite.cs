@@ -5,7 +5,7 @@ using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.Web
 using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
 
 
-namespace AutomationTestingProgram.Services;
+namespace AutomationTestingProgram.Actions;
 
 public class HandleTestSuite : AzureReporter
 {

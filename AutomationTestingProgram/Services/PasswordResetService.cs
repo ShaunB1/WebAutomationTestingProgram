@@ -10,7 +10,7 @@ using Microsoft.Graph.Models;
 using System.Text.Json;
 using System.Globalization;
 
-namespace AutomationTestingProgram.Services
+namespace AutomationTestingProgram.Actions
 {
     public class PasswordResetService
     {

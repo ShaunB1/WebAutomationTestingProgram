@@ -48,7 +48,7 @@ public class TestController : ControllerBase
 
             // If request succeeds
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) successfully completed.");
-            return Ok(new { Message = $"{request.GetType().Name} (ID: {request.ID}) Complete.", Request = request });
+            return Ok(new { Message = $"Completed", Request = request });
         }
         catch (OperationCanceledException e)
         {

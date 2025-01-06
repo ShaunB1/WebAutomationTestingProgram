@@ -6,6 +6,7 @@ using AutomationTestingProgram.Models.Settings;
 using AutomationTestingProgram.Models.Exceptions;
 using AutomationTestingProgram.Backend.Helpers;
 using Microsoft.Graph.Models;
+using Azure;
 
 namespace AutomationTestingProgram.Services;
 
@@ -37,12 +38,7 @@ public static class AzureKeyVaultService
 
             var clientOptions = new SecretClientOptions
             {
-                Transport = new HttpClientTransport(_httpClient),
-                Diagnostics =
-                {
-                    IsLoggingEnabled = false, 
-                    IsDistributedTracingEnabled = false 
-                }
+                Transport = new HttpClientTransport(_httpClient)
             };
 
             SecretClient client = GetAzureClient(clientOptions);
@@ -54,7 +50,7 @@ public static class AzureKeyVaultService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error retrieving secret: {ex.Message}");
+            throw new Exception($"Error retrieving secret: {HandleException(ex)}");
         }
     }
 
@@ -82,7 +78,7 @@ public static class AzureKeyVaultService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error updating secret: {ex.Message}");
+            throw new Exception($"Error updating secret: {HandleException(ex)}");
         }
     }
 
@@ -99,8 +95,16 @@ public static class AzureKeyVaultService
             };
 
             SecretClient client = GetAzureClient(clientOptions);
+            KeyVaultSecret secret;
 
-            KeyVaultSecret secret = await client.GetSecretAsync(secretName.Replace("@", "--").Replace(".", "-").Replace("_", "---").ToLower());
+            try
+            {
+                secret = await client.GetSecretAsync(secretName.Replace("@", "--").Replace(".", "-").Replace("_", "---").ToLower());
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Error retrieving secret: {HandleException(e)}");
+            }
 
             if (secret.Value == "OPS" + DateTime.Now.ToString("ddMMMyyyy", CultureInfo.InvariantCulture) + "!")
             {
@@ -123,7 +127,7 @@ public static class AzureKeyVaultService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error connecting to Azure Key Vault: {ex.Message}\n{ex.StackTrace}");
+            throw new Exception($"Error connecting to Azure Key Vault: {ex.Message}");
         }
     }
 
@@ -138,7 +142,27 @@ public static class AzureKeyVaultService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error connecting to Azure Key Vault: {ex.Message}\n{ex.StackTrace}");
+            throw new Exception($"Error connecting to Azure Key Vault: {HandleException(ex)}");
         }
     }
+
+    private static string HandleException(Exception e)
+    {
+        switch (e)
+        {
+            case RequestFailedException rfe when rfe.Status == 403: return "Client address is not authorized and caller is not a trusted service. Make sure 'Canada Central' is in use.";
+            case RequestFailedException rfe when rfe.Status == 404: return "The secret was not found.";
+            case RequestFailedException rfe when rfe.Status == 401: return "Unauthorized request.";
+            case RequestFailedException rfe when rfe.Status == 400: return "Bad request.";
+            case RequestFailedException rfe when rfe.Status == 500: return "Internal server error.";
+            case RequestFailedException rfe when rfe.Status == 503: return "Service unavailable.";
+            case ArgumentException: return "Invalid argument provided.";
+            case TaskCanceledException: return "Task was canceled.";
+            case AuthenticationFailedException: return "Authentication with Azure Key Vault failed.";
+            case OperationCanceledException: return "Operation was canceled.";
+            default: return e.Message;
+        }
+    }
+
+
 }

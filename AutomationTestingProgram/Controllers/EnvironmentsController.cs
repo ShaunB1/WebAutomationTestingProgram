@@ -25,12 +25,8 @@ public class EnvironmentsController : ControllerBase
      * curl -X GET -H "Content-Type: application/json" http://localhost:5223/api/environments/keychainAccounts
      * - SecretKey
      * curl -X GET -H "Content-Type: application/json" http://localhost:5223/api/environments/secretKey?email=example@example.com
-     * - VALIDATE
-     *   curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\Schools Table.xlsx" http://localhost:5223/api/test/validate
-     * - PROCESS
-     * curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\Schools Table.xlsx" -F "Type=Chrome" -F "Version=92" -F "Environment=TestEnv" http://localhost:5223/api/test/run
-     * - GETACTIVEREQUESTS
-     * curl -X POST -H "Content-Type: application/json" http://localhost:5223/api/test/retrieve
+     * - RESET
+     * curl -X POST -H "Content-Type: application/json" -d "{\"Email\": \"iam_ma@ontarioemail.ca\"}" http://localhost:5223/api/environments/resetPassword
      * 
      * Test commands:
      * for /l %i in (1,1,10) do start /b curl -X POST -H "Content-Type: application/json" http://localhost:5223/api/test/retrieve
@@ -46,7 +42,7 @@ public class EnvironmentsController : ControllerBase
 
             // If request succeeds
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) successfully completed.");
-            return Ok(new { Message = $"{request.GetType().Name} (ID: {request.ID}) Complete.", Request = request });
+            return Ok(new { Message = $"Completed", Request = request });
         }
         catch (OperationCanceledException e)
         {
@@ -70,7 +66,7 @@ public class EnvironmentsController : ControllerBase
         return await HandleRequest<KeyChainRetrievalRequest>(request);
     }
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpGet("secretKey")]
     public async Task<IActionResult> GetSecretKey([FromQuery] SecretKeyRetrievalRequestModel model)
     {

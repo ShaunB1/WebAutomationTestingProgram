@@ -197,10 +197,9 @@ namespace AutomationTestingProgram.Backend
                     throw new Exception($"Request to cancel (ID: {this.CancelRequestID}) cannot be a CancellationRequest.");
 
                 case Type when type == typeof(KeyChainRetrievalRequest):
-                case Type when type == typeof(CancellationRequest):
+                case Type when type == typeof(SecretKeyRetrievalRequest):
+                case Type when type == typeof(PasswordResetRequest):
                     throw new Exception($"Request to cancel (ID: {this.CancelRequestID}) cannot be cancelled (invalid type).");
-
-
             }
         }
 

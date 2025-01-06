@@ -88,6 +88,10 @@ void ConfigureLogging(WebApplicationBuilder builder)
 {
     builder.Logging.ClearProviders();
     builder.Logging.AddProvider(new CustomLoggerProvider(LogManager.GetRunFolderPath()));
+
+    builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
+    builder.Logging.AddFilter("Microsoft.AspNetCore.HttpLogging", LogLevel.None);
+    builder.Logging.AddFilter("WebSocket*", LogLevel.None);
 }
 
 void ConfigureAppSettings(WebApplicationBuilder builder)

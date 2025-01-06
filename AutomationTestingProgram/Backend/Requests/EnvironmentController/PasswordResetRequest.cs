@@ -1,5 +1,6 @@
 ﻿using AutomationTestingProgram.Services;
 using AutomationTestingProgram.Services.Logging;
+using DocumentFormat.OpenXml.Math;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using System.Security.Claims;
@@ -11,7 +12,7 @@ namespace AutomationTestingProgram.Backend
     /// Request to reset password for an email
     /// </summary>
     public class PasswordResetRequest : IClientRequest
-    {
+    {   
         public string ID { get; }
         [JsonIgnore]
         public ClaimsPrincipal User { get; }
@@ -151,7 +152,7 @@ namespace AutomationTestingProgram.Backend
 
             try
             {
-                Logger.LogInformation($"Validating SecretKeyRetrieval Request (ID: {ID})");
+                Logger.LogInformation($"Validating PasswordReset Request (ID: {ID})");
 
                 // Validate permission to access application
                 this.SetStatus(State.Validating, $"Validating User Permissions - Team");

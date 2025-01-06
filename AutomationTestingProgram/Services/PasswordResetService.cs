@@ -13,6 +13,7 @@ namespace AutomationTestingProgram.Services
     {
         private static readonly MicrosoftGraphSettings _settings;
         private static readonly LockManager<string> _lockManager;
+        private static readonly SemaphoreSlim _limit;
         private static HttpClient _httpClient;
 
         /*
@@ -26,7 +27,7 @@ namespace AutomationTestingProgram.Services
         static PasswordResetService()
         {
             _settings = AppConfiguration.GetSection<MicrosoftGraphSettings>("MicrosoftGraph");
-            _lockManager = new LockManager<string>();
+            _lockManager = new LockManager<string>(_settings.Limit);
         }
 
         public static void Initialize(HttpClient httpClient)
@@ -90,7 +91,7 @@ namespace AutomationTestingProgram.Services
 
                 if (response.IsSuccessStatusCode && responseObject != null && responseObject.result == 0)
                 {
-                    Logger.LogInformation($"OTP request successful\nResponse:{responseBody}");
+                    Logger.LogInformation($"OTP request successful");
                 }
                 else
                 {
@@ -99,7 +100,7 @@ namespace AutomationTestingProgram.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"OTP request failed. {ex.Message}\n{ex.StackTrace}");
+                throw new Exception($"OTP request failed. {ex.Message}");
             }
         }
 
@@ -142,11 +143,10 @@ namespace AutomationTestingProgram.Services
                 {
                     throw new Exception("No reset password email was found");
                 }
-                Logger.LogInformation($"Password reset email text:\n{emailText}");
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to find email containing OTP. {ex.Message}\n{ex.StackTrace}");
+                throw new Exception($"Failed to find email containing OTP. {ex.Message}");
             }
 
             // Find OTP from the email text. Searches for 5 digits or more in between bodies of text
@@ -171,7 +171,7 @@ namespace AutomationTestingProgram.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to find OTP in email. {ex.Message}\n{ex.StackTrace}");
+                throw new Exception($"Failed to find OTP in email. {ex.Message}");
             }
         }
 
@@ -193,16 +193,16 @@ namespace AutomationTestingProgram.Services
 
                 if (response.IsSuccessStatusCode && responseObject != null && responseObject.result == 0)
                 {
-                    Logger.LogInformation($"Password reset request successful\nResponse:{responseBody}");
+                    Logger.LogInformation($"Password reset request successful");
                 }
                 else
                 {
-                    throw new Exception($"Password reset request failed with status code {response.StatusCode}\n{responseBody}");
+                    throw new Exception($"Password reset request failed with status code {response.StatusCode}");
                 }
             }
             catch (Exception ex)
             {
-                throw new Exception($"Password reset request failed. {ex.Message}\n{ex.StackTrace}");
+                throw new Exception($"Password reset request failed. {ex.Message}");
             }
         }
 

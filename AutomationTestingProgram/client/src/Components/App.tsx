@@ -26,26 +26,30 @@ function App() {
     const fallBackElement =
         window.location.pathname !== "/signin-oidc" ? <Navigate to={"/"} /> : <></>;
     const { instance, accounts } = useMsal();
-    const [name, setName] = useState(null);
-    const [email, setEmail] = useState(null);
+    const [name, setName] = useState<string | null>(null);
+    const [email, setEmail] = useState<string | null>(null);
 
     useEffect(() => {
         const getAccountInfo = async () => {
             await instance.initialize();
-            const token = await getToken(instance, accounts);
-            const headers = new Headers();
-            headers.append("Authorization", `Bearer ${token}`);
-            const response = await fetch("/api/auth/getAccountInfo", {
-                method: "GET",
-                headers: headers,
-            });
-            const result = await response.json();
-            setName(result.name);
-            setEmail(result.email);
+            try {
+                const token = await getToken(instance, accounts);
+                if (token) {
+                    const payload = JSON.parse(atob(token.split('.')[1]))
+                    const name = payload.name || null;
+                    const email = payload.preferred_username || null;
+                    setName(name);
+                    setEmail(email);
+                }
+
+            } catch (err) {
+                console.error('Error decoding token:', err);
+                return null;
+            }
         }
         getAccountInfo();
     }, []);
-
+    
     return (
         <>
             <BrowserRouter>
@@ -109,3 +113,4 @@ function App() {
 }
 
 export default App
+

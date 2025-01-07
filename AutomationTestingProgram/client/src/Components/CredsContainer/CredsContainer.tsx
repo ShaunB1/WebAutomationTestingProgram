@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState, memo, useMemo } from "react";
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from "ag-grid-community";
 import { Button, CircularProgress, TextField } from "@mui/material";
+import { getToken } from "../../authConfig";
+import { useMsal } from "@azure/msal-react";
 
 interface ErrorResponse {
     error: string;
@@ -11,16 +13,19 @@ function CredsContainer() {
     const [rowData, setRowData] = useState([]);
     const [loading, setLoading] = useState(true);
     const gridRef: any = useRef();
+    const { instance, accounts } = useMsal();
 
     useEffect(() => {
         const fetchRows = async () => {
             try {
                 setLoading(true);
+                const token = await getToken(instance, accounts);
+                const headers = new Headers();
+                headers.append("Authorization", `Bearer ${token}`);
+                headers.append('Content-Type', 'application/json')
                 const response = await fetch("api/environments/keychainAccounts", {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: headers
                 });
                 setLoading(false);
                 if (!response.ok) {
@@ -40,11 +45,13 @@ function CredsContainer() {
     const handleClick = async (email: string, setValue: (value: string) => void, setLoading: (value: boolean) => void, setError: (value: boolean) => void) => {
         try {
             setLoading(true);
+            const token = await getToken(instance, accounts);
+            const headers = new Headers();
+            headers.append("Authorization", `Bearer ${token}`);
+            headers.append('Content-Type', 'application/json')
             const response = await fetch(`api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+                headers: headers
             });
             setLoading(false);
             if (!response.ok) {

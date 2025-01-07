@@ -6,8 +6,13 @@
 
 .button:first-child {
     font-weight: bold;
-    font-size: 25px; 
+    font-size: 25px;
 }
+
+.button:last-child {
+    margin-left: auto;
+}
+
 
 .navbar {
     height: 60px;

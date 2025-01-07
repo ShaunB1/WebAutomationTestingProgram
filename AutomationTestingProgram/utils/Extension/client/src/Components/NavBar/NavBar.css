@@ -9,6 +9,10 @@
     font-size: 25px; 
 }
 
+.button:last-child {
+    margin-left: auto;
+}
+
 .navbar {
     height: 60px;
 }

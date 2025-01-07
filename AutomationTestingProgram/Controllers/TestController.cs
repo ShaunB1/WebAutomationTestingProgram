@@ -43,7 +43,7 @@ public class TestController : ControllerBase
     // We want to authorization for all endpoints, but if you are testing then comment out the line below
     [Authorize]
     [HttpPost("run")]
-    public async Task<IActionResult> RunTests([FromForm] IFormFile file, [FromForm] string env, [FromForm] string browser)
+    public async Task<IActionResult> RunTests(IFormFile file, [FromForm] string env, [FromForm] string browser)
     {
         if (file == null)
         {
@@ -106,25 +106,25 @@ public class TestController : ControllerBase
         }
     }
 
-    public IActionResult SaveTestSteps([FromForm] List<TestStep> testSteps)
-    {
-        using (var workbook = new XLWorkbook())
-        {
-            var worksheet = workbook.Worksheets.Add("TestSteps");
-            worksheet.Cell(1, 1).Value = "TestCaseName";
-            worksheet.Cell(1, 2).Value = "TestDescription";
+    //public IActionResult SaveTestSteps([FromForm] List<TestStep> testSteps)
+    //{
+    //    using (var workbook = new XLWorkbook())
+    //    {
+    //        var worksheet = workbook.Worksheets.Add("TestSteps");
+    //        worksheet.Cell(1, 1).Value = "TestCaseName";
+    //        worksheet.Cell(1, 2).Value = "TestDescription";
 
-            for (int i = 0; i < testSteps.Count; i++)
-            {
-                worksheet.Cell(i + 2, 1).Value = testSteps[i].TestCaseName;
-                worksheet.Cell(i + 2, 2).Value = testSteps[i].TestDescription;
-            }
+    //        for (int i = 0; i < testSteps.Count; i++)
+    //        {
+    //            worksheet.Cell(i + 2, 1).Value = testSteps[i].TestCaseName;
+    //            worksheet.Cell(i + 2, 2).Value = testSteps[i].TestDescription;
+    //        }
 
-            using (var stream = new MemoryStream())
-            {
-                workbook.SaveAs(stream);
-                return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Testing.xlsx");
-            }
-        }
-    }
+    //        using (var stream = new MemoryStream())
+    //        {
+    //            workbook.SaveAs(stream);
+    //            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Testing.xlsx");
+    //        }
+    //    }
+    //}
 }

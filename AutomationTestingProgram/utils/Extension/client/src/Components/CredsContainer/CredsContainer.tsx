@@ -15,17 +15,16 @@ function CredsContainer(props: any) {
 
     const gridRef: any = useRef();
 
-    const url = HOST;
-
     useEffect(() => {
         const fetchRows = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`${url}/api/environments/keychainAccounts`, {
+                const headers = new Headers();
+                headers.append("Authorization", `Bearer ${props.accessToken}`);
+                headers.append('Content-Type', 'application/json');
+                const response = await fetch(`${HOST}/api/environments/keychainAccounts`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: headers
                 });
                 setLoading(false);
                 if (!response.ok) {
@@ -66,12 +65,14 @@ function CredsContainer(props: any) {
     const handleClick = async (email: string, setLoading: (value: boolean) => void, setError: (value: boolean) => void) => {
         try {
             setLoading(true);
-            const response = await fetch(`${url}/api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
+            const headers = new Headers();
+            headers.append("Authorization", `Bearer ${props.accessToken}`);
+            headers.append('Content-Type', 'application/json');
+            const response = await fetch(`${HOST}/api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+                headers: headers
             });
+
             setLoading(false);
             if (!response.ok) {
                 setError(true);

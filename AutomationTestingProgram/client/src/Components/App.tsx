@@ -4,12 +4,14 @@ import NavBar from "./NavBar/NavBar.tsx";
 import EnvsPage from "../Pages/EnvsPage.tsx";
 import PivotTable from "./PivotTable/PivotTable.tsx";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { MsalAuthenticationTemplate } from "@azure/msal-react";
+import { MsalAuthenticationTemplate, useMsal } from "@azure/msal-react";
 import { InteractionType } from "@azure/msal-browser";
 import TaskBoard from "./TaskBoard/TaskBoard.tsx";
 import CompletedTasks from "./CompletedTasks/CompletedTasks.tsx";
 import ChatBot from "./ChatBot/ChatBot.tsx";
 import FileValidation from "./FileValidation/FileValidation.tsx";
+import { getToken } from "../authConfig.ts";
+import { useEffect, useState } from "react";
 
 function App() {
     // Kenny implemented this fallback element but this can be removed/updated
@@ -23,12 +25,32 @@ function App() {
     */
     const fallBackElement =
         window.location.pathname !== "/signin-oidc" ? <Navigate to={"/"} /> : <></>;
+    const { instance, accounts } = useMsal();
+    const [name, setName] = useState(null);
+    const [email, setEmail] = useState(null);
+
+    useEffect(() => {
+        const getAccountInfo = async () => {
+            await instance.initialize();
+            const token = await getToken(instance, accounts);
+            const headers = new Headers();
+            headers.append("Authorization", `Bearer ${token}`);
+            const response = await fetch("/api/auth/getAccountInfo", {
+                method: "GET",
+                headers: headers,
+            });
+            const result = await response.json();
+            setName(result.name);
+            setEmail(result.email);
+        }
+        getAccountInfo();
+    }, []);
 
     return (
         <>
             <BrowserRouter>
                 <div className="main-container">
-                    <NavBar />
+                    <NavBar name={name} email={email} />
                     <div className="content-container">
                         <Routes>
                             <Route path="/" element={<Home />} />

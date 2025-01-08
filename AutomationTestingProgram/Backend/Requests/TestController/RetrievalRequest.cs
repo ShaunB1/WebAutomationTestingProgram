@@ -13,8 +13,6 @@ namespace AutomationTestingProgram.Backend
         public string ID { get; }
         [JsonIgnore]
         public ClaimsPrincipal User { get; }
-        [JsonIgnore]
-        public TaskCompletionSource ResponseSource { get; }
         public State State { get; private set; }
         [JsonIgnore]
         public object StateLock { get; }

@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Reflection;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 namespace AutomationTestingProgram.Backend
@@ -17,13 +18,6 @@ namespace AutomationTestingProgram.Backend
         /// Reference to the User that sent the request
         /// </summary>
         ClaimsPrincipal User { get; }
-
-        /// <summary>
-        /// The TaskCompletionSource associated with this request.
-        /// When a request is received, the caller await the result of this TaskCompletionSource.
-        /// This allows the request to be completed from any point throughout the code.
-        /// </summary>
-        TaskCompletionSource ResponseSource { get; }
 
         /// <summary>
         /// The State of the Request.

@@ -1,5 +1,4 @@
-﻿using AutomationTestingProgram.Backend.Helpers;
-using AutomationTestingProgram.Models.Settings;
+﻿using AutomationTestingProgram.Models.Settings;
 
 namespace AutomationTestingProgram.Backend
 {   
@@ -27,12 +26,12 @@ namespace AutomationTestingProgram.Backend
         /// </summary>
         private static readonly SemaphoreSlim _maxOperations;
 
-        private static readonly IOSettings _IOSettings;
+        private static readonly IOSettings _settings;
 
         static IOManager()
         {
-            _IOSettings = AppConfiguration.GetSection<IOSettings>("IO");
-            _maxOperations = new SemaphoreSlim(_IOSettings.Limit);
+            _settings = AppConfiguration.GetSection<IOSettings>("IO");
+            _maxOperations = new SemaphoreSlim(_settings.Limit);
         }
 
         /// <summary>

@@ -13,8 +13,6 @@ namespace AutomationTestingProgram.Backend
         public string ID { get; }
         [JsonIgnore]
         public ClaimsPrincipal User { get; }
-        [JsonIgnore]
-        public TaskCompletionSource ResponseSource { get; }
         public State State { get; private set; }
         [JsonIgnore]
         public object StateLock { get; }
@@ -50,7 +48,6 @@ namespace AutomationTestingProgram.Backend
             this.ID = Guid.NewGuid().ToString();
             this.User = User;
             CancelRequestID = ID;
-            ResponseSource = new TaskCompletionSource();
             State = State.Received;
             StateLock = new object();
             CancellationTokenSource = new CancellationTokenSource(); // CANNOT CANCEL CANCELLATION REQUEST

@@ -1,4 +1,6 @@
-﻿namespace AutomationTestingProgram.Backend.Helpers
+﻿using DocumentFormat.OpenXml.Math;
+
+namespace AutomationTestingProgram.Backend
 {   
     /// <summary>
     /// Class used to manage a lock dictionary with appropriate addition and deletion
@@ -10,11 +12,25 @@
         private readonly Dictionary<T, LockInfo> _lockMap;
         private readonly SemaphoreSlim _limit;
 
+        /// <summary>
+        /// Initialize a <see cref="LockManager{T}"/> class with a limit on total # of concurrent locks.
+        /// </summary>
+        /// <param name="Limit"></param>
         public LockManager(int Limit)
         {
             _bigLock = new object();
             _lockMap = new Dictionary<T, LockInfo>();
             _limit = new SemaphoreSlim(Limit);
+        }
+
+        /// <summary>
+        /// Initialize a <see cref="LockManager{T}"/> class without any limit on # of concurrent locks.
+        /// </summary>
+        public LockManager()
+        {
+            _bigLock = new object();
+            _lockMap = new Dictionary<T, LockInfo>();
+            _limit = new SemaphoreSlim(int.MaxValue); // Simulating infinite slots
         }
 
         /*

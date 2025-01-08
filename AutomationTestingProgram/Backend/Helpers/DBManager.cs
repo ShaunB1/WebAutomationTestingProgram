@@ -1,4 +1,4 @@
-﻿namespace AutomationTestingProgram.Backend.Helpers
+﻿namespace AutomationTestingProgram.Backend
 {
     public class DBManager
     {

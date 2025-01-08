@@ -65,7 +65,7 @@ namespace AutomationTestingProgram.Backend
             BrowserType = Type;
             BrowserVersion = Version;
             this.Environment = Environment;
-            ResponseSource = new TaskCompletionSource();
+            ResponseSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             State = State.Received;
             StateLock = new object();
             CancellationTokenSource = new CancellationTokenSource();

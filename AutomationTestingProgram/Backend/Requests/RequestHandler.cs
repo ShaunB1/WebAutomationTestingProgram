@@ -18,7 +18,7 @@ namespace AutomationTestingProgram.Backend
         /// <summary>
         /// Settings used for Requests
         /// </summary>
-        private static readonly RequestSettings _requestSettings;
+        private static readonly RequestSettings _settings;
 
         /// <summary>
         /// Semaphore used to limit total # of active requests
@@ -39,8 +39,8 @@ namespace AutomationTestingProgram.Backend
         static RequestHandler()
         {
             _playwright = new PlaywrightObject();
-            _requestSettings = AppConfiguration.GetSection<RequestSettings>("Request");
-            _maxRequests = new SemaphoreSlim(_requestSettings.Limit);
+            _settings = AppConfiguration.GetSection<RequestSettings>("Request");
+            _maxRequests = new SemaphoreSlim(_settings.Limit);
             _requests = new ConcurrentDictionary<string, IClientRequest>();
             _tokenSource = new CancellationTokenSource();
         }
@@ -59,7 +59,6 @@ namespace AutomationTestingProgram.Backend
                 request.SetStatus(State.Received, $"{request.GetType().Name} (ID: {request.ID}) received.");
 
                 await request.Process();
-                await request.ResponseSource.Task;
                 // If an exception, caught by controller
             }
             finally
@@ -112,7 +111,7 @@ namespace AutomationTestingProgram.Backend
             _tokenSource.Cancel(); // Cancels the token source
 
             // Waits for all requests to be in the dictionary (concurrency issues)
-            while (_maxRequests.CurrentCount != _requestSettings.Limit - _requests.Count)
+            while (_maxRequests.CurrentCount != _settings.Limit - _requests.Count)
             {
                 await Task.Delay(100);
             }

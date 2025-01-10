@@ -2,7 +2,7 @@ import { useState } from 'react';
 import EnvNavContainer from "../EnvNavContainer/EnvNavContainer";
 import CredsContainer from "../CredsContainer/CredsContainer";
 
-function EnvPage(props: any) {
+function EnvPage() {
     const [currentCreds, setCurrentCreds] = useState({ username: "", password: "" });
 
     const handleUrlClick = (e: any, url: string) => {
@@ -25,7 +25,7 @@ function EnvPage(props: any) {
                     <EnvNavContainer handleUrlClick={handleUrlClick} />
                 </div>
                 <div style={{ height: "100%" }}>
-                    <CredsContainer accessToken={props.accessToken} setCurrentCreds={setCurrentCreds} />
+                    <CredsContainer setCurrentCreds={setCurrentCreds} />
                 </div>
             </div>
         </>

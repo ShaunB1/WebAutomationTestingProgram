@@ -3,6 +3,8 @@ import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from "ag-grid-community";
 import { Button, CircularProgress, TextField } from "@mui/material";
 import { HOST } from "../../constants";
+import { getToken } from "../../authConfig";
+import { useMsal } from "@azure/msal-react";
 
 interface ErrorResponse {
     error: string;
@@ -12,6 +14,7 @@ function CredsContainer(props: any) {
     const [rowData, setRowData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [credFilter, setCredFilter] = useState("");
+    const { instance, accounts } = useMsal();
 
     const gridRef: any = useRef();
 
@@ -20,7 +23,8 @@ function CredsContainer(props: any) {
             try {
                 setLoading(true);
                 const headers = new Headers();
-                headers.append("Authorization", `Bearer ${props.accessToken}`);
+                const token = await getToken(instance, accounts);
+                headers.append("Authorization", `Bearer ${token}`);
                 headers.append('Content-Type', 'application/json');
                 const response = await fetch(`${HOST}/api/environments/keychainAccounts`, {
                     method: 'GET',
@@ -66,7 +70,8 @@ function CredsContainer(props: any) {
         try {
             setLoading(true);
             const headers = new Headers();
-            headers.append("Authorization", `Bearer ${props.accessToken}`);
+            const token = await getToken(instance, accounts);
+            headers.append("Authorization", `Bearer ${token}`);
             headers.append('Content-Type', 'application/json');
             const response = await fetch(`${HOST}/api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
                 method: 'GET',
@@ -81,7 +86,6 @@ function CredsContainer(props: any) {
             }
             const result = await response.json();
             setError(false);
-            console.log(result.secretKey);
             props.setCurrentCreds({ username: email, password: result.message });
         } catch (err) {
             console.error(err);

@@ -6,44 +6,56 @@ import RecorderTable from "./RecorderTable/RecorderTable.tsx";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ToolsPage from "../Pages/ToolsPage/ToolsPage.tsx";
 import { useEffect, useState } from 'react';
+import { getToken } from '../authConfig.ts';
+import { HOST } from '../constants.ts';
+import { useMsal } from '@azure/msal-react';
 import AuthGuard from './AuthGuard/AuthGuard.tsx';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [accessToken, setAccessToken] = useState(null);
+  const [name, setName] = useState(null);
+  const [email, setEmail] = useState(null);
+  const { instance, accounts } = useMsal();
 
   const fallBackElement =
     window.location.pathname !== "/signin-oidc" ? <Navigate to={"/"} /> : <></>;
 
-  useEffect(() => {
-    chrome.storage.local.get("accessToken", (token) => {
-      if (token.accessToken) {
-        setAccessToken(token.accessToken);
-        setIsAuthenticated(true);
+    useEffect(() => {
+      const getAccountInfo = async () => {
+          await instance.initialize();
+          const token = await getToken(instance, accounts);
+          const headers = new Headers();
+          headers.append("Authorization", `Bearer ${token}`);
+          const response = await fetch(`${HOST}/api/auth/getAccountInfo`, {
+              method: "GET",
+              headers: headers,
+          });
+          const result = await response.json();
+          setName(result.name);
+          setEmail(result.email);
       }
-    });
+      getAccountInfo();
   }, []);
 
   return (
     <>
       <BrowserRouter>
         <div className="main-container">
-          <NavBar isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} setAccessToken={setAccessToken} />
+          <NavBar name={name} email={email} />
           <div className="content-container">
             <Routes>
-              <Route path="/" element={<Home isAuthenticated={isAuthenticated} />} />
+              <Route path="/" element={<Home />} />
               <Route path="/recorder" element={
-                <AuthGuard isAuthenticated={isAuthenticated}>
+                <AuthGuard>
                   <RecorderTable />
                 </AuthGuard>
               } />
               <Route path="/environments" element={
-                <AuthGuard isAuthenticated={isAuthenticated}>
-                  <EnvPage accessToken={accessToken} />
+                <AuthGuard>
+                  <EnvPage />
                 </AuthGuard>
               } />
               <Route path="/tools" element={
-                <AuthGuard isAuthenticated={isAuthenticated}>
+                <AuthGuard>
                   <ToolsPage />
                 </AuthGuard>
               } />

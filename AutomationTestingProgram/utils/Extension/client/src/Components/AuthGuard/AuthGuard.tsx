@@ -1,7 +1,10 @@
+import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-react";
+
 const AuthGuard = (props: any) => {
     return (
         <>
-            {props.isAuthenticated ? props.children : "Please login to continue"}
+            <AuthenticatedTemplate>{props.children}</AuthenticatedTemplate>
+            <UnauthenticatedTemplate>Please login to continue</UnauthenticatedTemplate>
         </>
     );
 }

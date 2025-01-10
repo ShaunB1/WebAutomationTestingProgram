@@ -262,7 +262,12 @@ const RecorderTable: React.FC = () => {
     }, [start]);
 
     const handleStartSwitch = () => {
-        setStart(!start);
+        if (selectedTestCase && selectedTestCase !== "") {
+            console.log(selectedTestCase);
+            setStart(!start);
+        } else {
+            alert("Please select a test case.");
+        }
     }
 
     const handleExport = () => {
@@ -586,8 +591,9 @@ const RecorderTable: React.FC = () => {
     const handleDeleteTestCase = () => {
         const selectedTestCases = sortedTestCasesRef.current?.api.getSelectedRows();
         if (selectedTestCases  && selectedTestCases.length > 0) {
-            setTestCases(prevTestCases => prevTestCases.filter(tc => !selectedTestCases.some(selected => selected.TESTCASENAME === tc.testCaseName)));
+            setTestCases(prevTestCases => prevTestCases.filter(tc => !selectedTestCases.some(selected => selected.TESTCASE === tc.testCaseName)));
             setSortedTestCases(prevTestCases => prevTestCases.filter(tc => !selectedTestCases.includes(tc)));
+            setSelectedTestCase(null);
         }
     }
 
@@ -734,6 +740,7 @@ const RecorderTable: React.FC = () => {
                             <TextField
                                 label="Test Case Name"
                                 variant="outlined"
+                                value={inputValue}
                                 onChange={handleInputChange}
                                 sx={{
                                     flexGrow: 1,

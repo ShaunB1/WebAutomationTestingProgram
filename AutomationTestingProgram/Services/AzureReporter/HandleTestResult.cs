@@ -1,7 +1,7 @@
 ﻿using AutomationTestingProgram.Models;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 
-namespace AutomationTestingProgram.Services;
+namespace AutomationTestingProgram.Actions;
 
 public class HandleTestResult : AzureReporter
 {

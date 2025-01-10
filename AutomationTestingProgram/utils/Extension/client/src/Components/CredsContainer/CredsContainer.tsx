@@ -3,6 +3,8 @@ import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from "ag-grid-community";
 import { Button, CircularProgress, TextField } from "@mui/material";
 import { HOST } from "../../constants";
+import { getToken } from "../../authConfig";
+import { useMsal } from "@azure/msal-react";
 
 interface ErrorResponse {
     error: string;
@@ -12,20 +14,21 @@ function CredsContainer(props: any) {
     const [rowData, setRowData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [credFilter, setCredFilter] = useState("");
+    const { instance, accounts } = useMsal();
 
     const gridRef: any = useRef();
-
-    const url = HOST;
 
     useEffect(() => {
         const fetchRows = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`${url}/api/environments/keychainAccounts`, {
+                const headers = new Headers();
+                const token = await getToken(instance, accounts);
+                headers.append("Authorization", `Bearer ${token}`);
+                headers.append('Content-Type', 'application/json');
+                const response = await fetch(`${HOST}/api/environments/keychainAccounts`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: headers
                 });
                 setLoading(false);
                 if (!response.ok) {
@@ -66,12 +69,15 @@ function CredsContainer(props: any) {
     const handleClick = async (email: string, setLoading: (value: boolean) => void, setError: (value: boolean) => void) => {
         try {
             setLoading(true);
-            const response = await fetch(`${url}/api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
+            const headers = new Headers();
+            const token = await getToken(instance, accounts);
+            headers.append("Authorization", `Bearer ${token}`);
+            headers.append('Content-Type', 'application/json');
+            const response = await fetch(`${HOST}/api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+                headers: headers
             });
+
             setLoading(false);
             if (!response.ok) {
                 setError(true);
@@ -80,7 +86,6 @@ function CredsContainer(props: any) {
             }
             const result = await response.json();
             setError(false);
-            console.log(result.secretKey);
             props.setCurrentCreds({ username: email, password: result.message });
         } catch (err) {
             console.error(err);

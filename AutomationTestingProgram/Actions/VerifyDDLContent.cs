@@ -10,11 +10,11 @@ namespace AutomationTestingProgram.Actions;
     /// <summary>
     /// This test step verifies the content of a dropdown list using Playwright.
     /// </summary>
-public class VerifyDDLContent : IWebAction
+public class VerifyDDLContent : WebAction
 {
     public string Name { get; set; } = "VerifyDDLContent";
 
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
             //base.Execute();
 

@@ -1,12 +1,12 @@
-using AutomationTestingProgram.Services;
+using AutomationTestingProgram.Actions;
 using Microsoft.Graph.Reports.GetPrinterArchivedPrintJobsWithPrinterIdWithStartDateTimeWithEndDateTime;
 using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Actions;
 
-public class Login : IWebAction
+public class Login : WebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         string username = step.Object;
         string password = step.Value;

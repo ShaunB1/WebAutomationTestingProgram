@@ -3,7 +3,8 @@
 ## Table of Contents
 1. [Test Controller](#test-controller)
 2. [Environments Controller](#environments-controller)
-3. [Task Controller](#task-controller)
+3. [Auth Controller](#auth-controller)
+4. [Task Controller](#task-controller)
 
 # Test Controller
 
@@ -47,9 +48,21 @@
     - **Content-Type**: `application/json`
     
 ```json
-{
-    "email": "example@ontarioemail.ca"
-}
+"example@ontarioemail.ca"
 ```
+
+# Auth Controller
+
+## Base URL `/api/auth`
+
+#### **GET** `/validateToken`
+- **Description**: Validates the access token in the `Authorization` header
+- **Authentication**: Requires a valid `Authorization` token
+- **Response**: Returns 200 if valid token and 401 otherwise
+
+#### **GET** `/getAccountInfo`
+- **Description**: Gets the account information of the user
+- **Authentication**: Requires a valid `Authorization` token
+- **Response**: Returns `name` and `email` of the user
 
 # Task Controller

@@ -4,9 +4,9 @@ using Newtonsoft.Json;
 
 namespace AutomationTestingProgram.Actions;
 
-public class UploadFile : IWebAction
+public class UploadFile : WebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         var locator = step.Object;
         var filePath = step.Value;

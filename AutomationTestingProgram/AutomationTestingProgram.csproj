@@ -29,7 +29,7 @@
 	<ItemGroup>
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
-		<Folder Include="client\src\utils\" />
+		<Folder Include="SampleTests\" />
 		<Folder Include="wwwroot\" />
 	</ItemGroup>
 
@@ -60,22 +60,28 @@
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-DT0luH8i.js" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-DsuYRK7M.js" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-uBzdGwA-.css" />
+		<_ContentIncludedByDefault Remove="wwwroot\assets\index-6taKtAMF.css" />
+		<_ContentIncludedByDefault Remove="wwwroot\assets\index-BFjJ9ENj.js" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Remove="TestData\**" />
+		<Compile Remove="client\src\utils\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Remove="TestData\**" />
+		<EmbeddedResource Remove="client\src\utils\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Content Remove="TestData\**" />
+		<Content Remove="client\src\utils\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Remove="TestData\**" />
+		<None Remove="client\src\utils\**" />
 	</ItemGroup>
 
 	<ItemGroup>

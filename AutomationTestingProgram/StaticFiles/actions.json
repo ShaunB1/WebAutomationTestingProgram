@@ -1,0 +1,22 @@
+﻿{
+  "clickwebelement": "AutomationTestingProgram.Actions.ClickWebElement",
+  "populatewebelement": "AutomationTestingProgram.Actions.PopulateWebElement",
+  "navigatetourl": "AutomationTestingProgram.Actions.NavigateToURL",
+  "verifywebelementavailability": "AutomationTestingProgram.Actions.VerifyWebElementAvailability",
+  "checkbox": "AutomationTestingProgram.Actions.CheckBox",
+  "login": "AutomationTestingProgram.Actions.Login",
+  "presskey": "AutomationTestingProgram.Actions.PressKey",
+  "selectddl": "AutomationTestingProgram.Actions.SelectDDL",
+  "runsqlscript": "AutomationTestingProgram.Actions.RunSQLScript",
+  "uploadfile": "AutomationTestingProgram.Actions.UploadFile",
+  "closewindow": "AutomationTestingProgram.Actions.CloseWindow",
+  "waitinseconds": "AutomationTestingProgram.Actions.WaitInSeconds",
+  "exitcondition": "AutomationTestingProgram.Actions.ExitCondition",
+  "chooseallddl": "AutomationTestingProgram.Actions.ChooseAllDDL",
+  "checkallradiobuttons": "AutomationTestingProgram.Actions.CheckAllRadioButtons",
+  "checkallboxes": "AutomationTestingProgram.Actions.CheckAllBoxes",
+  "fillalltextboxes": "AutomationTestingProgram.Actions.FillAllTextBoxes",
+  "verifytxtfile": "AutomationTestingProgram.Actions.VerifyTxtFile",
+  "comment": "AutomationTestingProgram.Actions.Comment",
+  "saveparameter": "AutomationTestingProgram.Actions.SaveParameter"
+}

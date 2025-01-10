@@ -9,11 +9,11 @@ namespace AutomationTestingProgram.Actions
     /// <summary>
     /// This test step verifies the content of an HTML editor using Playwright.
     /// </summary>
-    public class VerifyHTMLEditorContent : IWebAction
+    public class VerifyHTMLEditorContent : WebAction
     {
         public string Name { get; set; } = "Verify HTML Editor Content";
 
-        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+        public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
         {
             //base.Execute();
 

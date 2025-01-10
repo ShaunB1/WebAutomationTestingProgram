@@ -9,8 +9,11 @@ import {
     useMsal,
 } from "@azure/msal-react";
 import { login, logout } from "../../authConfig.ts";
+import { Avatar, Box, Divider, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
+import { useState } from 'react';
 
-const NavBar = () => {
+
+const NavBar = (props: any) => {
     const { instance, accounts } = useMsal();
 
     const handleLogin = async () => {
@@ -18,11 +21,33 @@ const NavBar = () => {
     };
 
     const handleLogout = async () => {
+        setAnchorElUser(null);
         await logout(instance, accounts);
     };
 
-    // TSX conditionally renders AuthenticatedTemplate if user is logged in,
-    // and Unauthenticated template otherwise.
+    const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+
+    const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorElUser(event.currentTarget);
+    };
+
+    const handleCloseUserMenu = () => {
+        setAnchorElUser(null);
+    };
+
+    const handleDownloadExtension = () => {
+        try {
+            const url = `${import.meta.env.BASE_URL}manifest.zip`;
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "manifest.zip");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (e) {
+            console.log(e)
+        }
+    }
 
     return (
         <>
@@ -54,9 +79,50 @@ const NavBar = () => {
                         <Button component={Link} to={"/completedtasks"} color="inherit" className="button">
                             Completed Tasks
                         </Button>
-                        <Button onClick={handleLogout} color="inherit" className="button">
-                            Logout
+                        <Button color="inherit" className="button" onClick={handleDownloadExtension}>Download Extension</Button>
+                        <Button component={Link} to={"/filevalidation"} color="inherit" className="button">
+                            File Validation
                         </Button>
+                        <Box style={{marginLeft: "auto"}} sx={{ flexGrow: 0 }}>
+                            <Tooltip title="Open settings">
+                                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                                    <Avatar></Avatar>
+                                </IconButton>
+                            </Tooltip>
+                            <Menu
+                                sx={{ mt: '45px' }}
+                                id="menu-appbar"
+                                anchorEl={anchorElUser}
+                                anchorOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                keepMounted
+                                transformOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                open={Boolean(anchorElUser)}
+                                onClose={handleCloseUserMenu}
+                            >
+                                <Typography sx={{ padding: '4px 16px', fontWeight: 'bold' }}>
+                                    {props.name}
+                                </Typography>
+                                <Typography sx={{ padding: '4px 6px 16px 16px' }}>
+                                    {props.email}
+                                </Typography>
+                                <Divider />
+                                <MenuItem key="Account" onClick={handleCloseUserMenu}>
+                                    <Typography sx={{ textAlign: 'center' }}>Account</Typography>
+                                </MenuItem>
+                                <MenuItem key="Settings" onClick={handleCloseUserMenu}>
+                                    <Typography sx={{ textAlign: 'center' }}>Settings</Typography>
+                                </MenuItem>
+                                <MenuItem key="Logout" onClick={handleLogout}>
+                                    <Typography sx={{ textAlign: 'center' }}>Logout</Typography>
+                                </MenuItem>
+                            </Menu>
+                        </Box>
                     </Toolbar>
                 </AuthenticatedTemplate>
                 <UnauthenticatedTemplate>

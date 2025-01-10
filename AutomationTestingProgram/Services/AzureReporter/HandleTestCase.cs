@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 
-namespace AutomationTestingProgram.Services;
+namespace AutomationTestingProgram.Actions;
 
 public class HandleTestCase : AzureReporter
 {

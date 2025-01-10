@@ -1,5 +1,5 @@
 using AutomationTestingProgram.Models;
-using AutomationTestingProgram.Services;
+using AutomationTestingProgram.Actions;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using DocumentFormat.OpenXml.Drawing.Charts;
@@ -11,6 +11,7 @@ using System.Diagnostics;
 /*using AutoUpdater;*/
 /*using AutomationTestingProgram.Helper*/
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class TestController : ControllerBase
@@ -56,29 +57,24 @@ public class TestController : ControllerBase
             return BadRequest("No file received.");
         }
 
-        Console.WriteLine("Received test request");
+        _logger.LogInformation("Received test request");
         // Response.ContentType = "text/event-stream";
         Response.Headers.Add("Cache-Control", "no-cache");
         Response.Headers.Add("Connection", "keep-alive");
 ;
         try
         {
+            _logger.LogInformation("Running Autoupdater");
             // Automatically run the AutoUpdater before starting the tests using helper 
             var updateResult = RunAutoUpdater(browser, browserVersion);
             if (!updateResult.IsSuccess)
             {
                 return StatusCode(500, updateResult.ErrorMessage);
             }
-
-            // Automatically run the AutoUpdater before starting the tests using main method of AutoUpdater
-            /*Console.WriteLine("Running AutoUpdater");
-            string[] autoupdater_args = new string[]
+            else
             {
-                    "--browser", browser,
-                    "--version", browserVersion,
-            };
-            AutoUpdater.AutoUpdater.AutoUpdateBrowsers(autoupdater_args);*/
-            /*AutoUpdater.AutoUpdateBrowsers(autoupdater_args);*/
+                _logger.LogInformation($"{updateResult.ErrorMessage}");
+            }
 
             var excelReader = new ExcelReader();
             var testSteps = excelReader.ReadTestSteps(file);
@@ -129,19 +125,19 @@ public class TestController : ControllerBase
         }
     }
 
-    public IActionResult SaveTestSteps([FromForm] List<TestStep> testSteps)
-    {
-        using (var workbook = new XLWorkbook())
-        {
-            var worksheet = workbook.Worksheets.Add("TestSteps");
-            worksheet.Cell(1, 1).Value = "TestCaseName";
-            worksheet.Cell(1, 2).Value = "TestDescription";
+    //public IActionResult SaveTestSteps([FromForm] List<TestStep> testSteps)
+    //{
+    //    using (var workbook = new XLWorkbook())
+    //    {
+    //        var worksheet = workbook.Worksheets.Add("TestSteps");
+    //        worksheet.Cell(1, 1).Value = "TestCaseName";
+    //        worksheet.Cell(1, 2).Value = "TestDescription";
 
-            for (int i = 0; i < testSteps.Count; i++)
-            {
-                worksheet.Cell(i + 2, 1).Value = testSteps[i].TestCaseName;
-                worksheet.Cell(i + 2, 2).Value = testSteps[i].TestDescription;
-            }
+    //        for (int i = 0; i < testSteps.Count; i++)
+    //        {
+    //            worksheet.Cell(i + 2, 1).Value = testSteps[i].TestCaseName;
+    //            worksheet.Cell(i + 2, 2).Value = testSteps[i].TestDescription;
+    //        }
 
             using (var stream = new MemoryStream())
             {

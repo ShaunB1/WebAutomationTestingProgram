@@ -4,7 +4,7 @@ using Microsoft.Playwright;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using HostingEnvironmentExtensions = Microsoft.AspNetCore.Hosting.HostingEnvironmentExtensions;
 
-namespace AutomationTestingProgram.Services;
+namespace AutomationTestingProgram.Actions;
 
 public class HandleReporting
 {

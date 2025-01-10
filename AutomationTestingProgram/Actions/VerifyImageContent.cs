@@ -8,11 +8,11 @@ namespace AutomationTestingProgram.Actions
     /// <summary>
     /// This test step verifies the content of an image using Playwright.
     /// </summary>
-    public class VerifyImageContent : IWebAction
+    public class VerifyImageContent : WebAction
     {
         public string Name { get; set; } = "Verify Image Content";
 
-        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+        public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
         {
             //base.Execute();
 

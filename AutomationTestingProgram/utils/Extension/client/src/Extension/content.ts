@@ -138,7 +138,7 @@ function blurEventListener(e: Event) {
     const element = e.target as HTMLElement;
     const tag = element.tagName.toLowerCase();
     const textContent = (element as HTMLInputElement).value;
-    const elDict = getAllAttributes(e.target as HTMLElement);
+    const elDict = getAllAttributes(e.target as HTMLElement, true);
     const values: TableValues = {
         testdescription: `Populate ${tag}`,
         actiononobject: "PopulateWebElement",
@@ -244,6 +244,8 @@ chrome.runtime.onMessage.addListener((message) => {
         if (message.selectedRow.COMMENTS === "eldict") {
             const elDictString = message.selectedRow.OBJECT;
             const closestElement: any = findClosestElement(elDictString);
+            console.log("CLOSEST ELEMENT: ");
+            console.log(closestElement);
 
             if (closestElement instanceof HTMLElement) {
                 previousOutlineStyle = closestElement.style.outline;
@@ -367,48 +369,56 @@ function findClosestElement(elDict: string) {
 
     maxScore += Object.keys(attributes).length;
 
-    Array.from(elements).forEach((el) => {
-        let score = 0;
+    try {
+        Array.from(elements).forEach((el) => {
+            let score = 0;
 
-        const iframeIndex = iframes.findIndex(iframe => iframe.contentDocument === el.ownerDocument);
+            const iframeIndex = iframes.findIndex(iframe => iframe.contentDocument === el.ownerDocument) === -1 ? 0 : iframes.findIndex(iframe => iframe.contentDocument === el.ownerDocument);
+            if (iframeIndex.toString() === iframe) {
+                try {
+                    if (el.tagName.toLowerCase() === tag.toLowerCase()) {
+                        score += 2;
+                    } else {
+                        score += 0.5;
+                    }
 
-        if (iframeIndex === iframe) {
-            score += 2;
-        }
+                    for (const [key, value] of Object.entries(attributes)) {
+                        let attrValue = el.getAttribute(key)
+                        if (attrValue) {
+                            attrValue = attrValue.replace(/\s+/g, " ").trim();
+                            if (attrValue === value) {
+                                score += 1
+                            } else if (attrValue.includes(value)) {
+                                score += 0.5
+                            }
+                        }
+                    }
 
-        if (el.tagName.toLowerCase() === tag.toLowerCase()) {
-            score += 2;
-        } else {
-            score += 0.5;
-        }
+                    const elText = getTextContent(el);
 
-        for (const [key, value] of Object.entries(attributes)) {
-            let attrValue = el.getAttribute(key)
-            if (attrValue) {
-                attrValue = attrValue.replace(/\s+/g, " ").trim();
-                if (attrValue === value) {
-                    score += 1
-                } else if (attrValue.includes(value)) {
-                    score += 0.5
+                    if (elText === text) {
+                        score += 2;
+                    } else if (elText.includes(text)) {
+                        score += 1;
+                    }
+
+                    if (score > highestScore) {
+                        highestScore = score;
+                        bestMatch = el;
+                    }
+                } catch (e) {
+                    console.error(e);
                 }
+            } else {
+                console.error(`NOT IN FRAME. EXPECTED: ${iframe} ACTUAL: ${iframeIndex}`);
             }
-        }
+        });
 
-        const elText = getTextContent(el);
-
-        if (elText === text) {
-            score += 2;
-        } else if (elText.includes(text)) {
-            score += 1;
-        }
-
-        if (score > highestScore) {
-            highestScore = score;
-            bestMatch = el;
-        }
-    });
-
-    return maxScore !== 0 && highestScore/maxScore >= 0.66 ? bestMatch : null;
+        console.log(highestScore, maxScore, highestScore / maxScore);
+        return maxScore !== 0 && highestScore / maxScore >= 0.66 ? bestMatch : null;
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 function getTextContent(element: HTMLElement) {
@@ -436,7 +446,7 @@ function getTextContent(element: HTMLElement) {
     return text.trim();
 }
 
-function getAllAttributes(element: HTMLElement) {
+function getAllAttributes(element: HTMLElement, interactable=false) {
     const attributesDict: { [key: string]: string | string[] | { [key: string]: string | string[] } } = {};
     const iframes = getAllIFrames(window.top?.document);
     const iframeIndex = iframes.findIndex(iframe => iframe.contentDocument === element.ownerDocument);
@@ -444,7 +454,7 @@ function getAllAttributes(element: HTMLElement) {
 
     attributesDict["iframe"] = index.toString();
     attributesDict["tag"] = element.tagName.toLowerCase();
-    attributesDict["text"] = getTextContent(element);
+    attributesDict["text"] = interactable ? "" : getTextContent(element);
     attributesDict["attributes"] = {};
 
     for (let i = 0; i < element.attributes.length; i++) {
@@ -452,10 +462,12 @@ function getAllAttributes(element: HTMLElement) {
         const attrName = attr.name;
         const attrValue = attr.value;
 
-        if (attrValue.includes(" ")) {
-            attributesDict["attributes"][attrName] = attrValue.split(" ").filter(Boolean);
-        } else {
-            attributesDict["attributes"][attrName] = attrValue;
+        if (attrName !== "style") {
+            if (attrValue.includes(" ")) {
+                attributesDict["attributes"][attrName] = attrValue.split(" ").filter(Boolean);
+            } else {
+                attributesDict["attributes"][attrName] = attrValue;
+            }
         }
     }
 

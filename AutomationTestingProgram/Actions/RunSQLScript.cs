@@ -7,11 +7,11 @@ using Microsoft.PowerShell.Commands;
 using Newtonsoft.Json;
 using Console = System.Console;
 
-namespace AutomationTestingProgram.Services;
+namespace AutomationTestingProgram.Actions;
 
-public class RunSQLScript : IWebAction
+public class RunSQLScript : WebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         var rootPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", ".."));
         

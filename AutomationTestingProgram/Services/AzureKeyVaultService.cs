@@ -8,7 +8,7 @@ using Microsoft.Playwright;
 using NPOI.SS.Formula.Functions;
 using System.Globalization;
 
-namespace AutomationTestingProgram.Services;
+namespace AutomationTestingProgram.Actions;
 
 public class AzureKeyVaultService
 {

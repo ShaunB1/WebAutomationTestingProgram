@@ -1,6 +1,6 @@
 ﻿using Microsoft.TeamFoundation.TestManagement.WebApi;
 
-namespace AutomationTestingProgram.Services;
+namespace AutomationTestingProgram.Actions;
 
 public class HandleTestPoint : AzureReporter
 {

@@ -9,11 +9,11 @@ namespace AutomationTestingProgram.Actions
     /// <summary>
     /// This test step verifies the content of a text box using Playwright.
     /// </summary>
-    public class VerifyTextBoxContent : IWebAction
+    public class VerifyTextBoxContent : WebAction
     {
         public string Name { get; set; } = "Verify Textbox Content";
 
-        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+        public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
         {
             //base.Execute();
 

@@ -4,9 +4,9 @@ using Microsoft.TeamFoundation.WorkItemTracking.Process.WebApi.Models;
 
 namespace AutomationTestingProgram.Actions;
 
-public class ChooseAllDDL : IWebAction
+public class ChooseAllDDL : WebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         try
         {

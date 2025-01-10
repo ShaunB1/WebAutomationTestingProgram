@@ -27,6 +27,27 @@ const SetArguments = () => {
         return browserData ? browserData.versions : [];
     };
 
+    /*// Function to remove comments from a JSON string
+    const removeComments = (jsonString: string) => {
+        return jsonString.replace(/\/\/.*$/gm, '').trim(); // Remove single-line comments
+    };
+
+    // Fetch and clean JSON data before parsing
+    const getBrowserVersions = (browser: string) => {
+        // Read the JSON string from the browserVerData file
+        const cleanJsonString = JSON.stringify(browserVerData);
+        const jsonWithoutComments = removeComments(cleanJsonString); // Remove comments
+
+        try {
+            const parsedData = JSON.parse(jsonWithoutComments); // Parse the cleaned JSON data
+            const browserData = parsedData.find((data) => data.browser === browser);
+            return browserData ? browserData.versions : [];
+        } catch (error) {
+            console.error("Error parsing the browser version data:", error);
+            return [];
+        }
+    };*/
+
     const browserOptions = ["Chrome", "Edge", "Firefox"];
 
     useEffect(() => {

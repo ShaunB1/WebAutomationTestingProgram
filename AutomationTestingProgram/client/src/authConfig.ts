@@ -69,12 +69,21 @@ export const login = async (instance: any) => {
 };
 
 export const getToken = async (instance: any, accounts: any) => {
-  const token = await instance.acquireTokenSilent({
-    ...loginRequest,
-    account: accounts[0],
-  });
+  try {
+    const token = await instance.acquireTokenSilent({
+      ...loginRequest,
+      account: accounts[0],
+    });
 
-  return token.accessToken;
+    return token.accessToken;
+  } catch (error: any) {
+    if (error.name === "InteractionRequiredAuthError") {
+
+      const response = await instance.acquireTokenRedirect();
+      return response.accessToken;
+    }
+    throw error;
+  }
 };
 
 export const logout = async (instance: any, accounts: any) => {

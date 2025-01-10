@@ -1,5 +1,5 @@
 ﻿using AutomationTestingProgram.Models;
-using AutomationTestingProgram.Services;
+using AutomationTestingProgram.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -18,7 +18,7 @@ public class EnvironmentsController : ControllerBase
         _keychainFilePath = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build()["KeychainFilePath"];
     }
 
-    //[Authorize]
+    [Authorize]
     [HttpGet("keychainAccounts")]
     public async Task<IActionResult> GetKeychainAccounts()
     {
@@ -59,7 +59,7 @@ public class EnvironmentsController : ControllerBase
         }
     }
 
-    //[Authorize]
+    [Authorize]
     [HttpGet("secretKey")]
     public async Task<IActionResult> GetSecretKey([FromQuery] string email)
     {

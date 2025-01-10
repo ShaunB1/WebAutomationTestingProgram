@@ -1,15 +1,17 @@
 using System.Net.WebSockets;
 using System.Text;
+using AutomationTestingProgram.Actions;
 using DotNetEnv;
 using AutomationTestingProgram.Models;
-using AutomationTestingProgram.Services;
 using DocumentFormat.OpenXml.InkML;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.WebSockets;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Identity.Web;
 using Newtonsoft.Json;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
@@ -33,21 +35,69 @@ builder.Services.AddScoped<PasswordResetService>();
 
 builder.Services.AddControllers();
 
+string tenantId = builder.Configuration["AzureAd:TenantId"];
+string clientId = builder.Configuration["AzureAd:ClientId"];
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.OAuth2,
+        Flows = new OpenApiOAuthFlows
+        {
+            Implicit = new OpenApiOAuthFlow
+            {
+                AuthorizationUrl = new Uri($"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize"),
+                TokenUrl = new Uri($"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token"),
+                Scopes = new Dictionary<string, string>
+                    {
+                        { $"api://{clientId}/.default", "Access your API" }
+                    }
+            }
+        }
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "oauth2"
+                    }
+                },
+                new[] { $"api://{clientId}/.default" }
+            }
+        });
+});
 
 var app = builder.Build(); // represents configured web app
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c => { 
+        c.OAuthClientId(clientId); 
+    });  
+} 
+else
+{
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts(); // (HTTP Strict Transport Security) browsers interact with server only over HTTPS
 }
 
 app.UseHttpsRedirection(); // client and server comms encrypted
-app.UseStaticFiles(); // can request static assets for frontend
+app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles")),
+    RequestPath = "/static"
+});
 
 app.UseWebSockets();
 

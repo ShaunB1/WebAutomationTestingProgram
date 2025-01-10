@@ -5,18 +5,18 @@ using Newtonsoft.Json;
 
 namespace AutomationTestingProgram.Actions;
 
-public class PopulateWebElement : IWebAction
+public class PopulateWebElement : WebAction
 {
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         var locator = step.Object;
         var state = step.Value.ToLower();
-        var element = step.Comments == "html id" 
-            ? page.Locator($"#{locator}") 
-            : step.Comments == "innertext" 
-                ? page.Locator($"text={locator}") 
-                : page.Locator(locator);
-        
+        // var element = step.Comments == "html id" 
+        //     ? page.Locator($"#{locator}") 
+        //     : step.Comments == "innertext" 
+        //         ? page.Locator($"text={locator}") 
+        //         : page.Locator(locator);
+        var element = await LocateElementAsync(page, locator);
         try
         {
             Match match = Regex.Match(step.Value, @"^{(\d+)}$");

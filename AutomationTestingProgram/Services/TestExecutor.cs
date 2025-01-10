@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 public class TestExecutor
 {
     private readonly int _testCaseId;
-    private readonly Dictionary<string, IWebAction> _actions;
+    private readonly Dictionary<string, WebAction> _actions;
     private readonly bool _reportToDevops = false;
     private readonly bool _recordTrace = false;
     private readonly bool _recordVideo = false;
@@ -34,7 +34,7 @@ public class TestExecutor
                 {
                     throw new InvalidOperationException($"Action type '{kvp.Value}' not found.");
                 }
-                return (IWebAction)Activator.CreateInstance(actionType);
+                return (WebAction)Activator.CreateInstance(actionType);
             }
         );
     }

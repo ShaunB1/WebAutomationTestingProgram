@@ -5,10 +5,10 @@ using System.Reflection;
 
 namespace AutomationTestingProgram.Actions;
 
-public class VerifyTxtFile : IWebAction
+public class VerifyTxtFile : WebAction
 {
     private const string Seperator = "];[";
-    public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         string option = step.Comments;
         switch (option.ToLower())

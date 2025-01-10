@@ -8,11 +8,11 @@ namespace AutomationTestingProgram.Actions
     /// <summary>
     /// This test step verifies the content of a web element using Playwright.
     /// </summary>
-    public class VerifyWebElementContent : IWebAction
+    public class VerifyWebElementContent : WebAction
     {
         public string Name { get; set; } = "Verify WebElement Content";
 
-        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+        public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
         {
             //base.Execute();
 

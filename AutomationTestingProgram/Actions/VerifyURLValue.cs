@@ -9,11 +9,11 @@ namespace AutomationTestingProgram.Actions
     /// <summary>
     /// This test step verifies the URL value of an element using Playwright.
     /// </summary>
-    public class VerifyURLValue : IWebAction
+    public class VerifyURLValue : WebAction
     {
         public string Name { get; set; } = "Verify URL Value";
 
-        public async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+        public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
         {
             //base.Execute();
 

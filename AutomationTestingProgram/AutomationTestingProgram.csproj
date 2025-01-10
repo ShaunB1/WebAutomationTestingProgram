@@ -29,7 +29,6 @@
 	<ItemGroup>
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
-		<Folder Include="client\src\utils\" />
 		<Folder Include="SampleTests\" />
 		<Folder Include="wwwroot\" />
 	</ItemGroup>
@@ -67,18 +66,22 @@
 
 	<ItemGroup>
 		<Compile Remove="TestData\**" />
+		<Compile Remove="client\src\utils\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Remove="TestData\**" />
+		<EmbeddedResource Remove="client\src\utils\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Content Remove="TestData\**" />
+		<Content Remove="client\src\utils\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Remove="TestData\**" />
+		<None Remove="client\src\utils\**" />
 	</ItemGroup>
 
 	<ItemGroup>

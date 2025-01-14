@@ -22,12 +22,9 @@ namespace AutomationTestingProgram.Actions
             {
                 // Locate the element using XPath and verify its text content
                 var locator = step.Object;
-
-                var element = step.Comments == "html id"
-                ? page.Locator($"#{locator}")
-                : step.Comments == "innertext"
-                ? page.Locator($"text={locator}")
-                    : page.Locator(locator);
+                var locatorType = step.Comments;
+                var element = await LocateElementAsync(page, locator, locatorType);
+                
                 string actualContent = await element.InnerTextAsync();
 
                 if (actualContent == expectedContent)

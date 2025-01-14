@@ -9,8 +9,10 @@ public class SelectDDL : WebAction
     public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         var locator = step.Object;
+        var locatorType = step.Comments;
+        var element = await LocateElementAsync(page, locator, locatorType);
+        
         var option = step.Value;
-        var element = page.Locator(locator);
 
         Match match = Regex.Match(step.Value, @"^{(\d+)}$");
         var datapoint = string.Empty;

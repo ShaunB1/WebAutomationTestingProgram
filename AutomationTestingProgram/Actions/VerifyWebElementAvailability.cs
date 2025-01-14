@@ -7,12 +7,10 @@ public class VerifyWebElementAvailability : WebAction
     public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         var locator = step.Object;
+        var locatorType = step.Comments;
+        var element = await LocateElementAsync(page, locator, locatorType);
+        
         var state = step.Value.ToLower();
-        var element = step.Comments == "html id" 
-            ? page.Locator($"#{locator}") 
-            : step.Comments == "innertext" 
-                ? page.Locator($"text={locator}") 
-                : page.Locator(locator);
 
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         

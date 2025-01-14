@@ -20,9 +20,48 @@ public abstract class WebAction
         Dictionary<string, string> envVars,
         Dictionary<string, string> saveParams);
 
-    public async Task<IElementHandle> LocateElementAsync(IPage page, string elDict)
+    public async Task<IElementHandle> LocateElementAsync(IPage page, string locator, string locatorType)
     {
-        JObject elDictObj = JObject.Parse(elDict);
+        var types = new List<string> { "htmlid", "xpath", "innertext" };
+        locatorType = locatorType.ToLower().Replace(" ", "");
+        
+        if (types.Contains(locatorType))
+        {
+            if (locatorType == "innertext")
+            {
+                var elements = page.Locator($":has-text('{locator}')");
+                var count = await elements.CountAsync();
+
+                for (int i = 0; i < count; i++)
+                {
+                    var element = elements.Nth(i);
+                    var isVisible = await element.IsVisibleAsync();
+                    if (isVisible)
+                    {
+                        var elementHandle = await element.ElementHandleAsync();
+                        return elementHandle;
+                    }
+                }
+            }
+            else if (locatorType == "htmlid")
+            {
+                var element = page.Locator($"#{locator}");
+                var elementHandle = await element.ElementHandleAsync();
+                return elementHandle;
+            }
+            else if (locatorType == "xpath")
+            {
+                var elementHandle = await page.QuerySelectorAsync(locator);
+                var isVisible = await elementHandle.IsVisibleAsync();
+                if (isVisible)
+                {
+                    return elementHandle;
+                }
+            }
+        } 
+        else if (locatorType.ToLower() == "eldict")
+        {
+                    JObject elDictObj = JObject.Parse(locator);
         ElDict obj = new ElDict
         {
             IFrame = int.TryParse(elDictObj["iframe"]?.ToString(), out var iframe) ? iframe : 0,
@@ -111,6 +150,9 @@ public abstract class WebAction
         }
         
         return maxScore != 0 && highestScore / maxScore >= 0.66 ? bestMatch : null;
+        }
+
+        return null;
 
         async Task<string> GetTextContent(IElementHandle element)
         {

@@ -1,53 +1,76 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 
 namespace AutomationTestingProgram.Actions;
 
 public class WebSocketLogBroadcaster : TextWriter
 {
-    private readonly ConcurrentBag<WebSocket> _clients = new();
+    private readonly ConcurrentDictionary<string, WebSocket> _clients = new();
+    private readonly ConcurrentDictionary<string, string> _testRuns = new();
 
     public WebSocketLogBroadcaster()
     {
         Console.SetOut(this);
     }
 
-    public void AddClient(WebSocket client)
+    public string AddClient(WebSocket client, string testRunId)
     {
-        _clients.Add(client);
-        Console.WriteLine("Successfully added websocket client.");
+        var clientId = Guid.NewGuid().ToString();
+        _clients.TryAdd(clientId, client);
+        _testRuns.TryAdd(testRunId, clientId);
+        
+        Console.WriteLine($"Added client {clientId} for test run {testRunId}.");
+        return clientId;
     }
 
-    public async Task BroadcastLogAsync(string logMessage)
+    public async Task BroadcastLogAsync(string logMessage, string testRunId)
     {
-        var buffer = Encoding.UTF8.GetBytes(logMessage);
-        var segment = new ArraySegment<byte>(buffer);
-
-        foreach (var client in _clients)
+        if (!_testRuns.TryGetValue(testRunId, out var clientId))
         {
-            if (client.State == WebSocketState.Open)
+            Console.WriteLine($"No client found for test run {testRunId}");
+            return;
+        }
+
+        if (!_clients.TryGetValue(clientId, out var client))
+        {
+            Console.WriteLine($"No active WebSocket client found for client {clientId}");
+            return;
+        }
+
+        if (client.State == WebSocketState.Open)
+        {
+            var payload = new
             {
-                await client.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
-                Console.WriteLine("Broadcasted log.");
-            }
-            else
-            {
-                Console.WriteLine("Websocket is not open.");
-            }
+                testRunId = testRunId,
+                logMessage = logMessage
+            };
+            
+            var jsonMessage = JsonSerializer.Serialize(payload);
+            
+            var buffer = Encoding.UTF8.GetBytes(jsonMessage);
+            var segment = new ArraySegment<byte>(buffer);
+            
+            await client.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
+        }
+        else
+        {
+            Console.WriteLine($"WebSocket for client {clientId} is not open. Removing client.");
+            _clients.TryRemove(clientId, out _);
+            _testRuns.TryRemove(testRunId, out _);
         }
     }
 
-    public void RemoveClient(WebSocket client)
+    public bool RemoveClient(string clientId)
     {
-        _clients.TryTake(out client);
-        Console.WriteLine("Successfully removed websocket client.");
-    }
-
-    public override async Task WriteLineAsync(string message)
-    {
-        await base.WriteLineAsync(message);
-        await BroadcastLogAsync(message);
+        if (_clients.TryRemove(clientId, out _))
+        {
+            Console.WriteLine($"Successfully removed websocket client {clientId}.");
+            return true;
+        }
+        Console.WriteLine($"Failed to remove websocket client {clientId}.");
+        return false;
     }
     
     public override Encoding Encoding => Encoding.UTF8;

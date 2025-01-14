@@ -43,13 +43,13 @@ public class TestController : ControllerBase
     // We want to authorization for all endpoints, but if you are testing then comment out the line below
     [Authorize]
     [HttpPost("run")]
-    public async Task<IActionResult> RunTests(IFormFile file, [FromForm] string env, [FromForm] string browser)
+    public async Task<IActionResult> RunTests(IFormFile file, [FromForm] string env, [FromForm] string browser, [FromHeader(Name = "TestRunId")] string testRunId)
     {
-        if (file == null)
+        if (file == null || string.IsNullOrEmpty(testRunId))
         {
-            return BadRequest("No file received.");
+            return BadRequest("File or TestRunId missing.");
         }
-
+        
         Console.WriteLine("Received test request");
         // Response.ContentType = "text/event-stream";
         Response.Headers.Add("Cache-Control", "no-cache");
@@ -79,14 +79,14 @@ public class TestController : ControllerBase
 
             await using var browserInstance = await browserType.LaunchAsync(new BrowserTypeLaunchOptions
             {
-                Headless = false,
+                Headless = true,
                 Channel = browser == "chrome" ? "chrome" :
                     browser == "edge" ? "msedge" : null
             });
-
-            var executor = new TestExecutor(_logger, _broadcaster);
+            
+            var executor = new TestExecutor(_logger, _broadcaster, testRunId);
             var fileName = Path.GetFileNameWithoutExtension(file.Name);
-            var reportHandler = new HandleReporting(_logger, _broadcaster);
+            var reportHandler = new HandleReporting(_logger, _broadcaster, testRunId);
 
             if (_reportToDevops)
             {
@@ -97,6 +97,7 @@ public class TestController : ControllerBase
                 await executor.ExecuteTestCasesAsync(browserInstance, testSteps, env, fileName, Response);
             }
 
+            var webSocketUrl = $"wss://{Request.Host}/ws/logs?testRunId={testRunId}";
             return Ok("Tests executed successfully.");
         }
         catch (Exception e)

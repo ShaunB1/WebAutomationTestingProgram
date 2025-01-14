@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 public class TestExecutor
 {
     private readonly int _testCaseId;
+    private readonly string _testRunId;
     private readonly Dictionary<string, WebAction> _actions;
     private readonly bool _reportToDevops = false;
     private readonly bool _recordTrace = false;
@@ -16,10 +17,11 @@ public class TestExecutor
     private Dictionary<string, string> _envVars = new Dictionary<string, string>();
     private Dictionary<string, string> _saveParameters = new Dictionary<string, string>();
 
-    public TestExecutor(ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
+    public TestExecutor(ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster, string testRunId)
     {
         _logger = logger;
         _broadcaster = broadcaster;
+        _testRunId = testRunId;
         
         var jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StaticFiles\\actions.json");
         var jsonContent = File.ReadAllText(jsonFilePath);
@@ -198,7 +200,7 @@ public class TestExecutor
 
                     _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}, {step.Value}");
                     await _broadcaster.BroadcastLogAsync(
-                        $"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
+                        $"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}", _testRunId);
 
                     var success = await RetryActionAsync(async () =>
                     {
@@ -222,7 +224,7 @@ public class TestExecutor
                         var res = await action.ExecuteAsync(page, step, iteration, _envVars, _saveParameters);
 
                         _logger.LogInformation($"TEST RESULT: {res}");
-                        await _broadcaster.BroadcastLogAsync($"TEST RESULT: {res}");
+                        await _broadcaster.BroadcastLogAsync($"TEST RESULT: {res}", _testRunId);
                         return res;
                     }, maxAttempts);
 
@@ -231,7 +233,7 @@ public class TestExecutor
                     if (!success)
                     {
                         // _logger.LogInformation($"FAILED: {step.Object}");
-                        await _broadcaster.BroadcastLogAsync($"FAILED: {step.Object}");
+                        await _broadcaster.BroadcastLogAsync($"FAILED: {step.Object}", _testRunId);
                         step.Outcome = "Failed";
                         stepsFailed.Add((step.SequenceIndex, step.TestDescription));
                         failCount++;
@@ -247,7 +249,7 @@ public class TestExecutor
             catch (Exception e)
             {
                 // _logger.LogInformation(e.ToString());
-                await _broadcaster.BroadcastLogAsync(e.ToString());
+                await _broadcaster.BroadcastLogAsync(e.ToString(), _testRunId);
                 var indexedStackTrace = new List<(int, string)>();
 
                 // return ("Failed", stepsFailed, new List<(int, string)>(index+1, e.StackTrace?.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)));
@@ -269,7 +271,7 @@ public class TestExecutor
                 catch (Exception e)
                 {
                     // _logger.LogInformation($"Attempt {attempt} failed with error: {e.Message}");
-                    await _broadcaster.BroadcastLogAsync($"Attempt {attempt} failed with error: {e.Message}");
+                    await _broadcaster.BroadcastLogAsync($"Attempt {attempt} failed with error: {e.Message}", _testRunId);
                     await Task.Delay(1000);
                 }
             }

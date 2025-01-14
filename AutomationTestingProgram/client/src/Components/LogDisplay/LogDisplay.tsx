@@ -1,6 +1,10 @@
 import {useEffect, useRef, useState} from "react";
 import {Box, List, ListItem, Paper, Typography} from "@mui/material";
 
+interface TestRun {
+    logs: string[];
+}
+
 const LogDisplay = () => {
     const [logs, setLogs] = useState<string[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);

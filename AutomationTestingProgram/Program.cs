@@ -106,15 +106,26 @@ app.Use(async (context, next) =>
     if (context.WebSockets.IsWebSocketRequest)
     {
         var path = context.Request.Path;
-        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
         if (path == "/ws/logs")
         {
-            await HandleLogsCommunication(webSocket, context);
+            var testRunId = context.Request.Query["testRunId"].ToString();
+
+            if (string.IsNullOrEmpty(testRunId))
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync("Invalid test run ID.");
+                return;
+            }
+            
+            var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+            
+            await HandleLogsCommunication(webSocket, context, testRunId);
         }
         else
         {
-            await webSocket.CloseAsync(WebSocketCloseStatus.ProtocolError, "Invalid endpoint.", CancellationToken.None);
+            context.Response.StatusCode = 400;
+            await context.Response.WriteAsync("Endpoint not found.");
         }
     }
     else
@@ -134,11 +145,14 @@ app.MapFallbackToFile("index.html"); // fallback to index.html for SPA routes
 
 app.Run();
 
-async Task HandleLogsCommunication(WebSocket webSocket, HttpContext context)
+async Task HandleLogsCommunication(WebSocket webSocket, HttpContext context, string testRunId)
 {
     var broadcaster = context.RequestServices.GetRequiredService<WebSocketLogBroadcaster>();
-    broadcaster.AddClient(webSocket);
+    var clientId = broadcaster.AddClient(webSocket, testRunId);
+    var clientIdMessage = Encoding.UTF8.GetBytes($"ClientId: {clientId}");
 
+    await webSocket.SendAsync(new ArraySegment<byte>(clientIdMessage), WebSocketMessageType.Text, true, CancellationToken.None);
+    
     try
     {
         var buffer = new byte[1024 * 4];
@@ -150,6 +164,8 @@ async Task HandleLogsCommunication(WebSocket webSocket, HttpContext context)
             if (result.MessageType == WebSocketMessageType.Close)
             {
                 await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by client.", CancellationToken.None);
+                broadcaster.RemoveClient(clientId);
+                Console.WriteLine($"Client {clientId} disconnected.");
             }
             else
             {
@@ -161,6 +177,7 @@ async Task HandleLogsCommunication(WebSocket webSocket, HttpContext context)
     catch (Exception exception)
     {
         Console.WriteLine(exception);
+        broadcaster.RemoveClient(clientId);
         throw;
     }
 }

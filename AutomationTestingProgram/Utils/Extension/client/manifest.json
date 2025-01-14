@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "AutomationTestingProgram",
+  "version": "3.0.0",
+  "description": "AutomationTestingProgram extension.",
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "sidePanel",
+    "webNavigation",
+    "scripting",
+    "activeTab",
+    "tabs",
+    "cookies",
+    "proxy",
+    "storage",
+    "identity",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "commands": {
+    "toggle-side-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E"
+      },
+      "description": "Toggle the side panel"
+    }
+  },
+  "key": "MD8BIjANCgYJKj9IPz8NCgEBAQUAAz8BDwAwPwENCgI/AQEAPz8GaD8/Kj9nPzM/Pz8/ZT8/Kz94Z2U/Yj8AQhc3J0M/P18/Pz83Dg0KPykYPz8/Pz8/QD8tP3c/dT93QykmPz8qRD4/S2A/P20/fz8/YT8/CD8/Pz8JPxw/Aj8dP2ZSP3IHNj8/XD9Cdz9SEz8uUD9rPz8qPz8/PwYbd0s/aT8LP30/Xj9EbT8/P0NHHzsWP3lySWNvPz8/cxgAZD8/Iz9uGWo/Pzc/Pz9LaUJyDzJ+JGE/Pz8/Bj8/P2U/P24NCj8CPz8vEG4/PzU/P24/Px0/PxM/DDQ/Glg3Zmd6Zi9nPz9APz8/c1s/PxpEBDM/Pz8/Pzw5P2IsPw4OP2QAOD9jAgMBAAENCg=="
+}

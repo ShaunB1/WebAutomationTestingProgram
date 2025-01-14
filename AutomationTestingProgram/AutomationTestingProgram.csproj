@@ -29,7 +29,12 @@
 	<ItemGroup>
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
+		<Folder Include="Core\" />
+		<Folder Include="Infrastructure\" />
+		<Folder Include="Modules\TestRunner\" />
 		<Folder Include="SampleTests\" />
+		<Folder Include="Shared\" />
+		<Folder Include="Tests\" />
 		<Folder Include="wwwroot\" />
 	</ItemGroup>
 
@@ -82,6 +87,549 @@
 	<ItemGroup>
 		<None Remove="TestData\**" />
 		<None Remove="client\src\utils\**" />
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\Microsoft.CSharp.dll">
+		  <Link>Infrastructure\ref\Microsoft.CSharp.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\Microsoft.VisualBasic.Core.dll">
+		  <Link>Infrastructure\ref\Microsoft.VisualBasic.Core.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\Microsoft.VisualBasic.dll">
+		  <Link>Infrastructure\ref\Microsoft.VisualBasic.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\Microsoft.Win32.Primitives.dll">
+		  <Link>Infrastructure\ref\Microsoft.Win32.Primitives.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\Microsoft.Win32.Registry.dll">
+		  <Link>Infrastructure\ref\Microsoft.Win32.Registry.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\mscorlib.dll">
+		  <Link>Infrastructure\ref\mscorlib.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\netstandard.dll">
+		  <Link>Infrastructure\ref\netstandard.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.AppContext.dll">
+		  <Link>Infrastructure\ref\System.AppContext.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Buffers.dll">
+		  <Link>Infrastructure\ref\System.Buffers.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Collections.Concurrent.dll">
+		  <Link>Infrastructure\ref\System.Collections.Concurrent.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Collections.dll">
+		  <Link>Infrastructure\ref\System.Collections.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Collections.Immutable.dll">
+		  <Link>Infrastructure\ref\System.Collections.Immutable.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Collections.NonGeneric.dll">
+		  <Link>Infrastructure\ref\System.Collections.NonGeneric.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Collections.Specialized.dll">
+		  <Link>Infrastructure\ref\System.Collections.Specialized.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ComponentModel.Annotations.dll">
+		  <Link>Infrastructure\ref\System.ComponentModel.Annotations.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ComponentModel.DataAnnotations.dll">
+		  <Link>Infrastructure\ref\System.ComponentModel.DataAnnotations.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ComponentModel.dll">
+		  <Link>Infrastructure\ref\System.ComponentModel.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ComponentModel.EventBasedAsync.dll">
+		  <Link>Infrastructure\ref\System.ComponentModel.EventBasedAsync.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ComponentModel.Primitives.dll">
+		  <Link>Infrastructure\ref\System.ComponentModel.Primitives.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ComponentModel.TypeConverter.dll">
+		  <Link>Infrastructure\ref\System.ComponentModel.TypeConverter.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Configuration.dll">
+		  <Link>Infrastructure\ref\System.Configuration.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Console.dll">
+		  <Link>Infrastructure\ref\System.Console.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Core.dll">
+		  <Link>Infrastructure\ref\System.Core.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Data.Common.dll">
+		  <Link>Infrastructure\ref\System.Data.Common.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Data.DataSetExtensions.dll">
+		  <Link>Infrastructure\ref\System.Data.DataSetExtensions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Data.dll">
+		  <Link>Infrastructure\ref\System.Data.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.Contracts.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.Contracts.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.Debug.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.Debug.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.DiagnosticSource.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.DiagnosticSource.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.FileVersionInfo.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.FileVersionInfo.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.Process.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.Process.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.StackTrace.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.StackTrace.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.TextWriterTraceListener.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.TextWriterTraceListener.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.Tools.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.Tools.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.TraceSource.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.TraceSource.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Diagnostics.Tracing.dll">
+		  <Link>Infrastructure\ref\System.Diagnostics.Tracing.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.dll">
+		  <Link>Infrastructure\ref\System.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Drawing.dll">
+		  <Link>Infrastructure\ref\System.Drawing.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Drawing.Primitives.dll">
+		  <Link>Infrastructure\ref\System.Drawing.Primitives.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Dynamic.Runtime.dll">
+		  <Link>Infrastructure\ref\System.Dynamic.Runtime.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Formats.Asn1.dll">
+		  <Link>Infrastructure\ref\System.Formats.Asn1.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Formats.Tar.dll">
+		  <Link>Infrastructure\ref\System.Formats.Tar.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Globalization.Calendars.dll">
+		  <Link>Infrastructure\ref\System.Globalization.Calendars.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Globalization.dll">
+		  <Link>Infrastructure\ref\System.Globalization.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Globalization.Extensions.dll">
+		  <Link>Infrastructure\ref\System.Globalization.Extensions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.Compression.Brotli.dll">
+		  <Link>Infrastructure\ref\System.IO.Compression.Brotli.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.Compression.dll">
+		  <Link>Infrastructure\ref\System.IO.Compression.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.Compression.FileSystem.dll">
+		  <Link>Infrastructure\ref\System.IO.Compression.FileSystem.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.Compression.ZipFile.dll">
+		  <Link>Infrastructure\ref\System.IO.Compression.ZipFile.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.dll">
+		  <Link>Infrastructure\ref\System.IO.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.FileSystem.AccessControl.dll">
+		  <Link>Infrastructure\ref\System.IO.FileSystem.AccessControl.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.FileSystem.dll">
+		  <Link>Infrastructure\ref\System.IO.FileSystem.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.FileSystem.DriveInfo.dll">
+		  <Link>Infrastructure\ref\System.IO.FileSystem.DriveInfo.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.FileSystem.Primitives.dll">
+		  <Link>Infrastructure\ref\System.IO.FileSystem.Primitives.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.FileSystem.Watcher.dll">
+		  <Link>Infrastructure\ref\System.IO.FileSystem.Watcher.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.IsolatedStorage.dll">
+		  <Link>Infrastructure\ref\System.IO.IsolatedStorage.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.MemoryMappedFiles.dll">
+		  <Link>Infrastructure\ref\System.IO.MemoryMappedFiles.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.Pipes.AccessControl.dll">
+		  <Link>Infrastructure\ref\System.IO.Pipes.AccessControl.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.Pipes.dll">
+		  <Link>Infrastructure\ref\System.IO.Pipes.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.IO.UnmanagedMemoryStream.dll">
+		  <Link>Infrastructure\ref\System.IO.UnmanagedMemoryStream.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Linq.dll">
+		  <Link>Infrastructure\ref\System.Linq.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Linq.Expressions.dll">
+		  <Link>Infrastructure\ref\System.Linq.Expressions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Linq.Parallel.dll">
+		  <Link>Infrastructure\ref\System.Linq.Parallel.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Linq.Queryable.dll">
+		  <Link>Infrastructure\ref\System.Linq.Queryable.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Memory.dll">
+		  <Link>Infrastructure\ref\System.Memory.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.dll">
+		  <Link>Infrastructure\ref\System.Net.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.Http.dll">
+		  <Link>Infrastructure\ref\System.Net.Http.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.Http.Json.dll">
+		  <Link>Infrastructure\ref\System.Net.Http.Json.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.HttpListener.dll">
+		  <Link>Infrastructure\ref\System.Net.HttpListener.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.Mail.dll">
+		  <Link>Infrastructure\ref\System.Net.Mail.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.NameResolution.dll">
+		  <Link>Infrastructure\ref\System.Net.NameResolution.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.NetworkInformation.dll">
+		  <Link>Infrastructure\ref\System.Net.NetworkInformation.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.Ping.dll">
+		  <Link>Infrastructure\ref\System.Net.Ping.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.Primitives.dll">
+		  <Link>Infrastructure\ref\System.Net.Primitives.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.Quic.dll">
+		  <Link>Infrastructure\ref\System.Net.Quic.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.Requests.dll">
+		  <Link>Infrastructure\ref\System.Net.Requests.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.Security.dll">
+		  <Link>Infrastructure\ref\System.Net.Security.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.ServicePoint.dll">
+		  <Link>Infrastructure\ref\System.Net.ServicePoint.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.Sockets.dll">
+		  <Link>Infrastructure\ref\System.Net.Sockets.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.WebClient.dll">
+		  <Link>Infrastructure\ref\System.Net.WebClient.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.WebHeaderCollection.dll">
+		  <Link>Infrastructure\ref\System.Net.WebHeaderCollection.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.WebProxy.dll">
+		  <Link>Infrastructure\ref\System.Net.WebProxy.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.WebSockets.Client.dll">
+		  <Link>Infrastructure\ref\System.Net.WebSockets.Client.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Net.WebSockets.dll">
+		  <Link>Infrastructure\ref\System.Net.WebSockets.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Numerics.dll">
+		  <Link>Infrastructure\ref\System.Numerics.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Numerics.Vectors.dll">
+		  <Link>Infrastructure\ref\System.Numerics.Vectors.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ObjectModel.dll">
+		  <Link>Infrastructure\ref\System.ObjectModel.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Reflection.DispatchProxy.dll">
+		  <Link>Infrastructure\ref\System.Reflection.DispatchProxy.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Reflection.dll">
+		  <Link>Infrastructure\ref\System.Reflection.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Reflection.Emit.dll">
+		  <Link>Infrastructure\ref\System.Reflection.Emit.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Reflection.Emit.ILGeneration.dll">
+		  <Link>Infrastructure\ref\System.Reflection.Emit.ILGeneration.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Reflection.Emit.Lightweight.dll">
+		  <Link>Infrastructure\ref\System.Reflection.Emit.Lightweight.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Reflection.Extensions.dll">
+		  <Link>Infrastructure\ref\System.Reflection.Extensions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Reflection.Metadata.dll">
+		  <Link>Infrastructure\ref\System.Reflection.Metadata.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Reflection.Primitives.dll">
+		  <Link>Infrastructure\ref\System.Reflection.Primitives.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Reflection.TypeExtensions.dll">
+		  <Link>Infrastructure\ref\System.Reflection.TypeExtensions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Resources.Reader.dll">
+		  <Link>Infrastructure\ref\System.Resources.Reader.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Resources.ResourceManager.dll">
+		  <Link>Infrastructure\ref\System.Resources.ResourceManager.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Resources.Writer.dll">
+		  <Link>Infrastructure\ref\System.Resources.Writer.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.CompilerServices.Unsafe.dll">
+		  <Link>Infrastructure\ref\System.Runtime.CompilerServices.Unsafe.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.CompilerServices.VisualC.dll">
+		  <Link>Infrastructure\ref\System.Runtime.CompilerServices.VisualC.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.dll">
+		  <Link>Infrastructure\ref\System.Runtime.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Extensions.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Extensions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Handles.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Handles.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.InteropServices.dll">
+		  <Link>Infrastructure\ref\System.Runtime.InteropServices.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.InteropServices.JavaScript.dll">
+		  <Link>Infrastructure\ref\System.Runtime.InteropServices.JavaScript.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.InteropServices.RuntimeInformation.dll">
+		  <Link>Infrastructure\ref\System.Runtime.InteropServices.RuntimeInformation.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Intrinsics.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Intrinsics.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Loader.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Loader.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Numerics.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Numerics.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Serialization.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Serialization.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Serialization.Formatters.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Serialization.Formatters.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Serialization.Json.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Serialization.Json.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Serialization.Primitives.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Serialization.Primitives.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Runtime.Serialization.Xml.dll">
+		  <Link>Infrastructure\ref\System.Runtime.Serialization.Xml.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.AccessControl.dll">
+		  <Link>Infrastructure\ref\System.Security.AccessControl.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Claims.dll">
+		  <Link>Infrastructure\ref\System.Security.Claims.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Cryptography.Algorithms.dll">
+		  <Link>Infrastructure\ref\System.Security.Cryptography.Algorithms.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Cryptography.Cng.dll">
+		  <Link>Infrastructure\ref\System.Security.Cryptography.Cng.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Cryptography.Csp.dll">
+		  <Link>Infrastructure\ref\System.Security.Cryptography.Csp.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Cryptography.dll">
+		  <Link>Infrastructure\ref\System.Security.Cryptography.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Cryptography.Encoding.dll">
+		  <Link>Infrastructure\ref\System.Security.Cryptography.Encoding.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Cryptography.OpenSsl.dll">
+		  <Link>Infrastructure\ref\System.Security.Cryptography.OpenSsl.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Cryptography.Primitives.dll">
+		  <Link>Infrastructure\ref\System.Security.Cryptography.Primitives.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Cryptography.X509Certificates.dll">
+		  <Link>Infrastructure\ref\System.Security.Cryptography.X509Certificates.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.dll">
+		  <Link>Infrastructure\ref\System.Security.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Principal.dll">
+		  <Link>Infrastructure\ref\System.Security.Principal.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.Principal.Windows.dll">
+		  <Link>Infrastructure\ref\System.Security.Principal.Windows.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Security.SecureString.dll">
+		  <Link>Infrastructure\ref\System.Security.SecureString.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ServiceModel.Web.dll">
+		  <Link>Infrastructure\ref\System.ServiceModel.Web.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ServiceProcess.dll">
+		  <Link>Infrastructure\ref\System.ServiceProcess.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Text.Encoding.CodePages.dll">
+		  <Link>Infrastructure\ref\System.Text.Encoding.CodePages.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Text.Encoding.dll">
+		  <Link>Infrastructure\ref\System.Text.Encoding.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Text.Encoding.Extensions.dll">
+		  <Link>Infrastructure\ref\System.Text.Encoding.Extensions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Text.Encodings.Web.dll">
+		  <Link>Infrastructure\ref\System.Text.Encodings.Web.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Text.Json.dll">
+		  <Link>Infrastructure\ref\System.Text.Json.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Text.RegularExpressions.dll">
+		  <Link>Infrastructure\ref\System.Text.RegularExpressions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.Channels.dll">
+		  <Link>Infrastructure\ref\System.Threading.Channels.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.dll">
+		  <Link>Infrastructure\ref\System.Threading.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.Overlapped.dll">
+		  <Link>Infrastructure\ref\System.Threading.Overlapped.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.Tasks.Dataflow.dll">
+		  <Link>Infrastructure\ref\System.Threading.Tasks.Dataflow.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.Tasks.dll">
+		  <Link>Infrastructure\ref\System.Threading.Tasks.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.Tasks.Extensions.dll">
+		  <Link>Infrastructure\ref\System.Threading.Tasks.Extensions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.Tasks.Parallel.dll">
+		  <Link>Infrastructure\ref\System.Threading.Tasks.Parallel.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.Thread.dll">
+		  <Link>Infrastructure\ref\System.Threading.Thread.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.ThreadPool.dll">
+		  <Link>Infrastructure\ref\System.Threading.ThreadPool.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Threading.Timer.dll">
+		  <Link>Infrastructure\ref\System.Threading.Timer.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Transactions.dll">
+		  <Link>Infrastructure\ref\System.Transactions.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Transactions.Local.dll">
+		  <Link>Infrastructure\ref\System.Transactions.Local.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.ValueTuple.dll">
+		  <Link>Infrastructure\ref\System.ValueTuple.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Web.dll">
+		  <Link>Infrastructure\ref\System.Web.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Web.HttpUtility.dll">
+		  <Link>Infrastructure\ref\System.Web.HttpUtility.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Windows.dll">
+		  <Link>Infrastructure\ref\System.Windows.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Xml.dll">
+		  <Link>Infrastructure\ref\System.Xml.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Xml.Linq.dll">
+		  <Link>Infrastructure\ref\System.Xml.Linq.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Xml.ReaderWriter.dll">
+		  <Link>Infrastructure\ref\System.Xml.ReaderWriter.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Xml.Serialization.dll">
+		  <Link>Infrastructure\ref\System.Xml.Serialization.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Xml.XDocument.dll">
+		  <Link>Infrastructure\ref\System.Xml.XDocument.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Xml.XmlDocument.dll">
+		  <Link>Infrastructure\ref\System.Xml.XmlDocument.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Xml.XmlSerializer.dll">
+		  <Link>Infrastructure\ref\System.Xml.XmlSerializer.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Xml.XPath.dll">
+		  <Link>Infrastructure\ref\System.Xml.XPath.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\System.Xml.XPath.XDocument.dll">
+		  <Link>Infrastructure\ref\System.Xml.XPath.XDocument.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\ref\WindowsBase.dll">
+		  <Link>Infrastructure\ref\WindowsBase.dll</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\unix\lib\net8.0\Modules\Microsoft.PowerShell.Host\Microsoft.PowerShell.Host.psd1">
+		  <Link>Infrastructure\runtimes\unix\lib\net8.0\Modules\Microsoft.PowerShell.Host\Microsoft.PowerShell.Host.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\unix\lib\net8.0\Modules\Microsoft.PowerShell.Management\Microsoft.PowerShell.Management.psd1">
+		  <Link>Infrastructure\runtimes\unix\lib\net8.0\Modules\Microsoft.PowerShell.Management\Microsoft.PowerShell.Management.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\unix\lib\net8.0\Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1">
+		  <Link>Infrastructure\runtimes\unix\lib\net8.0\Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\unix\lib\net8.0\Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1">
+		  <Link>Infrastructure\runtimes\unix\lib\net8.0\Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\CimCmdlets\CimCmdlets.psd1">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\CimCmdlets\CimCmdlets.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Diagnostics\Diagnostics.format.ps1xml">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Diagnostics\Diagnostics.format.ps1xml</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Diagnostics\Event.format.ps1xml">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Diagnostics\Event.format.ps1xml</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Diagnostics\GetEvent.types.ps1xml">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Diagnostics\GetEvent.types.ps1xml</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Diagnostics\Microsoft.PowerShell.Diagnostics.psd1">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Diagnostics\Microsoft.PowerShell.Diagnostics.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Host\Microsoft.PowerShell.Host.psd1">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Host\Microsoft.PowerShell.Host.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Management\Microsoft.PowerShell.Management.psd1">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Management\Microsoft.PowerShell.Management.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Security\Security.types.ps1xml">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Security\Security.types.ps1xml</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.WSMan.Management\Microsoft.WSMan.Management.psd1">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.WSMan.Management\Microsoft.WSMan.Management.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\Microsoft.WSMan.Management\WSMan.format.ps1xml">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\Microsoft.WSMan.Management\WSMan.format.ps1xml</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\PSDiagnostics\PSDiagnostics.psd1">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\PSDiagnostics\PSDiagnostics.psd1</Link>
+		</None>
+		<None Include="..\..\..\..\.nuget\packages\microsoft.powershell.sdk\7.4.6\contentFiles\any\any\runtimes\win\lib\net8.0\Modules\PSDiagnostics\PSDiagnostics.psm1">
+		  <Link>Infrastructure\runtimes\win\lib\net8.0\Modules\PSDiagnostics\PSDiagnostics.psm1</Link>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>

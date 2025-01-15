@@ -1,22 +1,15 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using DotNetEnv;
-using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Services;
-using AutomationTestingProgram.Services.Logging;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.Identity.Web;
-using AutomationTestingProgram.Models.Settings;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Diagnostics;
-using DocumentFormat.OpenXml.Features;
+using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Modules.TestRunnerModule;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
@@ -88,7 +81,6 @@ void ConfigureLogging(WebApplicationBuilder builder)
 {
     builder.Logging.ClearProviders();
     builder.Logging.AddProvider(new CustomLoggerProvider(LogManager.GetRunFolderPath()));
-
     builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
     builder.Logging.AddFilter("Microsoft.AspNetCore.HttpLogging", LogLevel.None);
     builder.Logging.AddFilter("WebSocket*", LogLevel.None);
@@ -97,13 +89,23 @@ void ConfigureLogging(WebApplicationBuilder builder)
 void ConfigureAppSettings(WebApplicationBuilder builder)
 {
     // Configuring models with data from appsettings.json
+
+    // Azure
     builder.Services.Configure<AzureDevOpsSettings>(builder.Configuration.GetSection("AzureDevops"));
     builder.Services.Configure<AzureKeyVaultSettings>(builder.Configuration.GetSection("AzureKeyVault"));
+    
+    // Other
     builder.Services.Configure<MicrosoftGraphSettings>(builder.Configuration.GetSection("MicrosoftGraph"));
+    builder.Services.Configure<IOSettings>(builder.Configuration.GetSection("IO"));
+
+    // Request
     builder.Services.Configure<RequestSettings>(builder.Configuration.GetSection("Request"));
+    
+    // Playwright
     builder.Services.Configure<BrowserSettings>(builder.Configuration.GetSection("Browser"));
     builder.Services.Configure<ContextSettings>(builder.Configuration.GetSection("Context"));
     builder.Services.Configure<PageSettings>(builder.Configuration.GetSection("Page"));
+
 }
 
 void ConfigureFileUpload(WebApplicationBuilder builder)
@@ -118,15 +120,23 @@ void ConfigureFileUpload(WebApplicationBuilder builder)
 
 void RegisterServices(WebApplicationBuilder builder)
 {
+    builder.Services.AddSingleton<ICustomLoggerProvider>(sp =>
+    new CustomLoggerProvider(LogManager.GetRunFolderPath()));
+
     builder.Services.AddSingleton<WebSocketLogBroadcaster>();
+
     builder.Services.AddHttpClient("HttpClient", client =>
     {
+        client.Timeout = TimeSpan.FromMinutes(5); // 5 minute timeout
         client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
         client.DefaultRequestHeaders.Add("Accept", "application/json");
         client.DefaultRequestHeaders.Add("User-Agent", "WebAutomationTestingFramework/1.0");
-    }); 
+    });
 
     builder.Services.AddSingleton<ShutDownService>();
+
+    builder.Services.AddSingleton<AzureKeyVaultService>();
+    builder.Services.AddSingleton<PasswordResetService>();
 }
 
 void ConfigureApplicationLifetime(WebApplication app)
@@ -134,14 +144,14 @@ void ConfigureApplicationLifetime(WebApplication app)
     var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
     var myService = app.Services.GetRequiredService<ShutDownService>();
 
-    lifetime.ApplicationStarted.Register(() =>
+    /*lifetime.ApplicationStarted.Register(() =>
     {
         var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
         var httpClient = httpClientFactory.CreateClient("HttpClient");
 
         AzureKeyVaultService.Initialize(httpClient);
         PasswordResetService.Initialize(httpClient);
-    });
+    });*/
 
     lifetime.ApplicationStopping.Register(() => myService.OnApplicationStopping().GetAwaiter().GetResult());
 }

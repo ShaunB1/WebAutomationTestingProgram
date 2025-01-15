@@ -91,11 +91,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="Backend\Files\environment_list.csv">
+		<None Include="Core\StaticFiles\environment_list.csv">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<TargetPath>environment_list.csv</TargetPath>
 		</None>
-		<None Include="Backend\Files\KeychainAccounts2023.xls">
+		<None Include="Core\StaticFiles\KeychainAccounts2023.xls">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<TargetPath>KeychainAccounts2023.xls</TargetPath>
 		</None>

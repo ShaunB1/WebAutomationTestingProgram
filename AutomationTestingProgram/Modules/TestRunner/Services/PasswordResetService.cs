@@ -18,7 +18,6 @@ namespace AutomationTestingProgram.Actions
         private static readonly string _graphClientId;
         private static readonly string _graphTenantId;
         private static readonly string _graphEmail;
-        private static readonly string _graphPassword;
 
         static PasswordResetService()
         {
@@ -26,7 +25,6 @@ namespace AutomationTestingProgram.Actions
             _graphClientId = graphConfig["MicrosoftGraph:GraphClientId"];
             _graphTenantId = graphConfig["MicrosoftGraph:GraphTenantId"];
             _graphEmail = graphConfig["MicrosoftGraph:GraphEmail"];
-            _graphPassword = graphConfig["MicrosoftGraph:GraphPassword"];
 
             _client = new HttpClient();
             _client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
@@ -113,11 +111,21 @@ namespace AutomationTestingProgram.Actions
         private static async Task<(bool success, string message)> GetOTPFromEmail(string email, string emailTime)
         {
             string emailText = string.Empty;
+            var result = await AzureKeyVaultService.GetKvSecret(_graphEmail);
+            string graphPassword;
+            if (result.success)
+            {
+                graphPassword = result.message;
+            }
+            else
+            {
+                return (false, $"Failed fetch password for graph email {_graphEmail}");
+            }
 
             // Find the email containing the OTP
             try
             {
-                UsernamePasswordCredential credential = new UsernamePasswordCredential(_graphEmail, _graphPassword, _graphTenantId, _graphClientId);
+                UsernamePasswordCredential credential = new UsernamePasswordCredential(_graphEmail, graphPassword, _graphTenantId, _graphClientId);
                 GraphServiceClient graphClient = new GraphServiceClient(credential, new[] { "https://graph.microsoft.com/.default" });
 
                 // Get the top 20 most recent emails that were sent after emailTime - the time we requested OTP

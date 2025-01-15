@@ -11,8 +11,9 @@ public class Login : WebAction
         string username = step.Object;
         string password = step.Value;
 
-        // If password is blank, attempt to get from Azure Key Vault
-        if (password == string.Empty)
+        // If password is blank or commented, attempt to get from Azure Key Vault
+        bool isHardcodedPassword = password != string.Empty && !password.StartsWith("##");
+        if (!isHardcodedPassword)
         {
             var result = await AzureKeyVaultService.GetKvSecret(username);
             if (result.success)
@@ -137,6 +138,8 @@ public class Login : WebAction
                 return false;
             }
 
+            // Hard wait for now, but we need to implement function that detects loading spinner completion
+            Task.Delay(10000).Wait();
             return true;
         }
         catch (Exception ex)

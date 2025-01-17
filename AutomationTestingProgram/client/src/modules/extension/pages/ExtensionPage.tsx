@@ -17,7 +17,10 @@ const ExtensionPage = () => {
                 headers: headers,
             });
             if (!response.ok) {
-                throw new Error(`${response.status} - ${response.statusText}`)
+                const errorDetails = await response.json(); 
+                throw new Error(
+                    `${response.status} - ${response.statusText}\nMessage: ${errorDetails.Message}\nStackTrace: ${errorDetails.StackTrace}`
+                );
             }
             const blob = await response.blob();
             const link = document.createElement('a');

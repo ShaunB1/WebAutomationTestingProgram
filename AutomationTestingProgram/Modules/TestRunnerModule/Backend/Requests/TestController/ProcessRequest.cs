@@ -42,7 +42,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <param name="Type">The type of the browser (e.g., "Chrome", "Firefox") that will handle the request.</param>
         /// <param name="Version">The version of the browser (e.g., "91", "93") that will be used to process the request.</param>
         public ProcessRequest(ICustomLoggerProvider provider, ClaimsPrincipal User, IFormFile File, string Type, string Version, string Environment)
-            : base(User)
+            : base(User, isLoggingEnabled:true)
         {            
             this.Logger = provider.CreateLogger<ProcessRequest>(FolderPath);
             

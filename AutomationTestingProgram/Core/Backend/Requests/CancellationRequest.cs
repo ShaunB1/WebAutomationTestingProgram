@@ -16,7 +16,7 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// The unique identifier of the request to cancel
         /// </summary>
-        private string CancelRequestID { get; }
+        public string CancelRequestID { get; }
 
         /// <summary>
         /// The Request to Cancel

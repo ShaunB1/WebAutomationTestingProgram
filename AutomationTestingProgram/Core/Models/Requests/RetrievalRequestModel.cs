@@ -9,10 +9,9 @@ namespace AutomationTestingProgram.Core
     {
         [Required(ErrorMessage = "The Type is required")]
         [AllowedFilterType()]
-        public string FilterType;
+        public string FilterType { get; set; }
 
-        [Required(ErrorMessage = "The Value is required")]
         [AllowedFilterValue("FilterType")]
-        public string FilterValue;
+        public string FilterValue { get; set; }
     }
 }

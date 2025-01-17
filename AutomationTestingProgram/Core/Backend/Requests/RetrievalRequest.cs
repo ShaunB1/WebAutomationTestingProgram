@@ -14,17 +14,17 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// The type of filter provided with the request
         /// </summary>
-        private FilterType FilterType { get; }
+        public FilterType FilterType { get; }
 
         /// <summary>
         /// The value of the filter provided with the request
         /// </summary>
-        private string FilterValue { get; }
+        public string FilterValue { get; }
 
         /// <summary>
         /// List of retrieved requests, based on filter
         /// </summary>
-        private IList<IClientRequest> RetrievedRequests { get; set; }
+        public IList<IClientRequest> RetrievedRequests { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RetrievalRequest"/> class.

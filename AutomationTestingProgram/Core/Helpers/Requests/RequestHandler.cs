@@ -113,12 +113,19 @@ namespace AutomationTestingProgram.Core
             {
                 return _requests.Values.ToList();
             }
+            
+            Type? filterType = Type.GetType(filter);
+
+            if (filterType == null)
+            {
+                throw new ArgumentException($"Invalid filter type: {filter}");
+            }
 
             IList<IClientRequest> requests = new List<IClientRequest>();
 
             foreach (var value in _requests.Values)
             {
-                if (typeof(IClientRequest).IsAssignableFrom((Type?)value))
+                if (filterType.IsAssignableFrom(value.GetType()))
                 {
                     requests.Add(value);
                 }

@@ -17,12 +17,14 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Reference to the User that sent the request
         /// </summary>
+        [JsonIgnore]
         ClaimsPrincipal User { get; }
 
         /// <summary>
         /// The TaskCompletionSource associated with this request.
         /// Allows other threads to monitor its completion, as well what type of completion.
         /// </summary>
+        [JsonIgnore]
         TaskCompletionSource ResponseSource { get; }
 
         /// <summary>
@@ -38,7 +40,7 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// The folder path for the request. Folder includes all logs, files, directories, etc.
         /// </summary>
-        string FolderPath { get; }
+        string? FolderPath { get; }
 
 
         /// <summary>

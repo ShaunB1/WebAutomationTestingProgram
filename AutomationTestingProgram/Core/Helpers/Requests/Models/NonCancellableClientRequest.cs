@@ -32,7 +32,7 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Initializes variables to be used for all Cancellable Request Types
         /// </summary>
-        public NonCancellableClientRequest(ClaimsPrincipal User)
+        public NonCancellableClientRequest(ClaimsPrincipal User, bool isLoggingEnabled = true)
         {
             this.ID = Guid.NewGuid().ToString();
             this.User = User;
@@ -42,7 +42,14 @@ namespace AutomationTestingProgram.Core
 
             _statelock = new object();
 
-            this.FolderPath = LogManager.CreateRequestFolder(ID);
+            if (isLoggingEnabled)
+            {
+                this.FolderPath = LogManager.CreateRequestFolder(ID);
+            }
+            else
+            {
+                this.FolderPath = string.Empty;
+            }
         }
 
         public void SetStatus(State responseType, string message = "", Exception? e = null)
@@ -104,6 +111,9 @@ namespace AutomationTestingProgram.Core
             try
             {
                 Validate();
+
+                if (ResponseSource.Task.IsCompleted)
+                    return;
 
                 await Execute();
             }

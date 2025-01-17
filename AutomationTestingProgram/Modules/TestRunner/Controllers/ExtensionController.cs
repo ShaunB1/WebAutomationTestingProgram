@@ -21,13 +21,24 @@ public class ExtensionController : ControllerBase
     [HttpGet("download-zip")]
     public async Task<IActionResult> DownloadZip()
     {
-        if (System.IO.File.Exists(_extensionDownloadPath))
+        try
         {
-            return PhysicalFile(_extensionDownloadPath, "application/octet-stream", "TAP_Extension.zip");
+            if (System.IO.File.Exists(_extensionDownloadPath))
+            {
+                return PhysicalFile(_extensionDownloadPath, "application/octet-stream", "TAP_Extension.zip");
+            }
+            else
+            {
+                return StatusCode(StatusCodes.Status404NotFound);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError);
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                Message = ex.Message,
+                StackTrace = ex.StackTrace
+            });
         }
     }
 }

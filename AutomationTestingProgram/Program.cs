@@ -133,6 +133,13 @@ void RegisterServices(WebApplicationBuilder builder)
         client.DefaultRequestHeaders.Add("User-Agent", "WebAutomationTestingFramework/1.0");
     });
 
+    /*
+     * When HttpClient is injected directly with DI, headers will be removed
+     * after registering the class its injected to as a service.
+     * 
+     * Must inject IHttpClientFactory!!
+     */
+
     builder.Services.AddSingleton<ShutDownService>();
 
     builder.Services.AddSingleton<AzureKeyVaultService>();

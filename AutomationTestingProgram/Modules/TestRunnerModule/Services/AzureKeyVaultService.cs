@@ -17,14 +17,14 @@ public class AzureKeyVaultService
 
     private readonly HttpClient _httpClient;
 
-    public AzureKeyVaultService(IOptions<AzureKeyVaultSettings> options, HttpClient httpClient)
+    public AzureKeyVaultService(IOptions<AzureKeyVaultSettings> options, IHttpClientFactory httpClientFactory)
     {
         AzureKeyVaultSettings settings = options.Value;
         _vault = settings.CredentialVault;
         _cliendID = settings.KeyVaultClientId;
         _tenantID = settings.KeyVaultTenantId;
         _clientSecret = settings.KeyVaultClientSecret;
-        _httpClient = httpClient;
+        _httpClient = httpClientFactory.CreateClient("HttpClient");
     }
 
     /// <summary>

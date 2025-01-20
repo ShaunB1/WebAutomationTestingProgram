@@ -19,7 +19,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         private readonly HttpClient _httpClient;
         private readonly AzureKeyVaultService _azureKeyVaultService;
 
-        public PasswordResetService(IOptions<MicrosoftGraphSettings> options, HttpClient httpClient, AzureKeyVaultService azureKeyVaultService)
+        public PasswordResetService(IOptions<MicrosoftGraphSettings> options, IHttpClientFactory httpClientFactory, AzureKeyVaultService azureKeyVaultService)
         {
             MicrosoftGraphSettings settings = options.Value;
             _graphClientID = settings.GraphClientId;
@@ -27,7 +27,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             _graphEmail = settings.GraphEmail;
 
             _lockManager = new LockManager<string>(settings.Limit);
-            _httpClient = httpClient;
+            _httpClient = httpClientFactory.CreateClient("HttpClient");
             _azureKeyVaultService = azureKeyVaultService;
         }
 
@@ -82,7 +82,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             {
                 HttpResponseMessage response = await _httpClient.PostAsync(forgotPasswordURL, content);
                 string responseBody = await response.Content.ReadAsStringAsync();
-
+                
                 var responseObject = JsonSerializer.Deserialize<PasswordResetResponse>(responseBody);
 
                 if (response.IsSuccessStatusCode && responseObject != null && responseObject.result == 0)

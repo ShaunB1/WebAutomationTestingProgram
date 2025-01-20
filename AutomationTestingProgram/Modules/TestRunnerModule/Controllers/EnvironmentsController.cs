@@ -20,11 +20,11 @@ public class EnvironmentsController : CoreController
 
     /* API Request Examples:
      * - KeychainAccounts
-     * curl -X GET -H "Content-Type: application/json" http://localhost:5223/api/environments/keychainAccounts
+     * curl -X GET -H "Content-Type: application/json" https://localhost:7117/api/environments/keychainAccounts
      * - SecretKey
-     * curl -X GET -H "Content-Type: application/json" http://localhost:5223/api/environments/secretKey?email=example@example.com
+     * curl -X GET -H "Content-Type: application/json" https://localhost:7117/api/environments/secretKey?email=example@example.com
      * - RESET
-     * curl -X POST -H "Content-Type: application/json" -d "{\"Email\": \"iam_ma@ontarioemail.ca\"}" http://localhost:5223/api/environments/resetPassword
+     * curl -X POST -H "Content-Type: application/json" -d "{\"Email\": \"iam_ma@ontarioemail.ca\"}" https://localhost:7117/api/environments/resetPassword
      * 
      * Test commands:
      * for /l %i in (1,1,10) do start /b curl -X POST -H "Content-Type: application/json" http://localhost:5223/api/test/retrieve

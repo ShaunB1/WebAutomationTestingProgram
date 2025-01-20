@@ -15,6 +15,8 @@ namespace AutomationTestingProgram.Core
         public TaskCompletionSource ResponseSource { get; }
         public State State { get; private set; }
         public string Message { get; private set; }
+        [JsonIgnore]
+        public string StackTrace { get; private set; }
         public string FolderPath { get; }
 
         /// <summary>
@@ -34,7 +36,14 @@ namespace AutomationTestingProgram.Core
         /// Used by CancellationRequest to cancel requests.
         /// </summary>
         [JsonIgnore] // Cannot serialize CancellationTokenSource. Ignore
-        private CancellationTokenSource CancellationTokenSource { get; }
+        private CancellationTokenSource CancelSource { get; }
+
+        /// <summary>
+        /// CancellationToken associated with the request, created by the CancellationTokenSource.
+        /// Used by various operations to monitor cancellation state.
+        /// </summary>
+        [JsonIgnore]
+        protected CancellationToken CancelToken { get; }
 
         /// <summary>
         /// Initializes variables to be used for all Cancellable Request Types
@@ -45,8 +54,10 @@ namespace AutomationTestingProgram.Core
             this.User = User;
             this.ResponseSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             this.State = State.Received;
-            this.CancellationTokenSource = new CancellationTokenSource();
+            this.CancelSource = new CancellationTokenSource();
+            this.CancelToken = CancelSource.Token;
             this.Message = string.Empty;
+            this.StackTrace = string.Empty;
 
             _statelock = new object();
 
@@ -81,14 +92,15 @@ namespace AutomationTestingProgram.Core
                     case State.Failure:
                         if (e != null) // If exception given, add to message
                         {
-                            Message += "\n" + e.ToString();
+                            Message += ": " + e.Message;
+                            StackTrace += e.StackTrace;
                             ResponseSource.SetException(e);
                         }
                         else
                         {
                             ResponseSource.SetException(new Exception($"{responseType.ToString()} : {message}"));
                         }
-                        LogError($"State: {State}\nMessage: {Message}");
+                        LogError($"State: {State}\nMessage: {Message}\nStack Trace: {StackTrace}");
                         break;
                     case State.Cancelled:
                         ResponseSource.SetCanceled();
@@ -110,30 +122,44 @@ namespace AutomationTestingProgram.Core
             }
         }
 
+        /// <summary>
+        /// Flags the request for cancellation.
+        /// </summary>
         public void Cancel()
         {
-            CancellationTokenSource.Cancel();
+            CancelSource.Cancel();
         }
 
+
+        /// <summary>
+        /// Checks whether request is flagged for cancellation.
+        /// If so, OperationCanceledException is thrown.
+        /// Note: This is to be used for manual checks throughout the request lifecyle.
+        /// CancellationSourceToken can also be passed around while waiting.
+        /// </summary>
         public void IsCancellationRequested()
         {
-            if (CancellationTokenSource.IsCancellationRequested)
+            if (CancelToken.IsCancellationRequested)
             {
-                SetStatus(State.Cancelled, "Request Cancelled");
                 throw new OperationCanceledException("Request Cancelled");
             }
         }
 
         public async Task Process()
-        {   // Errors caught by RequestHandler
+        {   
             try
             {
                 Validate();
 
-                if (ResponseSource.Task.IsCompleted)
-                    return;
-
                 await Execute();
+            }
+            catch (OperationCanceledException)
+            {
+                this.SetStatus(State.Cancelled, "Cancelled");
+            }
+            catch (Exception e)
+            {
+                this.SetStatus(State.Failure, $"Failure (State: {State})", e);
             }
             finally
             {

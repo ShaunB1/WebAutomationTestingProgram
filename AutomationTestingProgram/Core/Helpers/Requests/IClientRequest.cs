@@ -38,6 +38,12 @@ namespace AutomationTestingProgram.Core
         string Message { get; }
 
         /// <summary>
+        /// Stack Trace associated with the request. Used to explain origin of errors.
+        /// </summary>
+        [JsonIgnore] // Not returned in Http Response
+        string StackTrace { get; }
+
+        /// <summary>
         /// The folder path for the request. Folder includes all logs, files, directories, etc.
         /// </summary>
         string? FolderPath { get; }
@@ -60,13 +66,7 @@ namespace AutomationTestingProgram.Core
         /// If no exception is provided, the method will handle success and failure states accordingly.
         /// </param>
         void SetStatus(State responseType, string message = "", Exception? e = null);
-
-        /// <summary>
-        /// Checks whether request is flagged for cancellation.
-        /// If so, request is cancelled, and OperationCanceledException is thrown.
-        /// </summary>
-        void IsCancellationRequested();
-
+        
         /// <summary>
         /// Process the request.
         /// </summary>

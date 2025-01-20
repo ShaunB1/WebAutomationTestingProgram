@@ -60,18 +60,10 @@ namespace AutomationTestingProgram.Core
              * - User has permission to access application section (requets sent from sections in the application)
              */
 
-            try
-            {
-                SetStatus(State.Validating, $"Validating Retrieval Request (ID: {ID})");
+            SetStatus(State.Validating, $"Validating Retrieval Request (ID: {ID})");
 
-                // Validate permission to access application
-                LogInfo($"Validating User Permissions - Application");
-
-            }
-            catch (Exception e)
-            {
-                SetStatus(State.Failure, "Validation Failure", e);
-            }
+            // Validate permission to access application
+            LogInfo($"Validating User Permissions - Application");
         }
 
         /// <summary>
@@ -90,29 +82,22 @@ namespace AutomationTestingProgram.Core
              * 
              */
 
-            try
-            {
-                SetStatus(State.Processing, $"Processing Retrieval Request (ID: {ID})");
-                
-                switch (FilterType)
-                {
-                    case FilterType.None:
-                        RetrievedRequests = RequestHandler.RetrieveRequests();
-                        break;
-                    case FilterType.ID:
-                        RetrievedRequests.Add(RequestHandler.RetrieveRequest(FilterValue));
-                        break;
-                    case FilterType.Type:
-                        RetrievedRequests = RequestHandler.RetrieveRequests(FilterValue);
-                        break;
-                }
+            SetStatus(State.Processing, $"Processing Retrieval Request (ID: {ID})");
 
-                SetStatus(State.Completed, $"Retrieval Request (ID: {ID}) completed successfully");
-            }
-            catch (Exception e)
+            switch (FilterType)
             {
-                SetStatus(State.Failure, "Processing Failure", e);
+                case FilterType.None:
+                    RetrievedRequests = RequestHandler.RetrieveRequests();
+                    break;
+                case FilterType.ID:
+                    RetrievedRequests.Add(RequestHandler.RetrieveRequest(FilterValue));
+                    break;
+                case FilterType.Type:
+                    RetrievedRequests = RequestHandler.RetrieveRequests(FilterValue);
+                    break;
             }
+
+            SetStatus(State.Completed, $"Retrieval Request (ID: {ID}) completed successfully.");
 
             return Task.CompletedTask;
         }

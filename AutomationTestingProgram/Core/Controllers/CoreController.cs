@@ -44,7 +44,7 @@ public class CoreController : ControllerBase
 
     /* API Request Examples:
      * - STOP
-     * curl -X POST -H "Content-Type: application/json" -d "{\"ID\": \"request-id-to-stop\"}" https://localhost:7117/api/core/stop
+     * curl -X POST -H "Content-Type: application/json" -d "{\"ID\": \"f76d4bdd-bccf-4a42-bd91-2c5a1d5c81b8\"}" https://localhost:7117/api/core/stop
      * - GETACTIVEREQUESTS
      * 
      * TYPE: curl -X POST -H "Content-Type: application/json" -d "{\"FilterType\": \"Type\", \"FilterValue\": \"AutomationTestingProgram.Core.RetrievalRequest\"}" https://localhost:7117/api/core/retrieve

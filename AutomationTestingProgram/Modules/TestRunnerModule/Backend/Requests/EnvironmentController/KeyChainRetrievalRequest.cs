@@ -43,23 +43,15 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
              * - User has permission to access application section (requets sent from sections in the application)
              */
 
-            try
-            {
-                this.SetStatus(State.Validating, $"Validating KeyChainRetrieval Request (ID: {ID})");
+            this.SetStatus(State.Validating, $"Validating KeyChainRetrieval Request (ID: {ID})");
 
-                // Validate permission to access application
-                LogInfo($"Validating User Permissions - Team");
+            // Validate permission to access application
+            LogInfo($"Validating User Permissions - Team");
 
-                /*
-                 * Later implementation: Validates what emails the user has access to.
-                 * Only those emails are returned.
-                 */
-
-            }
-            catch (Exception e)
-            {
-                SetStatus(State.Failure, "Validation Failure", e);
-            }
+            /*
+             * Later implementation: Validates what emails the user has access to.
+             * Only those emails are returned.
+             */
         }
 
         /// <summary>
@@ -71,6 +63,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             try
             {
                 this.SetStatus(State.Processing, $"Processing KeyChainRetrieval Request (ID: {ID})");
+                await IOManager.TryAquireSlotAsync();
+
 
                 string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "KeychainAccounts2023.xls");
 
@@ -80,7 +74,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                     throw new Exception("KeychainFile not found");
                 }
 
-                await IOManager.TryAquireSlotAsync();
                 using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     IWorkbook workbook = new HSSFWorkbook(fs);
@@ -103,10 +96,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
 
                 SetStatus(State.Completed, $"KeyChainRetrieval Request (ID: {ID}) completed successfully");
-            }
-            catch (Exception e)
-            {
-                SetStatus(State.Failure, "Processing Failure", e);
             }
             finally
             {

@@ -56,26 +56,17 @@ namespace AutomationTestingProgram.Core
              *      -> If User: Request to Cancel must be within user's group, and own request
              */
 
-            try
-            {
-                SetStatus(State.Validating, $"Validating Cancellation Request (ID {ID}, CancelID {CancelRequestID})");
+            SetStatus(State.Validating, $"Validating Cancellation Request (ID {ID}, CancelID {CancelRequestID})");
 
-                // Validate permission to access team
-                LogInfo($"Validating User Permissions - Team");
+            // Validate permission to access team
+            LogInfo($"Validating User Permissions - Team");
 
-                // Validate Request to Cancel
-                LogInfo($"Validating Request to Cancel");
-                ValidateRequest();
+            // Validate Request to Cancel
+            LogInfo($"Validating Request to Cancel");
+            ValidateRequest();
 
-                // Validate permissions to cancel request
-                LogInfo($"Validating User Permissions - Request to Cancel");
-
-            }
-            catch (Exception e)
-            {
-                SetStatus(State.Failure, "Validation Failure", e);
-            }
-
+            // Validate permissions to cancel request
+            LogInfo($"Validating User Permissions - Request to Cancel");
         }
 
         /// <summary>
@@ -114,33 +105,26 @@ namespace AutomationTestingProgram.Core
              */
 
 
+            SetStatus(State.Processing, $"Processing Cancellation Request (ID {ID}, CancelID {CancelRequestID})");
+
+            CancelRequest!.Cancel();
+            LogInfo($"Sent Cancellation Request to Request (ID: {CancelRequestID})");
+
             try
             {
-                SetStatus(State.Processing, $"Processing Cancellation Request (ID {ID}, CancelID {CancelRequestID})");
+                await CancelRequest!.ResponseSource.Task;
 
-                CancelRequest!.Cancel();
-                LogInfo($"Sent Cancellation Request to Request (ID: {CancelRequestID})");
-
-                try
-                {
-                    await CancelRequest!.ResponseSource.Task;
-
-                    // Request completed before cancellation received/processed
-                    throw new Exception($"Request (ID: {CancelRequestID}) completed before cancellation received/processed");
-                }
-                catch (OperationCanceledException) // Request successfully canceled
-                {
-                    SetStatus(State.Completed, $"Request (ID: {CancelRequestID}) cancelled successfully");
-                }
-                catch (Exception)
-                {
-                    // Request failed before cancellation received/processed
-                    throw new Exception($"Request (ID: {CancelRequestID}) failed before cancellation received/processed");
-                }
+                // Request completed before cancellation received/processed
+                throw new Exception($"Request (ID: {CancelRequestID}) completed before cancellation received/processed");
             }
-            catch (Exception e)
+            catch (OperationCanceledException) // Request successfully canceled
             {
-                SetStatus(State.Failure, "Processing Failure", e);
+                SetStatus(State.Completed, $"Request (ID: {CancelRequestID}) cancelled successfully");
+            }
+            catch (Exception)
+            {
+                // Request failed before cancellation received/processed
+                throw new Exception($"Request (ID: {CancelRequestID}) failed before cancellation received/processed");
             }
         }
     }

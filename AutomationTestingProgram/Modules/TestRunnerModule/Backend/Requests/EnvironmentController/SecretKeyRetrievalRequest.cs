@@ -51,23 +51,15 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
              * - User has permission to access application section (requets sent from sections in the application)
              */
 
-            try
-            {
-                SetStatus(State.Validating, $"Validating SecretKeyRetrieval Request (ID: {ID}, Email: {Email})");
+            SetStatus(State.Validating, $"Validating SecretKeyRetrieval Request (ID: {ID}, Email: {Email})");
 
-                // Validate permission to access application
-                LogInfo($"Validating User Permissions - Team");
+            // Validate permission to access application
+            LogInfo($"Validating User Permissions - Team");
 
-                /*
-                 * Later implementation:
-                 * Validate whether the user has permission to access the email account.
-                 */
-
-            }
-            catch (Exception e)
-            {
-                SetStatus(State.Failure, "Validation Failure", e);
-            }
+            /*
+             * Later implementation:
+             * Validate whether the user has permission to access the email account.
+             */
         }
 
         /// <summary>
@@ -85,10 +77,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 SecretKey = await azureKeyVaultService.GetKvSecret(this, Email);
 
                 SetStatus(State.Completed, $"SecretKeyRetrieval Request (ID: {ID}, Email: {Email}) completed successfully");
-            }
-            catch (Exception e)
-            {
-                SetStatus(State.Failure, "Processing Failure", e);
             }
             finally
             {

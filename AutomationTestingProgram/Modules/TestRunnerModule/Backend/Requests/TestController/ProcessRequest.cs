@@ -64,19 +64,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
              * - User has permission to access application team/group
              */
 
-            try
-            {
-                this.SetStatus(State.Validating, $"Validating Process Request (ID: {ID}, BrowserType: {BrowserType}," +
+            this.SetStatus(State.Validating, $"Validating Process Request (ID: {ID}, BrowserType: {BrowserType}," +
                     $" BrowserVersion: {BrowserVersion}, Environment: {Environment})");
 
-                // Validate permission to access team
-                LogInfo($"Validating User Permissions - Team");
-
-            }
-            catch (Exception e)
-            {
-                this.SetStatus(State.Failure, "Validation Failure", e);
-            }
+            // Validate permission to access team
+            LogInfo($"Validating User Permissions - Team");
         }
 
         /// <summary>
@@ -85,29 +77,19 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         protected override async Task Execute()
         {
-            try
-            {
-                this.SetStatus(State.Processing, $"Processing Process Request (ID: {ID}, BrowserType: {BrowserType}," +
+            this.SetStatus(State.Processing, $"Processing Process Request (ID: {ID}, BrowserType: {BrowserType}," +
                     $" BrowserVersion: {BrowserVersion}, Environment: {Environment})");
 
-                IsCancellationRequested();
+            IsCancellationRequested();
 
-                for (int i = 0; i <= 5; i++)
-                {
-                    // Check if cancellation requested
-
-                    IsCancellationRequested();
-                    await Task.Delay(20000);
-                    LogInfo($"{i}");
-                }
-
-                this.SetStatus(State.Completed, $"Process Request (ID: {ID}, BrowserType: {BrowserType}," +
-                    $" BrowserVersion: {BrowserVersion}, Environment: {Environment}) completed successfully");
-            }
-            catch (Exception e)
+            for (int i = 0; i <= 5; i++)
             {
-                this.SetStatus(State.Failure, "Processing Failure", e);
+                await Task.Delay(20000, CancelToken);
+                LogInfo($"{i}");
             }
+
+            this.SetStatus(State.Completed, $"Process Request (ID: {ID}, BrowserType: {BrowserType}," +
+                $" BrowserVersion: {BrowserVersion}, Environment: {Environment}) completed successfully");
         }
     }
 }

@@ -42,18 +42,10 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
              * - User has permission to access application team/group
              */
 
-            try
-            {
-                this.SetStatus(State.Validating, $"Validating Process Request (ID: {ID})");
+            this.SetStatus(State.Validating, $"Validating Process Request (ID: {ID})");
 
-                // Validate permission to access team
-                LogInfo($"Validating User Permissions - Team");
-
-            }
-            catch (Exception e)
-            {
-                this.SetStatus(State.Failure, "Validation Failure", e);
-            }
+            // Validate permission to access team
+            LogInfo($"Validating User Permissions - Team");
         }
 
         /// <summary>
@@ -62,26 +54,17 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         protected override async Task Execute()
         {
-            try
+            this.SetStatus(State.Processing, $"Processing Validation Request (ID: {ID})");
+
+            IsCancellationRequested();
+
+            for (int i = 0; i <= 5; i++)
             {
-                this.SetStatus(State.Processing, $"Processing Validation Request (ID: {ID})");
-
-                IsCancellationRequested();
-
-                for (int i = 0; i <= 5; i++)
-                {
-                    // Check if cancellation requested
-                    IsCancellationRequested();
-                    await Task.Delay(20000);
-                    Logger.LogInformation($"{i}");
-                }
-
-                this.SetStatus(State.Completed, $"Validation Request (ID: {ID}) completed successfully");
+                await Task.Delay(20000, CancelToken);
+                Logger.LogInformation($"{i}");
             }
-            catch (Exception e)
-            {
-                this.SetStatus(State.Failure, "Processing Failure", e);
-            }
+
+            this.SetStatus(State.Completed, $"Validation Request (ID: {ID}) completed successfully");
         }
     }
 }

@@ -15,6 +15,8 @@ namespace AutomationTestingProgram.Core
         public TaskCompletionSource ResponseSource { get; }
         public State State { get; private set; }
         public string Message { get; private set; }
+        [JsonIgnore]
+        public string StackTrace { get; private set; }
         public string FolderPath { get; }
 
         /// <summary>
@@ -39,6 +41,7 @@ namespace AutomationTestingProgram.Core
             this.ResponseSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             this.State = State.Received;
             this.Message = string.Empty;
+            this.StackTrace = string.Empty;
 
             _statelock = new object();
 
@@ -76,14 +79,15 @@ namespace AutomationTestingProgram.Core
                     case State.Failure:
                         if (e != null) // If exception given, add to message
                         {
-                            Message += "\n" + e.ToString();
+                            Message += ": " + e.Message;
+                            StackTrace += e.StackTrace;
                             ResponseSource.SetException(e);
                         }
                         else
                         {
                             ResponseSource.SetException(new Exception($"{responseType.ToString()} : {message}"));
                         }
-                        LogError($"State: {State}\nMessage: {Message}");
+                        LogError($"State: {State}\nMessage: {Message}\nStack Trace: {StackTrace}");
                         break;
                     case State.Rejected:
                         ResponseSource.SetCanceled();
@@ -107,15 +111,20 @@ namespace AutomationTestingProgram.Core
         }
 
         public async Task Process()
-        {   // Errors caught by RequestHandler
+        {
             try
             {
                 Validate();
 
-                if (ResponseSource.Task.IsCompleted)
-                    return;
-
                 await Execute();
+            }
+            catch (OperationCanceledException)
+            {
+                this.SetStatus(State.Cancelled, "Cancelled");
+            }
+            catch (Exception e)
+            {
+                this.SetStatus(State.Failure, $"Failure (State: {State})", e);
             }
             finally
             {

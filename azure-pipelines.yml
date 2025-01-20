@@ -51,7 +51,7 @@ steps:
   inputs:
     command: 'publish'
     projects: '$(project)'
-    arguments: '--configuration $(buildConfiguration) --output "$(build.artifactStagingDirectory)" /p:PublishSingleFile=true /p:SkipInvalidConfigurations=true /p:DeployIisAppPath="Default Web Site"'
+    arguments: '--configuration $(buildConfiguration) --output "$(build.artifactStagingDirectory)" /p:SkipInvalidConfigurations=true /p:DeployIisAppPath="Default Web Site"'
 
 - task: PublishBuildArtifacts@1
   inputs:

@@ -36,8 +36,8 @@ public class ExtensionController : ControllerBase
         {
             return StatusCode(StatusCodes.Status500InternalServerError, new
             {
-                Message = ex.Message,
-                StackTrace = ex.StackTrace
+                message = ex.Message,
+                stackTrace = ex.StackTrace
             });
         }
     }

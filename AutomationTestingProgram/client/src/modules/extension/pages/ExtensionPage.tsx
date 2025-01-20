@@ -19,7 +19,7 @@ const ExtensionPage = () => {
             if (!response.ok) {
                 const errorDetails = await response.json(); 
                 throw new Error(
-                    `${response.status} - ${response.statusText}\nMessage: ${errorDetails.Message}\nStackTrace: ${errorDetails.StackTrace}`
+                    `${response.status} - ${response.statusText}\nMessage: ${errorDetails.message}\nStackTrace: ${errorDetails.stackTrace}`
                 );
             }
             const blob = await response.blob();

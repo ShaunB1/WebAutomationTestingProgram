@@ -7,7 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule.Backend.Playwright.Objects
+namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
     /// <summary>
     /// Represents a browser object that manages browser instances, contexts, and related tasks.

@@ -144,6 +144,8 @@ void RegisterServices(WebApplicationBuilder builder)
 
     builder.Services.AddSingleton<AzureKeyVaultService>();
     builder.Services.AddSingleton<PasswordResetService>();
+
+    // builder.Services.AddSingleton<PlaywrightObject>();
 }
 
 void ConfigureApplicationLifetime(WebApplication app)

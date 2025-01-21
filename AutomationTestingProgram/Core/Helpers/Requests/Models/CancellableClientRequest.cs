@@ -43,7 +43,7 @@ namespace AutomationTestingProgram.Core
         /// Used by various operations to monitor cancellation state.
         /// </summary>
         [JsonIgnore]
-        protected CancellationToken CancelToken { get; }
+        public CancellationToken CancelToken { get; }
 
         /// <summary>
         /// Initializes variables to be used for all Cancellable Request Types

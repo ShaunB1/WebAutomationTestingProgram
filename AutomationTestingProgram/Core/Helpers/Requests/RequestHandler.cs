@@ -1,5 +1,4 @@
-﻿using Microsoft.Kiota.Abstractions.Extensions;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
 namespace AutomationTestingProgram.Core
 {
@@ -8,11 +7,6 @@ namespace AutomationTestingProgram.Core
     /// </summary>
     public static class RequestHandler
     {
-        /// <summary>
-        /// The Playwright Object used to precess requests using playwright automation
-        /// </summary>
-        // private static readonly PlaywrightObject _playwright;
-
         /// <summary>
         /// Settings used for Requests
         /// </summary>
@@ -36,7 +30,6 @@ namespace AutomationTestingProgram.Core
 
         static RequestHandler()
         {
-            // _playwright = new PlaywrightObject();
             _settings = AppConfiguration.GetSection<RequestSettings>("Request");
             _maxRequests = new SemaphoreSlim(_settings.Limit);
             _requests = new ConcurrentDictionary<string, IClientRequest>();

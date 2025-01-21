@@ -1,4 +1,8 @@
-﻿namespace AutomationTestingProgram.Core
+﻿using DocumentFormat.OpenXml.Bibliography;
+using NPOI.OpenXmlFormats.Dml;
+using System.Management.Automation.Language;
+
+namespace AutomationTestingProgram.Core
 {
     /// <summary>
     /// Class used to manage a lock dictionary with appropriate addition and deletion
@@ -71,23 +75,31 @@
          * Round 6:                      E         -> (Fourth E completes)
          * Round 7: Complete
          * 
+         * In addition, cancellations are also handled (optional)
+         * If a cancellation token is passed when calling AquireLockAsync(),
+         * and the token is cancelled, LockManager will handle everything
+         * and return an OperationCancelledException.
+         * 
+         * Note: If you cancel after aquring the lock, must ensure that
+         * you call ReleaseLock.
+         * 
+         * CancellationTokens are added to ensure smooth instant cancellation
+         * while waiting for a slot.
+         * 
          * 
          */
 
-        public async Task AquireLockAsync(T key)
-        {
-
-            bool newEntry = false;
+        public async Task AquireLockAsync(T key, CancellationToken? token = null)
+        { 
             LockInfo value;
             lock (_bigLock)
             {
                 if (!_lockMap.TryGetValue(key, out value!))
                 {
-                    value = new LockInfo();
+                    value = new LockInfo(_limit);
                     _lockMap.Add(key, value);
 
-                    newEntry = true;
-                    value.Semaphore.Wait(); // Will be able to immediatelly block the semaphore
+                    _ = value.WaitTurnAsync();
                 }
                 else
                 {
@@ -95,13 +107,35 @@
                 }
             }
 
-            if (newEntry)
+            if (token != null)
             {
-                await _limit.WaitAsync();
-                value.Semaphore.Release();
-            }
+                try
+                {
+                    await value.Semaphore.WaitAsync(token.Value);
+                }
+                catch (OperationCanceledException)
+                {
+                    lock (_bigLock)
+                    {
+                        if (value.Count == 1)
+                        {
+                            value.Dispose();
+                            _lockMap.Remove(key);                            
+                        }
+                        else
+                        {
+                            value.Count--;
+                        }
+                    }
 
-            await value.Semaphore.WaitAsync();
+                    throw;
+                }
+            }
+            else
+            {
+                await value.Semaphore.WaitAsync();
+            }
+            
         }
 
         public void ReleaseLock(T key)
@@ -114,9 +148,8 @@
 
                     if (value.Count == 1)
                     {
+                        value.Dispose();
                         _lockMap.Remove(key);
-                        value.Semaphore.Dispose();
-                        _limit.Release();
                     }
                     else
                     {
@@ -126,15 +159,67 @@
             }
         }
 
+        /*
+         * Verify that cancellations work with LockManager         * 
+         * Work on Fairness Semaphores
+         */
+
         public class LockInfo
         {
             public int Count { get; set; }
             public SemaphoreSlim Semaphore { get; set; }
+            public CancellationTokenSource Source { get; set; }
 
-            public LockInfo()
+            private SemaphoreSlim Limit;
+            private bool limitAquired;
+            private SemaphoreSlim Lock; // Used to ensure no concurrency issues with dispose and WaitTurnAsyc
+
+            public LockInfo(SemaphoreSlim Limit)
             {
                 Semaphore = new SemaphoreSlim(1);
+                Semaphore.Wait(); // Closing the semaphore immediatelly
+                Source = new CancellationTokenSource();
                 Count = 1;
+                
+                this.Limit = Limit;
+                limitAquired = false;
+                Lock = new SemaphoreSlim(1);
+            }
+
+            public async Task WaitTurnAsync()
+            {
+                if (!limitAquired)
+                {
+                    try
+                    {
+                        Lock.Wait();
+                        await Limit.WaitAsync(Source.Token); // If cancelled, limitAquired remains false
+                        limitAquired = true;
+                        Semaphore.Release();
+                    }
+                    catch
+                    {
+
+                    }
+                    finally
+                    {
+                        Lock.Release();
+                    }
+                }
+            }
+
+            public void Dispose()
+            {
+                Source.Cancel();
+
+                Lock.Wait();
+                Semaphore.Dispose();
+                Source.Dispose();
+                if (limitAquired)
+                {
+                    Limit.Release();
+                }
+                Lock.Release();
             }
         }
 

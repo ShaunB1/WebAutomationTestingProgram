@@ -1,11 +1,7 @@
-﻿/*using AutomationTestingProgram.Modules.TestRunnerModule.Backend.Playwright.Managers;
-using AutomationTestingProgram.Services.Logging;
-using DocumentFormat.OpenXml.Wordprocessing;
+﻿/*using AutomationTestingProgram.Core;
+using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
-using Microsoft.TeamFoundation.Build.WebApi;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
@@ -17,12 +13,26 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <summary>
         /// The IPlaywright Instance linked with this object
         /// </summary>
-        public IPlaywright Instance { get; }
+        private readonly IPlaywright Instance;
 
         /// <summary>
-        /// Manages browser instances created by this object
+        /// Settings used for Browser Creation/Management
         /// </summary>
-        public BrowserManager BrowserManager { get; private set; }
+        private readonly BrowserSettings Settings;
+
+        /// <summary>
+        /// Dictionary that tracks all currently active browsers, mapped by browser type/version.
+        /// Each browser also keeps track of total # of active requests.
+        /// </summary>
+        private readonly ConcurrentDictionary<(string Type, string Version), (Browser Browser, int Amount)> ActiveBrowsers;
+
+        /// <summary>
+        /// Ensures that each browser can only process one event (Request added/terminated) at a time.
+        /// Includes a limit to how many browsers can be active at a time.
+        /// </summary>
+        private readonly LockManager<(string Type, string Version)> LockManager;
+
+        private ICustomLogger Logger;
 
         /// <summary>
         /// Keeps track of the next unique identifier for browser instances created by this object
@@ -42,23 +52,80 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PlaywrightObject"/> class.
-        /// Instance is associated with a <see cref="Backend.Managers.BrowserManager"/> class
         /// to manage <see cref="Browser"/> instances.
         /// </summary>
-        public PlaywrightObject()
+        public PlaywrightObject(ICustomLoggerProvider provider, IOptions<BrowserSettings> options)
         {
             Instance = Playwright.CreateAsync().GetAwaiter().GetResult();
-            BrowserManager = new BrowserManager(this);
+            Settings = options.Value;
+            ActiveBrowsers = new ConcurrentDictionary<(string Type, string Version), (Browser Browser, int Amount)>();
+            LockManager = new LockManager<(string Type, string Version)>(Settings.Limit);
+            Logger = provider.CreateLogger<PlaywrightObject>();
             NextBrowserID = 0;
         }
 
         /// <summary>
-        /// Retrieves the next unique browser ID for browser instances.
+        /// Processes a request by either executing it on an existing browser or queuing it if no suitable browser is available.
         /// </summary>
-        /// <returns>The next unique Browser ID</returns>
-        public int GetNextBrowserID()
+        /// <param name="request">The request to process.</param>
+        public async Task ProcessRequestAsync(ProcessRequest request)
         {
-            return Interlocked.Increment(ref NextBrowserID);
+            *//*
+             * Playwright operations are only for ProcessRequests for now.
+             * Refactor can later occur.
+             *//*
+
+            request.SetStatus(State.Processing, "Playwright processing request.");
+            request.IsCancellationRequested();
+
+            request.LogInfo($"Waiting for lock on Browser Type: {request.BrowserType}, Version: {request.BrowserVersion}.");
+            await LockManager.AquireLockAsync((request.BrowserType, request.BrowserVersion), request.CancelToken);
+            request.LogInfo($"Lock aquired");
+
+            Browser browser;
+
+            try
+            {
+                if (ActiveBrowsers.TryGetValue((request.BrowserType, request.BrowserVersion), out var entry))
+                {
+                    // If Browser already active, increase linked Amount
+                    entry.Amount++;
+                    browser = entry.Browser;
+                }
+                else
+                {
+                    // Create Browser, set linked Amount to 1
+                    browser = new Browser(this, request.BrowserType, request.BrowserVersion);
+                    await browser.InitializeAsync();
+                    ActiveBrowsers.TryAdd((request.BrowserType, request.BrowserVersion), (browser, 1));
+                }
+            }
+            finally
+            {
+                LockManager.ReleaseLock((request.BrowserType, request.BrowserVersion));
+            }
+
+            try
+            {
+                await browser.ProcessRequest(request);
+            }
+            finally
+            {
+                await LockManager.AquireLockAsync((request.BrowserType, request.BrowserVersion));
+                if (ActiveBrowsers.TryGetValue((request.BrowserType, request.BrowserVersion), out var entry))
+                {
+                    entry.Amount--;
+
+                    if (entry.Amount == 0)
+                    {
+
+                    }
+                }   
+                LockManager.ReleaseLock((request.BrowserType, request.BrowserVersion));
+            }
+            
+
+
         }
     }
 }

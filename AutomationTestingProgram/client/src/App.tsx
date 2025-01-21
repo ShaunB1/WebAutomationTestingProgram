@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import "./App.css";
 import NavBar from "@modules/core/components/NavBar/NavBar.tsx";
 import HomePage from "@modules/home/pages/HomePage.tsx";
@@ -6,12 +5,13 @@ import EnvsPage from "@modules/environments/pages/EnvPage.tsx";
 import PivotTablePage from "@modules/pivotTable/pages/PivotTablePage.tsx";
 import TaskBoardPage from "@modules/tasks/pages/TaskBoardPage.tsx";
 import CompletedTasksPage from "@modules/tasks/pages/CompletedTasksPage.tsx";
-import ChatBot from "@modules/core/components/ChatBot/ChatBot.tsx";
 import FileValidationPage from "@modules/fileValidation/pages/FileValidationPage.tsx";
-import { getToken } from "@auth/authConfig.ts";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { MsalAuthenticationTemplate, useMsal } from "@azure/msal-react";
 import { InteractionType } from "@azure/msal-browser";
+import { getToken } from "./auth/authConfig.ts";
+import { useEffect, useState } from "react";
+import EditTestFile from "./Pages/EditTestFile.tsx";
 import ExtensionPage from "@modules/extension/pages/ExtensionPage.tsx";
 
 function App() {
@@ -110,6 +110,15 @@ function App() {
                                     <MsalAuthenticationTemplate
                                         interactionType={InteractionType.Redirect}>
                                         <ExtensionPage />
+                                    </MsalAuthenticationTemplate>
+                                }
+                            />
+                            <Route
+                                path="/edittestfile"
+                                element={
+                                    <MsalAuthenticationTemplate
+                                        interactionType={InteractionType.Redirect}>
+                                        <EditTestFile />
                                     </MsalAuthenticationTemplate>
                                 }
                             />

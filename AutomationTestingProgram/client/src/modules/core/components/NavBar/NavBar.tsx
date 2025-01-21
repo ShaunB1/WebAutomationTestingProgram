@@ -69,6 +69,9 @@ const NavBar = (props: any) => {
                             File Validation
                         </Button>
                         <Button component={Link} to={"/extension"} color="inherit" className="button">Extension</Button>
+                        <Button component={Link} to={"/edittestfile"} color="inherit" className="button">
+                            Edit Test File
+                        </Button>
                         <Box style={{ marginLeft: "auto" }} sx={{ flexGrow: 0 }}>
                             <Tooltip title="Open settings">
                                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>

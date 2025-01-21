@@ -13,7 +13,10 @@ namespace AutomationTestingProgram.Actions
     {
         public string Name { get; set; } = "Verify URL Value";
 
-        public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+        public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+            Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+            Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration,
+            string cycleGroupName)
         {
             //base.Execute();
 

@@ -54,11 +54,11 @@ public class TestController : ControllerBase
         // Response.ContentType = "text/event-stream";
         Response.Headers.Add("Cache-Control", "no-cache");
         Response.Headers.Add("Connection", "keep-alive");
-;
+        
         try
         {
             var excelReader = new ExcelReader();
-            var testSteps = excelReader.ReadTestSteps(file);
+            var (testSteps, cycleGroups) = excelReader.ReadTestSteps(file);
 
             using var playwright = await Playwright.CreateAsync();
 
@@ -79,7 +79,7 @@ public class TestController : ControllerBase
 
             await using var browserInstance = await browserType.LaunchAsync(new BrowserTypeLaunchOptions
             {
-                Headless = true,
+                Headless = false,
                 Channel = browser == "chrome" ? "chrome" :
                     browser == "edge" ? "msedge" : null
             });
@@ -90,14 +90,13 @@ public class TestController : ControllerBase
 
             if (_reportToDevops)
             {
-                await reportHandler.ReportToDevOps(browserInstance, testSteps, env, fileName, Response);
+                await reportHandler.ReportToDevOps(browserInstance, testSteps, env, fileName, Response, cycleGroups);
             }
             else
             {
-                await executor.ExecuteTestCasesAsync(browserInstance, testSteps, env, fileName, Response);
+                await executor.ExecuteTestFileAsync(browserInstance, testSteps, env, fileName, cycleGroups);
             }
-
-            var webSocketUrl = $"wss://{Request.Host}/ws/logs?testRunId={testRunId}";
+            
             return Ok("Tests executed successfully.");
         }
         catch (Exception e)
@@ -106,7 +105,7 @@ public class TestController : ControllerBase
             return StatusCode(500, new { Error = e.Message });
         }
     }
-
+    
     //public IActionResult SaveTestSteps([FromForm] List<TestStep> testSteps)
     //{
     //    using (var workbook = new XLWorkbook())

@@ -6,7 +6,6 @@ import {AuthenticatedTemplate, UnauthenticatedTemplate, useMsal} from "@azure/ms
 import envData from "@assets/environment_list.json";
 import {getToken} from "@auth/authConfig.ts";
 import * as test from "node:test";
-
 interface TableData {
     name: string;
 }

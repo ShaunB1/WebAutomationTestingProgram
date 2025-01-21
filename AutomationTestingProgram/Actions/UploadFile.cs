@@ -6,34 +6,27 @@ namespace AutomationTestingProgram.Actions;
 
 public class UploadFile : WebAction
 {
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
         var locator = step.Object;
         var locatorType = step.Comments;
         var element = await LocateElementAsync(page, locator, locatorType);
+        string filePath;
         
-        var filePath = step.Value;
+        if (step.Value.StartsWith("{") && step.Value.EndsWith("}"))
+        {
+            filePath = GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
+        }
+        else
+        {
+            filePath = step.Value;
+        }
 
         try
         {
-            Match match = Regex.Match(step.Value, @"^{(\d+)}$");
-            var datapoint = string.Empty;
-
-            if (match.Success)
-            {
-                var content = match.Groups[1].Value;
-                var index = int.Parse(content);
-                var datasets = JsonConvert.DeserializeObject<List<List<string>>>(step.Data);
-                
-                datapoint = datasets?[iteration][index];
-                
-                await element.SetInputFilesAsync(datapoint);
-            }
-            else
-            {
-                await element.SetInputFilesAsync(filePath);                
-            }
-            
+            await element.SetInputFilesAsync(filePath);
             return true;
         }
         catch (Exception e)

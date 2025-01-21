@@ -29,7 +29,8 @@ public class HandleReporting
         _testRunId = testRunId;
     }
     
-    public async Task ReportToDevOps(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
+    public async Task ReportToDevOps(IBrowser browser, List<TestStep> testSteps, string environment, string fileName,
+        HttpResponse response, Dictionary<string, List<Dictionary<string, string>>> cycleGroups)
     {
         var testPlanName = fileName;
         var testPlanId = await _testPlanHandler.GetTestPlanIdByNameAsync(testPlanName);
@@ -104,7 +105,7 @@ public class HandleReporting
             testResultObj.startedDate = DateTime.UtcNow;
 
             var testPoint = await _testPointHandler.GetTestPointFromTestCaseIdAsync(testPlan.Id, testSuite.Id, testCaseIds[index]);
-            var (testCaseResult, failedTests, stackTrace) = await testExecutor.ExecuteTestStepsAsync(page, testCase.ToList(), response, 3);
+            var (testCaseResult, failedTests, stackTrace) = await testExecutor.ExecuteTestStepsAsync(page, testCase.ToList(), response, 3, cycleGroups);
             
             testResultObj.testPointId = testPoint.Id;
             testResultObj.completedDate = DateTime.UtcNow;

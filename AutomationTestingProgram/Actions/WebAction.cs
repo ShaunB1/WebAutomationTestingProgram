@@ -16,9 +16,43 @@ class ElDict
 
 public abstract class WebAction
 {
-    public abstract Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration,
+    public abstract Task<bool> ExecuteAsync(IPage page,
+        TestStep step,
         Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams);
+        Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups,
+        int currentIteration,
+        string cycleGroupName);
+
+    public string GetIterationData(
+        TestStep step,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups,
+        int currentIteration,
+        string cycleGroupName
+    )
+    {
+        if (cycleGroups.TryGetValue(cycleGroupName, out var iterations))
+        {
+            var iterationData = iterations[currentIteration];
+            string variableName;
+            if (step.Value.StartsWith("{") && step.Value.EndsWith("}"))
+            {
+                variableName = step.Value.Trim('{', '}');
+            }
+            else
+            {
+                variableName = step.Value;
+            }
+            
+            
+            if (iterationData.TryGetValue(variableName, out var value))
+            {
+                return value;
+            }
+        }
+
+        return "";
+    }
 
     public async Task<IElementHandle> LocateElementAsync(IPage page, string locator, string locatorType)
     {

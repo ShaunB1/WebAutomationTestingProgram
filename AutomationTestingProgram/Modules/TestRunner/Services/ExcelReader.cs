@@ -1,8 +1,9 @@
 using ClosedXML.Excel;
+using Microsoft.Graph.Models;
 
 public class ExcelReader
 {
-    public List<TestStep> ReadTestSteps(IFormFile file)
+    public (List<TestStep>, Dictionary<string, List<Dictionary<string, string>>>) ReadTestSteps(IFormFile file)
     {
         if (file == null || file.Length == 0)
         {
@@ -16,6 +17,7 @@ public class ExcelReader
         }
         
         var testSteps = new List<TestStep>();
+        var cycleGroups = new Dictionary<string, List<Dictionary<string, string>>>();
 
         using (var stream = new MemoryStream())
         {
@@ -23,10 +25,9 @@ public class ExcelReader
             stream.Position = 0;
             
             using var workbook = new XLWorkbook(stream);
-            var worksheet = workbook.Worksheet(1);
-            var rows = worksheet?.RangeUsed()?.RowsUsed().Skip(1);
-
-            if (rows == null) return testSteps;
+            
+            var mainSheet = workbook.Worksheet(1);
+            var rows = mainSheet?.RangeUsed()?.RowsUsed().Skip(1);
             
             testSteps.AddRange(rows.Select(row => new TestStep()
             {
@@ -44,12 +45,35 @@ public class ExcelReader
                 Collection = row.Cell(12).TryGetValue(out string collection) ? collection.Trim() : string.Empty,
                 TestStepType = row.Cell(13).TryGetValue(out string testStepType) ? testStepType.Trim() : string.Empty,
                 GoToStep = row.Cell(14).TryGetValue(out int goToStep) ? goToStep : 0,
-                Cycle = row.Cell(15).TryGetValue(out string cycle) ? cycle.Trim() : string.Empty,
-                Data = row.Cell(16).TryGetValue(out string data) ? data.Trim() : string.Empty,
-                CycleData = row.Cell(17).TryGetValue(out string cycleData) ? cycleData.Trim() : string.Empty,
+                CycleGroup = row.Cell(15).TryGetValue(out string cycleGroup) ? cycleGroup.Trim() : string.Empty,
             }));
+
+            foreach (var worksheet in workbook.Worksheets)
+            {
+                if (worksheet.Name.Equals("Sheet1", StringComparison.OrdinalIgnoreCase)) continue;
+
+                var groupName = worksheet.Name;
+                var groupRows = worksheet.RangeUsed()?.RowsUsed().Skip(1);
+                
+                if (groupRows == null) continue;
+
+                var groupData = new List<Dictionary<string, string>>();
+                var headers = worksheet.Row(1).CellsUsed().Select(cell => cell.GetValue<string>().Trim()).ToList();
+
+                foreach (var row in groupRows)
+                {
+                    var rowData = new Dictionary<string, string>();
+                    for (int i = 0; i < headers.Count; i++)
+                    {
+                        rowData[headers[i]] = row.Cell(i + 1).GetValue<string>().Trim();
+                    }
+                    groupData.Add(rowData);
+                }
+                
+                cycleGroups[groupName] = groupData;
+            }
         }
         
-        return testSteps;
+        return (testSteps, cycleGroups);
     }
 }

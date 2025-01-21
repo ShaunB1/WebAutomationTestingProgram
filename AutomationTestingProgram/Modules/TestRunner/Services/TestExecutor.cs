@@ -1,8 +1,9 @@
 using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Models;
 using Microsoft.Playwright;
-using Newtonsoft.Json;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 public class TestExecutor
 {
@@ -41,144 +42,22 @@ public class TestExecutor
         );
     }
 
-    public async Task ExecuteTestCasesAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, HttpResponse response)
+    public async Task ExecuteTestFileAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, Dictionary<string, List<Dictionary<string, string>>> cycleGroups)
     {
-        // execute test steps
         _envVars["environment"] = environment;
         var context = await browser.NewContextAsync();
         var page = await context.NewPageAsync();
-        //await page.SetViewportSizeAsync(1920, 1080);
-        var testResults = new List<TestCaseResultParams>();
-        var testCases = testSteps.Where(s => s.Control != "#").GroupBy(s => s.TestCaseName);
-        var cycleGroups = testSteps.Where(s => s.Cycle != string.Empty).GroupBy(s => s.Cycle);
-        var nonCycleGroups = testSteps.Where(s => s.Cycle == string.Empty).GroupBy(s => s.TestCaseName);
-
-        var cycleDatasets = JsonConvert.DeserializeObject<List<List<string>>>(testCases.First().First().CycleData);
-        var cycleIterations = cycleDatasets?.Count ?? -1;
-        var cycleIteration = 0;
-
-        foreach (var testCase in nonCycleGroups)
-        {
-            Console.WriteLine($"Executing Test Case: {testCase.Key}");
-            var firstStep = testCase.First();
-            var datasets = JsonConvert.DeserializeObject<List<List<string>>>(firstStep.Data);
-            var iterations = datasets?.Count ?? -1;
-            var iteration = 0;
-
-            if (page.IsClosed)
-            {
-                await context.ClearCookiesAsync();
-                page = await context.NewPageAsync();
-                await page.SetViewportSizeAsync(1920, 1080);
-            }
-
-            if (firstStep.ActionOnObject.ToLower().Replace(" ", "") == "exitcondition")
-            {
-                if (_actions.TryGetValue(firstStep.ActionOnObject.ToLower().Replace(" ", ""), out var action))
-                {
-                    var res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
-                    while (!res)
-                    {
-                        Task.Delay(TimeSpan.FromSeconds(15)).Wait();
-                        res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
-                        Console.WriteLine($"EXIT CONDITION: {res}");
-
-                        if (!res)
-                        {
-                            await ExecuteTestStepsAsync(page, testCase.ToList(), response, -1);
-                        }
-                    }
-                }
-
-                Console.WriteLine($"Moving to the next test case...");
-                continue;
-            }
-
-            if (datasets == null)
-            {
-                await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration = -1);
-            }
-
-            while (iterations > 0)
-            {
-                Console.WriteLine($"Iteration: {iterations}");
-                await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration);
-                iterations -= 1;
-                iteration += 1;
-            }
-        }
-
-        foreach (var cycleGroup in cycleGroups)
-        {
-            while (cycleIterations > 0)
-            {
-                testCases = cycleGroup.GroupBy(s => s.TestCaseName);
-                foreach (var testCase in testCases)
-                {
-
-                    Console.WriteLine($"Executing Test Case: {testCase.Key}");
-                    var firstStep = testCase.First();
-                    var datasets = JsonConvert.DeserializeObject<List<List<string>>>(firstStep.Data);
-                    var iterations = datasets?.Count ?? -1;
-
-                    var iteration = 0;
-
-
-                    if (page.IsClosed)
-                    {
-                        await context.ClearCookiesAsync();
-                        page = await context.NewPageAsync();
-                        await page.SetViewportSizeAsync(1920, 1080);
-                    }
-
-                    if (firstStep.ActionOnObject.ToLower().Replace(" ", "") == "exitcondition")
-                    {
-                        if (_actions.TryGetValue(firstStep.ActionOnObject.ToLower().Replace(" ", ""), out var action))
-                        {
-                            var res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
-                            while (!res)
-                            {
-                                Task.Delay(TimeSpan.FromSeconds(15)).Wait();
-                                res = await action.ExecuteAsync(page, firstStep, -1, _envVars, _saveParameters);
-                                Console.WriteLine($"EXIT CONDITION: {res}");
-
-                                if (!res)
-                                {
-                                    await ExecuteTestStepsAsync(page, testCase.ToList(), response, -1);
-                                }
-                            }
-                        }
-
-                        Console.WriteLine($"Moving to the next test case...");
-                        continue;
-                    }
-
-                    if (datasets == null && cycleDatasets == null)
-                    {
-                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration = -1);
-                    }
-
-                    if (cycleDatasets != null)
-                    {
-                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, cycleIteration);
-                    }
-
-                    while (iterations > 0)
-                    {
-                        Console.WriteLine($"Iteration: {iterations}");
-                        await ExecuteTestStepsAsync(page, testCase.ToList(), response, iteration);
-                        iterations -= 1;
-                        iteration += 1;
-                    }
-                }
-
-                cycleIterations -= 1;
-                cycleIteration += 1;
-            }
-        }
+        var iterationStack = new Stack<int>();
+        var currentIteration = 0;
+        
+        await ExecuteNestedLoopsAsync(page, testSteps, cycleGroups, iterationStack, currentIteration);
     }
-
-    public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page, List<TestStep> testSteps, HttpResponse response, int iteration, int maxAttempts = 2)
+    
+    public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page,
+        List<TestStep> testSteps,
+        HttpResponse response,
+        int iteration,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int maxAttempts = 1)
     {
         var stepsFailed = new List<(int, string)>();
         var failCount = 0;
@@ -221,11 +100,11 @@ public class TestExecutor
 
                         page.SetDefaultTimeout(timeout);
 
-                        var res = await action.ExecuteAsync(page, step, iteration, _envVars, _saveParameters);
+                        // var res = await action.ExecuteAsync(page, step, iteration, _envVars, _saveParameters, cycleGroups, TODO);
 
-                        _logger.LogInformation($"TEST RESULT: {res}");
-                        await _broadcaster.BroadcastLogAsync($"TEST RESULT: {res}", _testRunId);
-                        return res;
+                        // _logger.LogInformation($"TEST RESULT: {res}");
+                        // await _broadcaster.BroadcastLogAsync($"TEST RESULT: {res}", _testRunId);
+                        return false; // return res
                     }, maxAttempts);
 
                     step.CompletedDate = DateTime.UtcNow;
@@ -280,6 +159,124 @@ public class TestExecutor
         }
     }
 
+    public async Task ExecuteNestedLoopsAsync(IPage page, List<TestStep> steps,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, Stack<int> iterationStack,
+        int currentIteration)
+    {
+        try
+        {
+            for (var i = 0; i < steps.Count; i++)
+            {
+                var step = steps[i];
+                var parts = step.CycleGroup.Split(",");
+                var cycleGroup = parts.Length > 1 ? parts[0].Trim() : string.Empty;
+                var state = parts.Length > 1 ? parts[1].Trim().ToLower() : string.Empty;
+                var iterations = -1;
+
+                if (cycleGroups.TryGetValue(cycleGroup, out var it))
+                {
+                    iterations = it.Count;
+                }
+                    
+                List<TestStep> loopSteps = new List<TestStep>();
+                
+                if (state == "start")
+                {
+                    loopSteps = GetLoopSteps(steps);
+
+                    for (var j = 0; j < iterations; j++)
+                    {
+                        foreach (var loopStep in loopSteps)
+                        {
+                            if (_actions.TryGetValue(loopStep.ActionOnObject.ToLower(), out var action))
+                            {
+                                var result = await action.ExecuteAsync(page, loopStep, _envVars, _saveParameters, cycleGroups, j, cycleGroup);
+                                loopStep.RunSuccessful = result;
+                            }
+                        }
+                    }
+
+                    var startIndex = steps.IndexOf(loopSteps.First());
+                    var endIndex = steps.IndexOf(loopSteps.Last());
+                    steps = steps.Take(startIndex).Concat(steps.Skip(endIndex + 1)).ToList();
+                    i = startIndex - 1;
+                }
+                else
+                {
+                    if (_actions.TryGetValue(step.ActionOnObject.ToLower(), out var action))
+                    {
+                        var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
+                        step.RunSuccessful = result;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+    
+    public List<TestStep> GetLoopSteps(List<TestStep> steps)
+    {
+        var startIndex = -1;
+        var endIndex = -1;
+
+        for (var i = 0; i < steps.Count; i++)
+        {
+            var step = steps[i];
+            var parts = step.CycleGroup.Split(",");
+            var state = parts.Length > 1 ? parts[1].Trim().ToLower() : string.Empty;
+
+            if (state == "start")
+            {
+                if (startIndex == -1)
+                {
+                    startIndex = i;
+                }
+            }
+            else if (state == "end")
+            {
+                endIndex = i;
+                break;
+            }
+        }
+
+        if (startIndex == -1 || endIndex == -1 || startIndex > endIndex)
+        {
+            throw new InvalidOperationException("Invalid start or stop state.");
+        }
+        
+        return steps.Skip(startIndex).Take(endIndex - startIndex + 1).ToList();
+    }
+    
+    public async Task ExecuteLoopStepsAsync(IPage page,
+        List<TestStep> steps,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups,
+        int currentIteration,
+        string cycleGroupName)
+    {
+        foreach (var step in steps)
+        {
+            if (_actions.TryGetValue(step.ActionOnObject.ToLower().Replace(" ", ""), out var action))
+            {
+                var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroupName);
+                step.RunSuccessful = result;
+                    
+                if (!result)
+                {
+                    Console.WriteLine($"Test step failed: {step.ActionOnObject}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"No action defined for {step.ActionOnObject}");
+            }
+        }
+    }
+    
     // Replace parameters between "{" and "}" with the Saved Parameters. To be used with Object or Value string. 
     public string InsertParams(string input)
     {

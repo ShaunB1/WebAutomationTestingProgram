@@ -11,33 +11,15 @@ namespace AutomationTestingProgram.Actions;
 
 public class RunSQLScript : WebAction
 {
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step, int iteration, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
         var rootPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", ".."));
+        var scriptPath = GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
         
         try
         {
-            Match match = Regex.Match(step.Value, @"^{(\d+)}$");
-            var datapoint = string.Empty;
-            string scriptPath;
-
-            if (match.Success)
-            {
-                var content = match.Groups[1].Value;
-                var index = int.Parse(content);
-                var datasets = JsonConvert.DeserializeObject<List<List<string>>>(step.Data);
-                datapoint = datasets?[iteration][index];
-            }
-
-            if (iteration != -1)
-            {
-                scriptPath = datapoint;
-            }
-            else
-            {
-                scriptPath = step.Value;
-            }
-            
             var sqlExecutor = Path.Combine(rootPath, "Actions", "execute_sql.ps1");
             var username = "OPS_WRITE";
             var password = "qateamrw1#";

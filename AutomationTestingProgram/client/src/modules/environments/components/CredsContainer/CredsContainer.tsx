@@ -23,7 +23,7 @@ function CredsContainer() {
                 const headers = new Headers();
                 headers.append("Authorization", `Bearer ${token}`);
                 headers.append('Content-Type', 'application/json')
-                const response = await fetch("api/environments/keychainAccounts", {
+                const response = await fetch("/api/environments/keychainAccounts", {
                     method: 'GET',
                     headers: headers
                 });
@@ -49,7 +49,7 @@ function CredsContainer() {
             const headers = new Headers();
             headers.append("Authorization", `Bearer ${token}`);
             headers.append('Content-Type', 'application/json')
-            const response = await fetch(`api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
+            const response = await fetch(`/api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
                 method: 'GET',
                 headers: headers
             });

@@ -27,9 +27,10 @@ const Home: React.FC = () => {
 
     const { instance, accounts } = useMsal();
     const logContainerRef = useRef<HTMLDivElement>(null);
-    const host = process.env.NODE_ENV === "production" ? process.env.VITE_HOST : process.env.LOCAL_HOST;
+    // const host = process.env.NODE_ENV === "production" ? process.env.VITE_HOST : process.env.LOCAL_HOST;
 
-    console.log("HOST: ", host);
+    const host = window.location.protocol + "//" + window.location.host;
+    console.log("WS HOST: ", host);
 
     const envOptions: string[] = useMemo<string[]>(() => {
         return envData.map((env: any) => {
@@ -67,7 +68,7 @@ const Home: React.FC = () => {
         }
 
         const testRunId = crypto.randomUUID();
-        const socket = new WebSocket(`wss://${host}/ws/logs?testRunId=${testRunId}`);
+        const socket = new WebSocket(`/ws/logs?testRunId=${testRunId}`);
 
         const testRun: TestRun = {
             id: testRunId,

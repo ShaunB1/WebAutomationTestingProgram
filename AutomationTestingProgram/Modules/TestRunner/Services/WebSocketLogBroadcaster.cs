@@ -9,9 +9,11 @@ public class WebSocketLogBroadcaster : TextWriter
 {
     private readonly ConcurrentDictionary<string, WebSocket> _clients = new();
     private readonly ConcurrentDictionary<string, string> _testRuns = new();
+    private readonly TextWriter original;
 
     public WebSocketLogBroadcaster()
     {
+        original = Console.Out;
         Console.SetOut(this);
     }
 
@@ -53,6 +55,7 @@ public class WebSocketLogBroadcaster : TextWriter
             var segment = new ArraySegment<byte>(buffer);
             
             await client.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
+            original.WriteLine(logMessage);
         }
         else
         {
@@ -72,6 +75,11 @@ public class WebSocketLogBroadcaster : TextWriter
         Console.WriteLine($"Failed to remove websocket client {clientId}.");
         return false;
     }
-    
+
+    public override void WriteLine(string s)
+    {
+        original.WriteLine(s);
+    }
+
     public override Encoding Encoding => Encoding.UTF8;
 }

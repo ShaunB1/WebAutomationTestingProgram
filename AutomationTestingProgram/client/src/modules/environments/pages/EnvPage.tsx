@@ -75,7 +75,7 @@ function EnvPage() {
                 return;
             }
             try {
-                const response = await fetch("api/environments/resetPassword", {
+                const response = await fetch("/api/environments/resetPassword", {
                     method: 'POST',
                     body: JSON.stringify(resetEmail),
                     headers: headers

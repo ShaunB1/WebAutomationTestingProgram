@@ -8,10 +8,12 @@ interface TestRun {
 const LogDisplay = () => {
     const [logs, setLogs] = useState<string[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);
-    const host = process.env.NODE_ENV === "production" ? process.env.VITE_HOST : process.env.LOCAL_HOST;
+    // const host = process.env.NODE_ENV === "production" ? process.env.VITE_HOST : process.env.LOCAL_HOST;
+
+    const host = window.location.protocol + "//" + window.location.host;
 
     useEffect(() => {
-        const socket = new WebSocket(`wss://${host}/ws/logs`);
+        const socket = new WebSocket(`/ws/logs`);
         console.log(`WS Host: ${host}`);
         
         socket.onopen = (event) => {

@@ -4,7 +4,7 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  let host = env.NODE_ENV === "production" ? env.PROD_HOST : env.LOCAL_HOST || "localhost:5223";
+  let host = env.NODE_ENV === env.LOCAL_HOST || "localhost:5223";
   console.log(host);
 
   return {
@@ -12,9 +12,13 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         "/api": {
-          target: `https://${host}`,
+          target: `http://${host}`,
           changeOrigin: true,
-          secure: false,
+        },
+        "/ws": {
+          target: `http://${host}`,
+          changeOrigin: true,
+          ws: true
         },
       },
     },

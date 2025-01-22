@@ -10,11 +10,7 @@
  */
 
 // Determine tenant ID based on environment
-const clientId =
-  process.env.NODE_ENV === "production"
-    ? `${process.env.VITE_PROD_AZ_CLIENT}`
-    : `${process.env.VITE_DEV_AZ_CLIENT}`;
-
+const clientId = process.env.VITE_AZ_CLIENT;
 const tenantId = process.env.VITE_AZ_TENANT;
 
 export const msalConfig = {
@@ -36,7 +32,7 @@ export const msalConfig = {
         if (containsPii) {
           return;
         }
-        console.log(message);
+        //console.log(message);
       },
     },
   },

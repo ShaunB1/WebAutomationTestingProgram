@@ -2,5 +2,5 @@
 
 public class ContextSettings
 {
-    public int Limit { get; set; }
+    public int PageLimit { get; set; }
 }

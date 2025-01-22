@@ -1,23 +1,37 @@
-﻿/*using AutomationTestingProgram.Backend;
-using AutomationTestingProgram.Services.Logging;
+﻿using AutomationTestingProgram.Core;
 using DocumentFormat.OpenXml.Drawing;
+using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using System;
 using System.Collections.Generic;
 
-namespace AutomationTestingProgram.ModelsOLD
+namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
     public class Context
     {
-        public Browser Parent { get; }
-        private ContextManager ContextManager => Parent.ContextManager!;
+        /// <summary>
+        /// The current instance of the context, which is created and managed by Browser Parent.
+        /// </summary>
         public IBrowserContext? Instance { get; private set; }
+        
+        /// <summary>
+        /// A unique identifier for this Context object, specific to the parent Browser instance.  
+        /// Note: This ID is not a globally unique across all contexts, just those with the same parent. 
+        /// </summary>
         public int ID { get; }
-        *//*
-         * When login/entering credentials, set current user used to do so.
-         * When logout (not closing context), set to empty
-         *//* 
-        public string CurrentUser { get; set; }
+        
+
+        /// <summary>
+        /// The parent Browser instance that this Context object belongs to. 
+        /// </summary>
+        private Browser _parent { get; }
+
+        /// <summary>
+        /// Settings used for Context Creation/Page Management
+        /// </summary>
+        private ContextSettings _settings { get; }
+
+
         public string FolderPath { get; }
         public PageManager? PageManager { get; private set; }
 
@@ -28,7 +42,7 @@ namespace AutomationTestingProgram.ModelsOLD
         /// The Context object.
         /// </summary>
         /// <param name="browser">Browser (parent) instance </param>
-        public Context(Browser browser)
+        public Context(Browser browser, IOptions<ContextSettings> options, ICustomLoggerProvider provider)
         {
             this.Parent = browser;
             this.ID = browser.GetNextContextID();
@@ -160,4 +174,3 @@ namespace AutomationTestingProgram.ModelsOLD
 
     }
 }
-*/

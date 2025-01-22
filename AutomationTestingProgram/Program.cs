@@ -10,8 +10,12 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Diagnostics;
 using AutomationTestingProgram.Core;
 using AutomationTestingProgram.Modules.TestRunnerModule;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
+
+builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
 DotNetEnv.Env.Load();
 
@@ -42,13 +46,25 @@ void ConfigureServices(WebApplicationBuilder builder)
     // File Upload Setup
     ConfigureFileUpload(builder);
 
-    // Services Setup
-    RegisterServices(builder);
-
     // Controllers + other stuff
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
+
+    // HttpClient -- NOTE: Must inject IHttpClientFactory to use
+    builder.Services.AddHttpClient("HttpClient", client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(5); // 5 minute timeout
+        client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.Add("User-Agent", "WebAutomationTestingFramework/1.0");
+    });
+
+    builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
+    {
+        // Services Setup
+        RegisterServices(containerBuilder);
+    });
 
 }
 
@@ -100,8 +116,9 @@ void ConfigureAppSettings(WebApplicationBuilder builder)
 
     // Request
     builder.Services.Configure<RequestSettings>(builder.Configuration.GetSection("Request"));
-    
+
     // Playwright
+    builder.Services.Configure<PlaywrightSettings>(builder.Configuration.GetSection("Playwright"));
     builder.Services.Configure<BrowserSettings>(builder.Configuration.GetSection("Browser"));
     builder.Services.Configure<ContextSettings>(builder.Configuration.GetSection("Context"));
     builder.Services.Configure<PageSettings>(builder.Configuration.GetSection("Page"));
@@ -118,49 +135,36 @@ void ConfigureFileUpload(WebApplicationBuilder builder)
     });
 }
 
-void RegisterServices(WebApplicationBuilder builder)
+void RegisterServices(ContainerBuilder builder)
 {
-    builder.Services.AddSingleton<ICustomLoggerProvider>(sp =>
-    new CustomLoggerProvider(LogManager.GetRunFolderPath()));
+    // CORE
 
-    builder.Services.AddSingleton<WebSocketLogBroadcaster>();
-
-    builder.Services.AddHttpClient("HttpClient", client =>
+    builder.Register(c =>
     {
-        client.Timeout = TimeSpan.FromMinutes(5); // 5 minute timeout
-        client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
-        client.DefaultRequestHeaders.Add("Accept", "application/json");
-        client.DefaultRequestHeaders.Add("User-Agent", "WebAutomationTestingFramework/1.0");
-    });
+        return new CustomLoggerProvider(LogManager.GetRunFolderPath());
+    })
+    .As<ICustomLoggerProvider>()
+    .SingleInstance();
 
-    /*
-     * When HttpClient is injected directly with DI, headers will be removed
-     * after registering the class its injected to as a service.
-     * 
-     * Must inject IHttpClientFactory!!
-     */
+    builder.RegisterType<WebSocketLogBroadcaster>().SingleInstance();
+    builder.RegisterType<ShutDownService>().SingleInstance();
 
-    builder.Services.AddSingleton<ShutDownService>();
 
-    builder.Services.AddSingleton<AzureKeyVaultService>();
-    builder.Services.AddSingleton<PasswordResetService>();
 
-    // builder.Services.AddSingleton<PlaywrightObject>();
+    // TESTRUNNER MODULE
+
+    builder.RegisterType<AzureKeyVaultService>().SingleInstance();
+    builder.RegisterType<PasswordResetService>().SingleInstance();
+
+    builder.RegisterType<PlaywrightObject>().SingleInstance();
+    builder.RegisterType<BrowserFactory>().As<IBrowserFactory>().SingleInstance();
+    builder.RegisterType<ContextFactory>().As<IContextFactory>().SingleInstance();
 }
 
 void ConfigureApplicationLifetime(WebApplication app)
 {
     var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
     var myService = app.Services.GetRequiredService<ShutDownService>();
-
-    /*lifetime.ApplicationStarted.Register(() =>
-    {
-        var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
-        var httpClient = httpClientFactory.CreateClient("HttpClient");
-
-        AzureKeyVaultService.Initialize(httpClient);
-        PasswordResetService.Initialize(httpClient);
-    });*/
 
     lifetime.ApplicationStopping.Register(() => myService.OnApplicationStopping().GetAwaiter().GetResult());
 }
@@ -175,40 +179,20 @@ void ConfigureMiddleware(WebApplication app)
         if (context.Response.HasStarted)
             return;
 
-        if (context.Response.StatusCode == 401)
+        var errorMessages = new Dictionary<int, string>
         {
-            var errorMessage = new { message = "Unauthorized access. Please provide a valid token." };
-            context.Response.ContentType = "application/json";
-            string json = JsonSerializer.Serialize(errorMessage);
-            await context.Response.WriteAsync(json);
-        }
-        else if (context.Response.StatusCode == 403)
+            { 401, "Unauthorized access. Please provide a valid token." },
+            { 403, "Forbidden access. You do not have permission." },
+            { 400, "Bad request. Please check your input." },
+            { 404, "Resource not found." },
+            { 405, "Method not allowed." }
+        };
+
+        if (errorMessages.ContainsKey(context.Response.StatusCode))
         {
-            var errorMessage = new { message = "Forbidden access. You do not have permission." };
+            var errorMessage = new { message = errorMessages[context.Response.StatusCode] };
             context.Response.ContentType = "application/json";
-            string json = JsonSerializer.Serialize(errorMessage);
-            await context.Response.WriteAsync(json);
-        }
-        else if (context.Response.StatusCode == 400)
-        {
-            var errorMessage = new { message = "Bad request. Please check your input." };
-            context.Response.ContentType = "application/json";
-            string json = JsonSerializer.Serialize(errorMessage);
-            await context.Response.WriteAsync(json);
-        }
-        else if (context.Response.StatusCode == 404)
-        {
-            var errorMessage = new { message = "Resource not found." };
-            context.Response.ContentType = "application/json";
-            string json = JsonSerializer.Serialize(errorMessage);
-            await context.Response.WriteAsync(json);
-        }
-        else if (context.Response.StatusCode == 405)
-        {
-            var errorMessage = new { message = "Method not allowed." };
-            context.Response.ContentType = "application/json";
-            string json = JsonSerializer.Serialize(errorMessage);
-            await context.Response.WriteAsync(json);
+            await context.Response.WriteAsync(JsonSerializer.Serialize(errorMessage));
         }
     });
 

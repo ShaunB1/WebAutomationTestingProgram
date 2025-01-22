@@ -2,5 +2,6 @@
 
 public class BrowserSettings
 {
-    public int Limit { get; set; }
+    public int ContextLimit { get; set; }
+    public int InitializationTimeout { get; set; }
 }

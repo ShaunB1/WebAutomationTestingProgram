@@ -1,4 +1,4 @@
-﻿/*using AutomationTestingProgram.Backend;
+﻿using AutomationTestingProgram.Backend;
 using AutomationTestingProgram.Services.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
@@ -213,4 +213,3 @@ namespace AutomationTestingProgram.ModelsOLD
        
     }
 }
-*/

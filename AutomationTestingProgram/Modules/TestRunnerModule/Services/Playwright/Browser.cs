@@ -1,11 +1,8 @@
-﻿/*using AutomationTestingProgram.Core.Services.Requests;
-using AutomationTestingProgram.Services.Logging;
-using DocumentFormat.OpenXml.Wordprocessing;
+﻿using Microsoft.Graph.Models;
 using Microsoft.Playwright;
-using Microsoft.TeamFoundation.Build.WebApi;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+using AutomationTestingProgram.Core;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
@@ -14,11 +11,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
     /// </summary>
     public class Browser
     {
-        /// <summary>
-        /// The parent Playwright instance that this Browser object belongs to.
-        /// </summary>
-        public PlaywrightObject Parent { get; }
-
         /// <summary>
         /// The current instance of the browser, which is created and managed by Playwright.
         /// </summary>
@@ -40,35 +32,46 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public string Version { get; }
 
+
+        /// <summary>
+        /// The parent Playwright instance that this Browser object belongs to.
+        /// </summary>
+        private PlaywrightObject _parent { get; }
+
+        /// <summary>
+        /// Settings used for Browser Creation/Context Management.
+        /// </summary>
+        private BrowserSettings _settings { get; }
+
+        /// <summary>
+        /// Factory used to create Context Instances
+        /// </summary>
+        private IContextFactory _contextFactory { get; }
+
         /// <summary>
         /// The filepath where the browser's folder is located, including logs and other related data
         /// </summary>
-        public string FolderPath { get; }
+        private readonly string _folderPath;
 
         /// <summary>
-        /// Manages context instances created by this object
+        /// SemaphoreSlim limiting total # of active contexts
         /// </summary>
-        // public ContextManager? ContextManager { get; private set; }
+        private readonly SemaphoreSlim _contextLimit;
 
         /// <summary>
-        /// Keeps track of the next unique idetifier for browser instances created by this object
+        /// Keeps track of the next unique idetifier for context instances created by this object
         /// </summary>
-        private int NextContextID;
+        private int _nextContextID;
 
         /// <summary>
         /// Keeps track of the # of active requests in this browser object.
         /// </summary>
-        private int RequestCount;
+        private int _requestCount;
 
         /// <summary>
         /// The Logger object associated with this class
         /// </summary>
-        private readonly ILogger<Browser> Logger;
-
-        /// <summary>
-        /// The timeout for creating a new browser instance.
-        /// </summary>
-        private readonly int Timeout = 20000; // Should be able to be changed
+        private readonly ICustomLogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Browser"/> class.
@@ -76,40 +79,75 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// Please call InitializeAsync() to finish set-up.
         /// </summary>
         /// <param name="playwright">The parent Playwright object that manages the browser.</param>
-        /// <param name="Type">The type of the browser (e.g., "chrome", "firefox").</param>
-        /// <param name="Version">The version of the browser (e.g., 91, 92).</param>
-        public Browser(PlaywrightObject playwright, string Type, string Version)
+        /// <param name="type">The type of the browser (e.g., "chrome", "firefox").</param>
+        /// <param name="version">The version of the browser (e.g., 91, 92).</param>
+        public Browser(PlaywrightObject playwright, string type, string version, IOptions<BrowserSettings> options, ICustomLoggerProvider provider, IContextFactory contextFactory)
         {
-            Parent = playwright;
             ID = playwright.GetNextBrowserID();
-            NextContextID = 0;
-            this.Type = Type;
-            this.Version = Version;
-            FolderPath = LogManager.CreateBrowserFolder(ID, Type, Version.ToString());
-            RequestCount = 0;
-
-            CustomLoggerProvider provider = new CustomLoggerProvider(FolderPath);
-            Logger = provider.CreateLogger<Browser>()!;
+            Type = type;
+            Version = version;
+            
+            _parent = playwright;
+            _settings = options.Value;
+            _contextFactory = contextFactory;            
+            _folderPath = LogManager.CreateBrowserFolder(ID, Type, Version);
+            _contextLimit = new SemaphoreSlim(_settings.ContextLimit);
+            _logger = provider.CreateLogger<Browser>(_folderPath);
+            _nextContextID = 0;
+            _requestCount = 0;
         }
 
         /// <summary>
         /// Initializes the browser by creating a new browser instance and setting up its context manager.
         /// This method must be called after the browser object has been created.
         /// </summary>
-        /// <exception cref="Exception">Thrown if the browser cannot be initialized.</exception>
+        /// <exception cref="LaunchException">Thrown if the browser cannot be initialized.</exception>
         public async Task InitializeAsync()
         {
             try
             {
-                Instance = await CreateBrowserInstance(Parent.Instance, Type, Version);
+                Instance = await CreateBrowserInstance(_parent.Instance, Type, Version);
                 // this.ContextManager = new ContextManager(this);
-                Logger.LogInformation($"Successfully initialized Browser (ID: {ID}, Type: {Type}, Version: {Version})");
+                _logger.LogInformation($"Successfully initialized Browser (ID: {ID}, Type: {Type}, Version: {Version})");
             }
             catch (Exception e)
             {
-                Logger.LogError($"Failed to initialize Browser (ID: {ID}, Type: {Type}, Version: {Version}) due to {e}");
-                throw new Exception($"Failed to initialize Browser (ID: {ID}, Type: {Type}, Version: {Version})", e);
+                _logger.LogError($"Failed to initialize Browser (ID: {ID}, Type: {Type}, Version: {Version}) due to {e}");
+                throw new LaunchException($"Failed to initialize Browser (ID: {ID}, Type: {Type}, Version: {Version}).", e);
             }
+        }
+
+        /// <summary>
+        /// Sends a request to the Browser Manager for processing. This will initiate the request, but does not wait for completion.
+        /// </summary>
+        /// <param name="request">The request to process within the browser.</param>
+        public async Task ProcessRequest(ProcessRequest request)
+        {
+            request.LogInfo($"Browser (ID: {ID}, Type: {Type}, Version {Version}) received request.");
+
+            request.SetStatus(State.Queued, $"Waiting for lock on Context");
+            await _contextLimit.WaitAsync();
+            request.SetStatus(State.Processing, $"Lock aquired");
+
+            try
+            {
+
+                Context context = await _contextFactory.CreateContext(this);
+                await context.ProcessRequest(request);
+                await context.CloseAsync();
+
+            }
+            catch (LaunchException e)
+            {
+                _logger.LogError($"{e.Message}\nError:{e.InnerException}");
+                throw;
+            }
+            finally
+            {
+                _contextLimit.Release();
+            }
+
+
         }
 
         /// <summary>
@@ -118,49 +156,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <returns>The next unique context ID</returns>
         public int GetNextContextID()
         {
-            return Interlocked.Increment(ref NextContextID);
+            return Interlocked.Increment(ref _nextContextID);
         }
-
-        /// <summary>
-        /// Sends a request to the Browser Manager for processing. This will initiate the request, but does not wait for completion.
-        /// </summary>
-        /// <param name="request">The request to process within the browser.</param>
-        public async Task ProcessRequest(IClientRequest request)
-        {
-            IncrementRequestCount(request);
-            // _ = await ContextManager!.ProcessRequestAsync(request);
-
-            try
-            {
-                await request.IsCancellationRequested();
-                await Task.Delay(20000);
-
-                request.SetStatus(State.Completed, "Completed in Browser");
-                await request.ResponseSource.Task;
-            }
-            catch
-            {
-
-            }
-            finally
-            {
-                DecrementRequestCount(request);
-
-                // Add a lock.
-                // same as browser manager.
-                // Allow only one request to receive or terminate at a time
-                // So the lock should be used for the int
-                // Thread safe.
-                // Then I can do closing logic
-                //
-                //
-                //
-                //
-            }
-
-
-        }
-
 
         /// <summary>
         /// Increment the total # of processing requests
@@ -168,9 +165,9 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public void IncrementRequestCount(IClientRequest request)
         {
-            Interlocked.Increment(ref RequestCount);
-            Logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received. " +
-                $"-- Total Requests Active: '{RequestCount}'");
+            int value = Interlocked.Increment(ref _requestCount); // Used to ensure value is unchanged
+            _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received. " +
+                $"-- Total Requests Active: '{value}'");
         }
 
         /// <summary>
@@ -179,50 +176,50 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public void DecrementRequestCount(IClientRequest request)
         {
-            Interlocked.Decrement(ref RequestCount);
-            Logger.LogInformation($"Terminating {request.GetType().Name} (ID: {request.ID}) received. " +
-                $"-- Total Requests Active: '{RequestCount}'");
+            int value = Interlocked.Decrement(ref _requestCount);
+            _logger.LogInformation($"Terminating {request.GetType().Name} (ID: {request.ID}, Status: {request.State}). " +
+                $"-- Total Requests Active: '{value}'");
+        }
+
+        /// <summary>
+        /// Retrieves the current request count.
+        /// </summary>
+        /// <returns>The current request count.</returns>
+        public int GetRequestCount()
+        {
+            return _requestCount;
         }
 
         /// <summary>
         /// Closes the browser instance. This should only be called once all contexts associated with this browser have been closed.
         /// </summary>
         /// <exception cref="Exception">Thrown if the browser cannot be closed.</exception>
-        public async Task<bool> CloseAsync()
+        public async Task CloseAsync()
         {
-            bool closed = false;
 
             try
             {
-                // No active or queued requests, close browser instance
-                *//*if (ContextManager!.SafeToClose())
-                {
-                    await Instance!.CloseAsync();
-                    Instance = null;
-                    closed = true;
-                    Logger.LogInformation($"Browser (ID: {this.ID}, Type: {this.Type}, Version: {this.Version}) closed successfully.");
-                }*//*
+                _logger.LogInformation($"Closing Browser...");
+                await Instance!.CloseAsync();
+                _logger.LogInformation($"Browser (ID: {this.ID}, Type: {this.Type}, Version: {this.Version}) closed successfully.");
+
             }
             catch (Exception e)
             {
-                Logger.LogError($"Failed to close Browser (ID: {ID}, Type: {Type}, Version: {Version}) due to {e}");
-
-                throw new Exception($"Failed to close Browser (ID: {ID}, Type: {Type}, Version: {Version})", e);
+                _logger.LogError($"Failed to close Browser (ID: {ID}, Type: {Type}, Version: {Version}) due to {e}");
+                _logger.LogInformation($"Disposing...");
+                await Instance!.DisposeAsync();
+                _logger.LogInformation($"Disposing Complete");
             }
             finally
             {
-                if (Logger is CustomLogger<Browser> customLogger)
-                {
-                    customLogger.Flush();
-                }
+                _logger.Flush();
             }
-
-            return closed;
         }
 
-        *//*
+        /*
          * AutoUpdater must be implemented for Version Handling
-         *//*
+         */
 
         /// <summary>
         /// Creates a browser instance based on the specified browser type and version.
@@ -234,7 +231,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <exception cref="ArgumentException">Thrown if the browser type is unsupported.</exception>
         private async Task<IBrowser> CreateBrowserInstance(IPlaywright playwright, string type, string version)
         {
-            *//* "Automation/Browsers/{type}-{version}/{type}-win64/{type}.exe"
+            /* "Automation/Browsers/{type}-{version}/{type}-win64/{type}.exe"
                 all lowercase for types. No subversions (just main version for now)
 
                 Chrome: Automation/Browsers/chrome-{version}/chrome-win64/chome.exe
@@ -242,7 +239,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 Firefox:Automation/Browsers/firefox-{version}/firefox.exe
                 Safari: Ignore -> Playwright already uses latest                
              
-             *//*
+             */
             switch (type.ToLower())
             {
                 case "chrome":
@@ -263,7 +260,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             BrowserTypeLaunchOptions options = new BrowserTypeLaunchOptions
             {
                 Headless = false,
-                Timeout = Timeout,
+                Timeout = _settings.InitializationTimeout,
                 Channel = "chrome"
             };
             return await playwright.Chromium.LaunchAsync(options);
@@ -274,7 +271,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             BrowserTypeLaunchOptions options = new BrowserTypeLaunchOptions
             {
                 Headless = false,
-                Timeout = Timeout,
+                Timeout = _settings.InitializationTimeout,
                 Channel = "msedge"
             };
             return await playwright.Chromium.LaunchAsync(options);
@@ -285,7 +282,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             BrowserTypeLaunchOptions options = new BrowserTypeLaunchOptions
             {
                 Headless = false,
-                Timeout = Timeout,
+                Timeout = _settings.InitializationTimeout,
                 Channel = "firefox"
             };
             return await playwright.Firefox.LaunchAsync(options);
@@ -296,10 +293,10 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             BrowserTypeLaunchOptions options = new BrowserTypeLaunchOptions
             {
                 Headless = false,
-                Timeout = Timeout,
+                Timeout = _settings.InitializationTimeout,
                 Channel = "webkit"
             };
             return await playwright.Webkit.LaunchAsync(options);
         }
     }
-}*/
+}

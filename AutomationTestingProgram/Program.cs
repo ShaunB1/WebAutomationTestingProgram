@@ -74,6 +74,8 @@ builder.Services.AddSwaggerGen(c =>
         });
 });
 
+builder.Services.AddSignalR();
+
 var app = builder.Build(); // represents configured web app
 
 if (app.Environment.IsDevelopment())
@@ -140,6 +142,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<TestHub>("/testHub");
 
 app.MapFallbackToFile("index.html"); // fallback to index.html for SPA routes
 

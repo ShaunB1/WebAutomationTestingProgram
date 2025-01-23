@@ -31,7 +31,6 @@
 		<Folder Include="client\src\Pages\" />
 		<Folder Include="Core\" />
 		<Folder Include="Infrastructure\" />
-		<Folder Include="Modules\TestRunner\" />
 		<Folder Include="Shared\" />
 		<Folder Include="Tests\" />
 		<Folder Include="wwwroot\" />

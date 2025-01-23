@@ -43,7 +43,13 @@ public class TestController : ControllerBase
     // We want to authorization for all endpoints, but if you are testing then comment out the line below
     [Authorize]
     [HttpPost("run")]
-    public async Task<IActionResult> RunTests(IFormFile file, [FromForm] string env, [FromForm] string browser, [FromHeader(Name = "TestRunId")] string testRunId)
+    public async Task<IActionResult> RunTests(
+        IFormFile file,
+        [FromForm] string env,
+        [FromForm] string browser,
+        [FromForm] string delay,
+        [FromHeader(Name = "TestRunId")] string testRunId
+    )
     {
         if (file == null || string.IsNullOrEmpty(testRunId))
         {
@@ -94,7 +100,7 @@ public class TestController : ControllerBase
             }
             else
             {
-                await executor.ExecuteTestFileAsync(browserInstance, testSteps, env, fileName, cycleGroups);
+                await executor.ExecuteTestFileAsync(browserInstance, testSteps, env, fileName, cycleGroups, int.Parse(delay));
             }
             
             return Ok("Tests executed successfully.");

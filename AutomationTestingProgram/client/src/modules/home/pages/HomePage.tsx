@@ -24,6 +24,7 @@ const Home: React.FC = () => {
     const [envInputValue, setEnvInputValue] = useState('');
     const [browser, setBrowser] = useState<string | null>(null);
     const [browserInputValue, setBrowserInputValue] = useState('');
+    const [delay, setDelay] = useState(0);
 
     const { instance, accounts } = useMsal();
     const logContainerRef = useRef<HTMLDivElement>(null);
@@ -113,6 +114,7 @@ const Home: React.FC = () => {
         formData.append("file", file);
         formData.append('env', env);
         formData.append('browser', browser.toLowerCase());
+        formData.append("delay", delay.toString());
 
         try {
             const token = await getToken(instance, accounts);
@@ -241,6 +243,10 @@ const Home: React.FC = () => {
                                 }}
                                 renderInput={(params) => <TextField {...params} label="Browser" />}
                                 options={browserOptions}
+                            />
+                            <TextField
+                                label="Enter Delay (seconds)"
+                                onChange={(e) => setDelay(Number(e.target.value))}
                             />
                             <Button
                                 variant="contained"

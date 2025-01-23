@@ -43,7 +43,11 @@ public class TestExecutor
         );
     }
 
-    public async Task ExecuteTestFileAsync(IBrowser browser, List<TestStep> testSteps, string environment, string fileName, Dictionary<string, List<Dictionary<string, string>>> cycleGroups)
+    public async Task ExecuteTestFileAsync(IBrowser browser,
+        List<TestStep> testSteps,
+        string environment,
+        string fileName,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int delay)
     {
         _envVars["environment"] = environment;
         var context = await browser.NewContextAsync();
@@ -51,7 +55,7 @@ public class TestExecutor
         var iterationStack = new Stack<int>();
         var currentIteration = 0;
         
-        await ExecuteNestedLoopsAsync(page, testSteps, cycleGroups, iterationStack, currentIteration);
+        await ExecuteNestedLoopsAsync(page, testSteps, cycleGroups, iterationStack, currentIteration, delay);
     }
     
     public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page,
@@ -162,12 +166,14 @@ public class TestExecutor
 
     public async Task ExecuteNestedLoopsAsync(IPage page, List<TestStep> steps,
         Dictionary<string, List<Dictionary<string, string>>> cycleGroups, Stack<int> iterationStack,
-        int currentIteration)
+        int currentIteration, int delay)
     {
         try
         {
             for (var i = 0; i < steps.Count; i++)
             {
+                await Task.Delay(delay * 1000);
+                
                 var step = steps[i];
                 var parts = step.CycleGroup.Split(",");
                 var cycleGroup = parts.Length > 1 ? parts[0].Trim() : string.Empty;

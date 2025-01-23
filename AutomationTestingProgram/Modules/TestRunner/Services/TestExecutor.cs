@@ -1,3 +1,4 @@
+using System.Text;
 using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Models;
 using Microsoft.Playwright;
@@ -190,8 +191,35 @@ public class TestExecutor
                         {
                             if (_actions.TryGetValue(loopStep.ActionOnObject.ToLower(), out var action))
                             {
-                                var result = await action.ExecuteAsync(page, loopStep, _envVars, _saveParameters, cycleGroups, j, cycleGroup);
-                                loopStep.RunSuccessful = result;
+                                var logMessage = new StringBuilder()
+                                    .AppendLine("========================================================")
+                                    .AppendLine("                TEST EXECUTION LOG                      ")
+                                    .AppendLine("========================================================")
+                                    .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
+                                    .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
+                                    .AppendLine("--------------------------------------------------------")
+                                    .AppendLine($"ACTION:        {step.ActionOnObject,-40}")
+                                    .AppendLine($"OBJECT:        {step.Object,-40}")
+                                    .AppendLine($"VALUE:         {step.Value,-40}")
+                                    .AppendLine("--------------------------------------------------------")
+                                    .AppendLine($"EXECUTING...")
+                                    .AppendLine("========================================================")
+                                    .ToString();
+                                _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}, {step.Value}");
+                                
+                                await _broadcaster.BroadcastLogAsync(logMessage, _testRunId);
+                                
+                                var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
+                                step.RunSuccessful = result;
+                                
+                                _logger.LogInformation($"STATUS: {step.RunSuccessful}");
+
+                                var statusMessage = new StringBuilder()
+                                    .AppendLine($"STATUS: {step.RunSuccessful}")
+                                    .AppendLine()
+                                    .ToString();
+                                
+                                await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
                             }
                         }
                     }
@@ -204,9 +232,36 @@ public class TestExecutor
                 else
                 {
                     if (_actions.TryGetValue(step.ActionOnObject.ToLower(), out var action))
-                    {
+                    { 
+                        var logMessage = new StringBuilder()
+                            .AppendLine("========================================================")
+                            .AppendLine("                TEST EXECUTION LOG                      ")
+                            .AppendLine("========================================================")
+                            .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
+                            .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
+                            .AppendLine("--------------------------------------------------------")
+                            .AppendLine($"ACTION:        {step.ActionOnObject,-40}")
+                            .AppendLine($"OBJECT:        {step.Object,-40}")
+                            .AppendLine($"VALUE:         {step.Value,-40}")
+                            .AppendLine("--------------------------------------------------------")
+                            .AppendLine($"EXECUTING...")
+                            .AppendLine("========================================================")
+                            .ToString();
+                        _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}, {step.Value}");
+                        
+                        await _broadcaster.BroadcastLogAsync(logMessage, _testRunId);
+                        
                         var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
                         step.RunSuccessful = result;
+                        
+                        _logger.LogInformation($"STATUS: {step.RunSuccessful}");
+
+                        var statusMessage = new StringBuilder()
+                            .AppendLine($"STATUS: {step.RunSuccessful}")
+                            .AppendLine()
+                            .ToString();
+                        
+                        await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
                     }
                 }
             }

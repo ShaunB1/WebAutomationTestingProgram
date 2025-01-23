@@ -190,12 +190,6 @@ const Home: React.FC = () => {
     //     }
     // }, [])
 
-    const addTable = () => {
-        if (testCaseName.trim() === "") return;
-        setTables([...tables, { name: testCaseName }]);
-        setTestCaseName("");
-    }
-
     return (
         <>
             <AuthenticatedTemplate>
@@ -315,8 +309,18 @@ const Home: React.FC = () => {
                                     </Box>
                                     <List>
                                         {testRun.logs.map((log, logIndex) => (
-                                            <ListItem key={`${index}-${logIndex}`}>
-                                                <Typography>{log}</Typography>
+                                            <ListItem key={logIndex}>
+                                                <Typography
+                                                    component="pre"
+                                                    sx={{
+                                                        whiteSpace: "pre-wrap",
+                                                        fontFamily: "Courier, monospace",
+                                                        fontSize: "1rem",
+                                                        color: log.includes("STATUS: True") ? "green" : log.includes("STATUS: False") ? "red" : "white",
+                                                    }}
+                                                >
+                                                    {log}
+                                                </Typography>
                                             </ListItem>
                                         ))}
                                     </List>

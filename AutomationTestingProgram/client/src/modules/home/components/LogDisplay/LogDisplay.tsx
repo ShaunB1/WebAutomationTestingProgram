@@ -21,7 +21,10 @@ const LogDisplay = () => {
         }
         
         socket.onmessage = (event) => {
-            setLogs((prevLogs) => [...prevLogs, event.data as string]);
+            console.log("HIT-----------");
+            console.log(event.data);
+            console.log("-----------");
+            // setLogs((prevLogs) => [...prevLogs, event.data as string]);
         }
 
         socket.onerror = (error) => {
@@ -75,9 +78,16 @@ const LogDisplay = () => {
                     <List>
                         {logs.map((log, logIndex) => (
                             <ListItem key={logIndex}>
-                                <Typography>
-                                    {log}
-                                </Typography>
+                                <div
+                                    style={{
+                                        fontFamily: "Roboto, Arial, sans-serif", // Typography default font family
+                                        fontSize: "1rem", // Default font size of Typography
+                                        color: "white", // Match Typography color
+                                    }}
+                                    dangerouslySetInnerHTML={{
+                                        __html: log.replace(/\n/g, "<br>"),
+                                    }}
+                                />
                             </ListItem>
                         ))}
                     </List>

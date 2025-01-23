@@ -189,7 +189,7 @@ public class TestExecutor
                     {
                         foreach (var loopStep in loopSteps)
                         {
-                            if (_actions.TryGetValue(loopStep.ActionOnObject.ToLower(), out var action))
+                            if (_actions.TryGetValue(loopStep.ActionOnObject.Replace(" ", "").ToLower(), out var action))
                             {
                                 var logMessage = new StringBuilder()
                                     .AppendLine("========================================================")
@@ -231,7 +231,7 @@ public class TestExecutor
                 }
                 else
                 {
-                    if (_actions.TryGetValue(step.ActionOnObject.ToLower(), out var action))
+                    if (_actions.TryGetValue(step.ActionOnObject.Replace(" ", "").ToLower(), out var action))
                     { 
                         var logMessage = new StringBuilder()
                             .AppendLine("========================================================")
@@ -303,33 +303,6 @@ public class TestExecutor
         }
         
         return steps.Skip(startIndex).Take(endIndex - startIndex + 1).ToList();
-    }
-    
-    public async Task ExecuteLoopStepsAsync(IPage page,
-        List<TestStep> steps,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups,
-        int currentIteration,
-        string cycleGroupName)
-    {
-        foreach (var step in steps)
-        {
-            if (_actions.TryGetValue(step.ActionOnObject.ToLower().Replace(" ", ""), out var action))
-            {
-                var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroupName);
-                step.RunSuccessful = result;
-                    
-                if (!result)
-                {
-                    Console.WriteLine($"Test step failed: {step.ActionOnObject}");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"No action defined for {step.ActionOnObject}");
-            }
-        }
     }
     
     // Replace parameters between "{" and "}" with the Saved Parameters. To be used with Object or Value string. 

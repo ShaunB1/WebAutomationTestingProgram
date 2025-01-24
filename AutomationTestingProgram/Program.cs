@@ -90,6 +90,8 @@ void ConfigureServices(WebApplicationBuilder builder)
         });
     });
 
+    builder.Services.AddSignalR(); // SignalR -> Websockets
+
     // HttpClient -- NOTE: Must inject IHttpClientFactory to use
     builder.Services.AddHttpClient("HttpClient", client =>
     {
@@ -186,10 +188,8 @@ void RegisterServices(ContainerBuilder builder)
     .As<ICustomLoggerProvider>()
     .SingleInstance();
 
-    builder.RegisterType<WebSocketLogBroadcaster>().SingleInstance();
     builder.RegisterType<ShutDownService>().SingleInstance();
-
-
+    builder.RegisterType<TestHub>().OwnedByLifetimeScope();
 
     // TESTRUNNER MODULE
 
@@ -287,14 +287,13 @@ void ConfigureMiddleware(WebApplication app)
     app.UseRequestLocalization();
     app.UseMiddleware<RequestMiddleware>();
 
-    app.UseWebSockets();
-
     app.UseRouting(); // adds routing capabilities
 
     app.UseAuthentication(); // Add authentication middleware
     app.UseAuthorization(); // Add authorization middleware
 
     app.MapControllers();
+    app.MapHub<TestHub>("/testHub");
 
     app.MapFallbackToFile("index.html"); // fallback to index.html for SPA routes
 }

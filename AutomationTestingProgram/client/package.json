@@ -16,6 +16,7 @@
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@microsoft/signalr": "^8.0.7",
     "@mui/icons-material": "^6.3.0",
     "@mui/material": "^6.1.7",
     "@types/papaparse": "^5.3.15",

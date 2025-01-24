@@ -1,9 +1,10 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
 import {AgGridReact} from "ag-grid-react";
 import {ColDef} from "ag-grid-community";
 
 interface Task {
+    priority: string,
     task: string,
     description: string,
     start_date: string,
@@ -13,9 +14,11 @@ interface Task {
 }
 
 const CompletedTasksPage = () => {
+    const gridRef = useRef<AgGridReact>(null);
     const [colDefs] = useState<ColDef[]>([
         { field: "task", headerName: "Task", sortable: true, filter: true },
         { field: "description", headerName: "Description", sortable: true, filter: true },
+        { field: "priority", headerName: "Priority", sortable: true, filter: true },
         { field: "start_date", headerName: "Start Date", sortable: true, filter: true },
         { field: "end_date", headerName: "End Date", sortable: true, filter: true },
         { field: "days", headerName: "Days Taken", sortable: true, filter: true },

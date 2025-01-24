@@ -14,12 +14,12 @@ router.get("/", async (_req: Request, res: Response) => {
 });
 
 router.post("/", async (req: Request, res: Response) => {
-    const { name, task, description, start_date, end_date } = req.body;
+    const { name, task, description, start_date, end_date, priority } = req.body;
     console.log(req.body);
     try {
         const result = await pool.query(
-            "INSERT INTO completed_tasks (worker, task, start_date, end_date, description) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-            [name, task, start_date, end_date, description]
+            "INSERT INTO completed_tasks (worker, task, start_date, end_date, description, priority) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+            [name, task, start_date, end_date, description, priority]
         );
         res.json(result.rows);
     } catch (e) {

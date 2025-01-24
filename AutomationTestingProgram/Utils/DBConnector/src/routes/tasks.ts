@@ -13,12 +13,13 @@ router.get("/", async (_req: Request, res: Response) => {
 });
 
 router.post("/", async (req: Request, res: Response) => {
-    const { name, draggable_id, droppable_id, start_date, description } = req.body;
+    const { name, draggable_id, droppable_id, start_date, description, priority } = req.body;
+    console.log(req.body);
 
     try {
         const result = await pool.query(
-            "INSERT INTO tasks (name, draggable_id, droppable_id, start_date, description) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-            [name, draggable_id, droppable_id, start_date, description]
+            "INSERT INTO tasks (name, draggable_id, droppable_id, start_date, description, priority) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+            [name, draggable_id, droppable_id, start_date, description, priority]
         );
         res.status(200).json(result.rows[0]);
     } catch (e) {
@@ -63,13 +64,12 @@ router.delete("/", async (req: Request, res: Response) => {
 });
 
 router.patch("/", async (req: Request, res: Response) => {
-    const { draggable_id, name, description } = req.body;
-    console.log(req.body);
+    let { draggable_id, name, description, priority } = req.body;
 
     try {
         const result = await pool.query(
-            "UPDATE tasks SET name = $1, description = $2 WHERE draggable_id = $3 RETURNING *",
-            [name, description, draggable_id]
+            "UPDATE tasks SET name = $1, description = $2, priority = $4 WHERE draggable_id = $3 RETURNING *",
+            [name, description, draggable_id, priority]
         );
         res.json(result.rows);
     } catch (e) {

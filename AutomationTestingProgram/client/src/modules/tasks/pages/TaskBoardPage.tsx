@@ -26,6 +26,7 @@ interface Task {
     name: string;
     startDate: string;
     description: string;
+    priority: string;
 }
 
 interface Worker {
@@ -109,6 +110,7 @@ const TaskBoardPage = () => {
                             name: task.name,
                             startDate: task.start_date,
                             description: task.description,
+                            priority: task.priority
                         }
                         tasks.push(taskObj);
                     }
@@ -145,6 +147,7 @@ const TaskBoardPage = () => {
                         name: task.name,
                         startDate: task.start_date,
                         description: task.description,
+                        priority: task.priority
                     }
                     savedTasks.push(taskObj);
                 }
@@ -284,17 +287,18 @@ const TaskBoardPage = () => {
     const handleAddTask = async () => {
         if (newTask.trim() === "") return;
 
-        const task = { draggableId: Date.now().toString(), name: newTask, startDate: "", description: description };
+        const task = { draggableId: Date.now().toString(), name: newTask, startDate: "", description: description, priority: priority };
         const updatedTasks = [...tasks, task];
         setTasks(updatedTasks);
         setNewTask("");
         setDescription("");
+        setPriority("");
         setOpen(false);
 
         await fetch(`https://${import.meta.env.VITE_DB_HOST}/api/tasks`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: task.name, draggable_id: task.draggableId, droppable_id: "taskList", start_date: "", description: description }),
+            body: JSON.stringify({ name: task.name, draggable_id: task.draggableId, droppable_id: "taskList", start_date: "", description: description, priority: task.priority }),
         });
     }
 
@@ -342,7 +346,14 @@ const TaskBoardPage = () => {
             fetch(`https://${import.meta.env.VITE_DB_HOST}/api/completed_tasks`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: worker.name, task: task.name, description: task.description, start_date: task.startDate, end_date: endDate }),
+                body: JSON.stringify({
+                    name: worker.name,
+                    task: task.name,
+                    description: task.description,
+                    start_date: task.startDate,
+                    end_date: endDate,
+                    priority: task.priority
+                }),
             }),
             fetch(`https://${import.meta.env.VITE_DB_HOST}/api/tasks`, {
                 method: "DELETE",
@@ -353,6 +364,7 @@ const TaskBoardPage = () => {
     }
 
     const [description, setDescription] = useState("");
+    const [priority, setPriority] = useState("3");
 
     const handleDeleteTask = async (draggableId: string) => {
         await fetch(`https://${import.meta.env.VITE_DB_HOST}/api/tasks`, {
@@ -381,6 +393,7 @@ const TaskBoardPage = () => {
     const [openEdit, setOpenEdit] = useState(false);
     const [editDescription, setEditDescription] = useState("");
     const [editTaskName, setEditTaskName] = useState("");
+    const [editPriority, setEditPriority] = useState("");
     const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
     const handleOpen = () => setOpen(true);
@@ -389,8 +402,10 @@ const TaskBoardPage = () => {
 
     const handleOpenEdit = (task: Task) => {
         setSelectedTask(task);
+        setEditPriority(task.priority);
         setEditDescription(task.description);
         setEditTaskName(task.name);
+        setEditPriority(task.priority);
         setOpenEdit(true);
     }
 
@@ -400,16 +415,18 @@ const TaskBoardPage = () => {
         if (task) {
             task.description = editDescription;
             task.name = editTaskName;
+            task.priority = editPriority;
 
             await fetch(`https://${import.meta.env.VITE_DB_HOST}/api/tasks`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ draggable_id: task.draggableId, name: task.name, description: task.description }),
+                body: JSON.stringify({ draggable_id: task.draggableId, name: task.name, description: task.description, priority: parseInt(task.priority, 10) }),
             })
 
             setOpenEdit(false);
             setEditDescription("");
             setEditTaskName("");
+            setEditPriority("");
         }
     }
 
@@ -425,6 +442,22 @@ const TaskBoardPage = () => {
             days: calculateDays(task.startDate, currentDate),
         })),
     }));
+
+    const handleSortAlphabet = () => {
+        const temp: Task[] = [...tasks];
+
+        temp.sort((a, b) => a.name.localeCompare(b.name));
+
+        setTasks(temp);
+    }
+
+    const handleSortPriority = () => {
+        const temp: Task[] = [...tasks];
+
+        temp.sort((a, b) => Number(a.priority) - Number(b.priority));
+
+        setTasks(temp);
+    }
 
     return (
         <>
@@ -476,8 +509,23 @@ const TaskBoardPage = () => {
                                 label="Task Name..."
                                 value={editTaskName}
                                 onChange={(e) => setEditTaskName(e.target.value)}
-                                sx={{ width: "95%" }}
+                                sx={{ width: "80%" }}
                             />
+                            <Typography>Priority</Typography>
+                            <Select
+                                value={editPriority}
+                                onChange={(e) => setEditPriority(e.target.value)}
+                                sx={{
+                                    height: "50px",
+                                }}
+
+                            >
+                                <MenuItem value={1}>1</MenuItem>
+                                <MenuItem value={2}>2</MenuItem>
+                                <MenuItem value={3}>3</MenuItem>
+                                <MenuItem value={4}>4</MenuItem>
+                                <MenuItem value={5}>5</MenuItem>
+                            </Select>
                         </Box>
                         <Box sx={{ width: "95%", height: "75%", mb: 2 }}>
                             <Typography gutterBottom>Description</Typography>
@@ -567,8 +615,23 @@ const TaskBoardPage = () => {
                                         label="Task Name..."
                                         value={newTask}
                                         onChange={(e) => setNewTask(e.target.value)}
-                                        sx={{ width: "95%" }}
+                                        sx={{ width: "80%" }}
                                     />
+                                    <Typography>Priority</Typography>
+                                    <Select
+                                        value={priority}
+                                        onChange={(e) => setPriority(e.target.value)}
+                                        sx={{
+                                            height: "50px",
+                                        }}
+
+                                    >
+                                        <MenuItem value={1}>1</MenuItem>
+                                        <MenuItem value={2}>2</MenuItem>
+                                        <MenuItem value={3}>3</MenuItem>
+                                        <MenuItem value={4}>4</MenuItem>
+                                        <MenuItem value={5}>5</MenuItem>
+                                    </Select>
                                 </Box>
                                 <Box sx={{ width: "95%", height: "75%", mb: 2 }}>
                                     <Typography gutterBottom>Description</Typography>
@@ -786,31 +849,63 @@ const TaskBoardPage = () => {
                                                                             ...provided.draggableProps.style,
                                                                         }}
                                                                     >
-                                                                        <IconButton sx={{ cursor: "grab" }}>
-                                                                            <MoreVertIcon />
-                                                                        </IconButton>
-                                                                        <Box display="flex" sx={{
-                                                                            width: "100%",
-                                                                            justifyContent: "space-between",
-                                                                            alignItems: "center",
-                                                                        }}>
-                                                                            <Accordion sx={{
+                                                                        <Box
+                                                                            sx={{
                                                                                 width: "100%",
-                                                                                background: "#f0f0f0",
-                                                                            }}>
-                                                                                <AccordionSummary>
-                                                                                    <Typography
-                                                                                        sx={{ color: "#333333" }}
-                                                                                    >
-                                                                                        {task.name}
-                                                                                    </Typography>
-                                                                                </AccordionSummary>
-                                                                                <AccordionDetails>
-                                                                                    <Typography
-                                                                                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
-                                                                                    />
-                                                                                </AccordionDetails>
-                                                                            </Accordion>
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                            }}
+                                                                        >
+                                                                            <IconButton
+                                                                                sx={{
+                                                                                    cursor: "grab",
+                                                                                    color: task.days > 7 ? "white" : "default"
+                                                                                }}
+                                                                            >
+                                                                                <MoreVertIcon />
+                                                                            </IconButton>
+                                                                            <Box
+                                                                                sx={{
+                                                                                    width: "100%",
+                                                                                    display: "flex",
+                                                                                    flexDirection: "column",
+                                                                                    gap: 0.5,
+                                                                                }}
+                                                                            >
+                                                                                <Typography
+                                                                                    color="textSecondary"
+                                                                                    variant="body2"
+                                                                                    sx={{
+                                                                                        color: task.days > 7 ? "white" : "default",
+                                                                                    }}
+                                                                                >
+                                                                                    Priority: {task.priority}
+                                                                                </Typography>
+                                                                                <Box display="flex" sx={{
+                                                                                    width: "100%",
+                                                                                    justifyContent: "space-between",
+                                                                                    alignItems: "center",
+                                                                                }}
+                                                                                >
+                                                                                    <Accordion sx={{
+                                                                                        width: "100%",
+                                                                                        background: "#f0f0f0",
+                                                                                    }}>
+                                                                                        <AccordionSummary>
+                                                                                            <Typography
+                                                                                                sx={{ color: "#333333" }}
+                                                                                            >
+                                                                                                {task.name}
+                                                                                            </Typography>
+                                                                                        </AccordionSummary>
+                                                                                        <AccordionDetails>
+                                                                                            <Typography
+                                                                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+                                                                                            />
+                                                                                        </AccordionDetails>
+                                                                                    </Accordion>
+                                                                                </Box>
+                                                                            </Box>
                                                                             <Box display="flex" sx={{ alignItems: "center", gap: 1, ml: 2 }}>
                                                                                 <Typography style={{
                                                                                     width: "50px",
@@ -821,8 +916,10 @@ const TaskBoardPage = () => {
                                                                                     {`Day ${task.days}`}
                                                                                 </Typography>
                                                                                 <IconButton sx={{ m: 0, p: 1 }} onClick={() => handleOpenEdit(task)}>
-                                                                                    <EditIcon sx={{
-                                                                                        color: task.days > 7 ? "white" : "default" }}
+                                                                                    <EditIcon
+                                                                                        sx={{
+                                                                                            color: task.days > 7 ? "white" : "default"
+                                                                                        }}
                                                                                     />
                                                                                 </IconButton>
                                                                                 <IconButton color="primary" onClick={() => handleCompleteTask(task, worker)}>
@@ -856,30 +953,49 @@ const TaskBoardPage = () => {
                     >
                         <Box
                             sx={{
-                                width: "23%",
+                                width: "24%",
                                 borderRadius: 2,
                                 display: "flex",
                                 flexWrap: "wrap",
-                                height: "80vh",
+                                height: "83vh",
                                 position: "fixed",
                                 right: 20,
                                 background: "#F5F5F5",
                             }}
                         >
-                            <Typography variant="h6" color="textSecondary"
-                                        sx={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            alignItems: "center",
-                                            width: "100%",
-                                            borderRadius: 2,
-                                            background: "#313d4f",
-                                            height: "40px",
-                                            color: "white",
-                                        }}
+                            <Box
+                                sx={{
+                                    width: "100%",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    borderRadius: 2,
+                                    background: "#313d4f",
+                                    height: "80px",
+                                    color: "white",
+                                }}
                             >
-                                Task Board
-                            </Typography>
+                                <Box
+                                    sx={{
+
+                                    }}
+                                >
+                                    <Typography variant="h6" color="white">
+                                        Task Board
+                                    </Typography>
+                                </Box>
+                                <Box
+                                    sx={{
+                                        width: "100%",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <Button variant="text" onClick={handleSortAlphabet} sx={{ color: "#37B7C3" }}>A-Z</Button>
+                                    <Button variant="text" onClick={handleSortPriority} sx={{ color: "#37B7C3" }}>Priority</Button>
+                                </Box>
+                            </Box>
                             <Box sx={{ height: "100%", width: "100%", padding: 1 }}>
                                 <Droppable droppableId={"taskList"}>
                                     {(provided: any): any => (
@@ -903,33 +1019,76 @@ const TaskBoardPage = () => {
                                                                 ...provided.draggableProps.style,
                                                             }}
                                                         >
-                                                            <IconButton sx={{ cursor: "grab" }}>
-                                                                <MoreVertIcon />
-                                                            </IconButton>
-                                                            <Accordion sx={{
-                                                                width: "90%",
-                                                                background: "#f0f0f0",
-                                                                mr: 1,
-                                                            }}>
-                                                                <AccordionSummary>
+                                                            <Box
+                                                                sx={{
+                                                                    width: "100%",
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                }}
+                                                            >
+                                                                <IconButton
+                                                                    sx={{
+                                                                        cursor: "grab",
+                                                                        color: task.days > 7 ? "white" : "default"
+                                                                    }}
+                                                                >
+                                                                    <MoreVertIcon />
+                                                                </IconButton>
+                                                                <Box
+                                                                    sx={{
+                                                                        width: "100%",
+                                                                        display: "flex",
+                                                                        flexDirection: "column",
+                                                                        gap: 0.5,
+                                                                    }}
+                                                                >
                                                                     <Typography
-                                                                        sx={{ color: "#333333" }}
+                                                                        color="textSecondary"
+                                                                        variant="body2"
+                                                                        sx={{
+                                                                            color: task.days > 7 ? "white" : "default",
+                                                                        }}
                                                                     >
-                                                                        {task.name}
+                                                                        Priority: {task.priority}
                                                                     </Typography>
-                                                                </AccordionSummary>
-                                                                <AccordionDetails>
-                                                                    <Typography
-                                                                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
-                                                                    />
-                                                                </AccordionDetails>
-                                                            </Accordion>
-                                                            <IconButton sx={{ m: 0, p: 1 }} onClick={() => handleOpenEdit(task)}>
-                                                                <EditIcon />
-                                                            </IconButton>
-                                                            <IconButton onClick={() => handleDeleteTask(task.draggableId)}>
-                                                                <DeleteIcon />
-                                                            </IconButton>
+                                                                    <Box display="flex" sx={{
+                                                                        width: "100%",
+                                                                        justifyContent: "space-between",
+                                                                        alignItems: "center",
+                                                                    }}
+                                                                    >
+                                                                        <Accordion sx={{
+                                                                            width: "100%",
+                                                                            background: "#f0f0f0",
+                                                                        }}>
+                                                                            <AccordionSummary>
+                                                                                <Typography
+                                                                                    sx={{ color: "#333333" }}
+                                                                                >
+                                                                                    {task.name}
+                                                                                </Typography>
+                                                                            </AccordionSummary>
+                                                                            <AccordionDetails>
+                                                                                <Typography
+                                                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+                                                                                />
+                                                                            </AccordionDetails>
+                                                                        </Accordion>
+                                                                    </Box>
+                                                                </Box>
+                                                                <Box display="flex" sx={{ alignItems: "center", gap: 1, ml: 2 }}>
+                                                                    <IconButton sx={{ m: 0, p: 1 }} onClick={() => handleOpenEdit(task)}>
+                                                                        <EditIcon
+                                                                            sx={{
+                                                                                color: task.days > 7 ? "white" : "default"
+                                                                            }}
+                                                                        />
+                                                                    </IconButton>
+                                                                    <IconButton onClick={() => handleDeleteTask(task.draggableId)}>
+                                                                        <DeleteIcon />
+                                                                    </IconButton>
+                                                                </Box>
+                                                            </Box>
                                                         </ListItem>
                                                     )}
                                                 </Draggable>
@@ -940,100 +1099,6 @@ const TaskBoardPage = () => {
                                 </Droppable>
                             </Box>
                         </Box>
-                        {/*<Box*/}
-                        {/*    sx={{*/}
-                        {/*        width: "100%",*/}
-                        {/*        display: "flex",*/}
-                        {/*        justifyContent: "center",*/}
-                        {/*    }}*/}
-                        {/*>*/}
-                        {/*    <Box*/}
-                        {/*        sx={{*/}
-                        {/*            width: "100%",*/}
-                        {/*            borderRadius: 2,*/}
-                        {/*            display: "flex",*/}
-                        {/*            flexWrap: "wrap",*/}
-                        {/*            height: "38vh",*/}
-                        {/*            // position: "fixed",*/}
-                        {/*            right: 20,*/}
-                        {/*            background: "#F5F5F5",*/}
-                        {/*        }}*/}
-                        {/*    >*/}
-                        {/*        <Typography variant="h6" color="textSecondary"*/}
-                        {/*                    sx={{*/}
-                        {/*                        display: "flex",*/}
-                        {/*                        justifyContent: "center",*/}
-                        {/*                        alignItems: "center",*/}
-                        {/*                        width: "100%",*/}
-                        {/*                        borderRadius: 2,*/}
-                        {/*                        background: "#313d4f",*/}
-                        {/*                        height: "40px",*/}
-                        {/*                        color: "white",*/}
-                        {/*                    }}*/}
-                        {/*        >*/}
-                        {/*            High Priority*/}
-                        {/*        </Typography>*/}
-                        {/*        <Box sx={{ height: "100%", width: "100%", padding: 1 }}>*/}
-                        {/*            <Droppable droppableId={"taskList"}>*/}
-                        {/*                {(provided: any): any => (*/}
-                        {/*                    <List*/}
-                        {/*                        {...provided.droppableProps}*/}
-                        {/*                        ref={provided.innerRef}*/}
-                        {/*                        style={{listStyle: "none", padding: 0, width: "100%", height: "92%", overflow: "auto"}}*/}
-                        {/*                    >*/}
-                        {/*                        {tasks.map((task: any, index: any) => (*/}
-                        {/*                            <Draggable key={task.draggableId} draggableId={task.draggableId} index={index}>*/}
-                        {/*                                {(provided) => (*/}
-                        {/*                                    <ListItem*/}
-                        {/*                                        ref={provided.innerRef}*/}
-                        {/*                                        {...provided.draggableProps}*/}
-                        {/*                                        {...provided.dragHandleProps}*/}
-                        {/*                                        sx={{*/}
-                        {/*                                            padding: '10px 0',*/}
-                        {/*                                            margin: '4px 0',*/}
-                        {/*                                            backgroundColor: '#C4DAD2',*/}
-                        {/*                                            borderRadius: '4px',*/}
-                        {/*                                            ...provided.draggableProps.style,*/}
-                        {/*                                        }}*/}
-                        {/*                                    >*/}
-                        {/*                                        <IconButton sx={{ cursor: "grab" }}>*/}
-                        {/*                                            <MoreVertIcon />*/}
-                        {/*                                        </IconButton>*/}
-                        {/*                                        <Accordion sx={{*/}
-                        {/*                                            width: "90%",*/}
-                        {/*                                            background: "#f0f0f0",*/}
-                        {/*                                            mr: 1,*/}
-                        {/*                                        }}>*/}
-                        {/*                                            <AccordionSummary>*/}
-                        {/*                                                <Typography*/}
-                        {/*                                                    sx={{ color: "#333333" }}*/}
-                        {/*                                                >*/}
-                        {/*                                                    {task.name}*/}
-                        {/*                                                </Typography>*/}
-                        {/*                                            </AccordionSummary>*/}
-                        {/*                                            <AccordionDetails>*/}
-                        {/*                                                <Typography*/}
-                        {/*                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}*/}
-                        {/*                                                />*/}
-                        {/*                                            </AccordionDetails>*/}
-                        {/*                                        </Accordion>*/}
-                        {/*                                        <IconButton sx={{ m: 0, p: 1 }} onClick={() => handleOpenEdit(task)}>*/}
-                        {/*                                            <EditIcon />*/}
-                        {/*                                        </IconButton>*/}
-                        {/*                                        <IconButton onClick={() => handleDeleteTask(task.draggableId)}>*/}
-                        {/*                                            <DeleteIcon />*/}
-                        {/*                                        </IconButton>*/}
-                        {/*                                    </ListItem>*/}
-                        {/*                                )}*/}
-                        {/*                            </Draggable>*/}
-                        {/*                        ))}*/}
-                        {/*                        {provided.placeholder}*/}
-                        {/*                    </List>*/}
-                        {/*                )}*/}
-                        {/*            </Droppable>*/}
-                        {/*        </Box>*/}
-                        {/*    </Box>*/}
-                        {/*</Box>*/}
                     </Box>
                 </DragDropContext>
             </Box>

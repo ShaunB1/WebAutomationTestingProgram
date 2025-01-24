@@ -8,22 +8,22 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         Task<Page> CreatePage(Context context);
     }
 
-    public class ContextFactory : IContextFactory
+    public class PageFactory : IPageFactory
     {
-        private readonly IOptions<ContextSettings> _settings;
+        private readonly IOptions<PageSettings> _settings;
         private readonly ICustomLoggerProvider _provider;
 
-        public ContextFactory(IOptions<ContextSettings> options, ICustomLoggerProvider provider)
+        public PageFactory(IOptions<PageSettings> options, ICustomLoggerProvider provider)
         {
             _settings = options;
             _provider = provider;
         }
 
-        public async Task<Context> CreateContext(Browser browser)
+        public async Task<Page> CreatePage(Context context)
         {
-            Context context = new Context(browser, _settings, _provider);
-            await context.InitializeAsync();
-            return context;
+            Page page = new Page(context, _settings, _provider);
+            await page.InitializeAsync();
+            return page;
         }
     }
 }

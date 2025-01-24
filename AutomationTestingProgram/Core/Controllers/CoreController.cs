@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DocumentFormat.OpenXml.EMMA;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AutomationTestingProgram.Core;
@@ -39,6 +40,22 @@ public class CoreController : ControllerBase
             // If request fails
             _logger.LogError($"{request.GetType().Name} (ID: {request.ID}) failed.\nError: '{e.Message}'");
             return StatusCode(500, new { Error = e.Message, Request = request });
+        }
+    }
+
+    /// <summary>
+    /// Copies the given IFormFile to the request Folder.
+    /// </summary>
+    /// <param name="file">The provided file.</param>
+    /// <param name="folderPath">The path of the folder. </param>
+    /// <returns></returns>
+    protected async Task CopyFileToFolder(IFormFile file, string folderPath)
+    {
+        string filePath = Path.Combine(folderPath, file.FileName);
+
+        using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true))
+        {
+            await file.CopyToAsync(fileStream);
         }
     }
 

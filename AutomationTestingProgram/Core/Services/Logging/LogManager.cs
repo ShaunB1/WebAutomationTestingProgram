@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 using IWshRuntimeLibrary; // Had to reference "Windows Script Host Object Model" in the Project References
 
@@ -118,6 +120,7 @@ public static class LogManager
     /// </summary>
     /// <param name="requestFolderPath">The path of the request folder</param>
     /// <param name="contextFolderPath">The path of the context folder</param>
+    [SupportedOSPlatform("windows")]
     public static void MapRequestToContextFolders(string requestFolderPath, string contextFolderPath)
     {
         if (!Directory.Exists(requestFolderPath))
@@ -134,19 +137,42 @@ public static class LogManager
         string RequestShortcutPath = Path.Combine(requestFolderPath, "Context.lnk");
 
         // Create a WshShell instance to manage the shortcut
-        WshShell wshShell = new WshShell();
+        WshShell? wshShell = null;
+        IWshShortcut? ContextToRequestShortcut = null;
+        IWshShortcut? RequestToContextShortcut = null;
 
-        // Create first shortcut
-        IWshShortcut ContextToRequestShortcut = (IWshShortcut)wshShell.CreateShortcut(ContextShortcutPath);
-        ContextToRequestShortcut.Description = "Context To Request Shortcut";
-        ContextToRequestShortcut.TargetPath = requestFolderPath;
-        ContextToRequestShortcut.Save();
+        try
+        {
+            wshShell = new WshShell();
 
-        // Create second shortcut
-        IWshShortcut RequestToContextShortcut = (IWshShortcut)wshShell.CreateShortcut(RequestShortcutPath);
-        RequestToContextShortcut.Description = "Request to Context Shortcut";
-        RequestToContextShortcut.TargetPath = contextFolderPath;
-        RequestToContextShortcut.Save();
+            // Create first shortcut
+            ContextToRequestShortcut = (IWshShortcut)wshShell.CreateShortcut(ContextShortcutPath);
+            ContextToRequestShortcut.Description = "Context To Request Shortcut";
+            ContextToRequestShortcut.TargetPath = requestFolderPath;
+            ContextToRequestShortcut.Save();
+
+            // Create second shortcut
+            RequestToContextShortcut = (IWshShortcut)wshShell.CreateShortcut(RequestShortcutPath);
+            RequestToContextShortcut.Description = "Request to Context Shortcut";
+            RequestToContextShortcut.TargetPath = contextFolderPath;
+            RequestToContextShortcut.Save();
+        }
+        finally // Have to manually dispose of COM objects
+        {
+            if (wshShell != null)
+                Marshal.ReleaseComObject(wshShell);
+
+            if (ContextToRequestShortcut != null)
+            {
+                Marshal.ReleaseComObject(ContextToRequestShortcut);
+            }
+
+            if (RequestToContextShortcut != null)
+            {
+                Marshal.ReleaseComObject(RequestToContextShortcut);
+            }
+        }
+        
     }
 
     /// <summary>

@@ -115,6 +115,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                     browser = await _browserFactory.CreateBrowser(this, request.BrowserType, request.BrowserVersion);
                     _activeBrowsers.TryAdd((request.BrowserType, request.BrowserVersion), browser);
                     _logger.LogInformation($"New Browser initialized (ID: {browser.ID}, Type: {browser.Type}, Version: {browser.Version}).");
+                    browser.IncrementRequestCount(request);
                     request.LogInfo($"New Browser Created...");
                 }
             }
@@ -135,6 +136,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
             try
             {
+
                 await browser.ProcessRequest(request);
             }
             finally

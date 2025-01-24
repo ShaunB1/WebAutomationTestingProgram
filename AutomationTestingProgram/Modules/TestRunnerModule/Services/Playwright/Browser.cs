@@ -23,6 +23,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         public int ID { get; }
 
         /// <summary>
+        /// The filepath where the browser's folder is located, including logs and other related data
+        /// </summary>
+        public string FolderPath { get; }
+
+        /// <summary>
         /// The Type of Browser
         /// </summary>
         public string Type { get; }
@@ -47,11 +52,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// Factory used to create Context Instances
         /// </summary>
         private IContextFactory _contextFactory { get; }
-
-        /// <summary>
-        /// The filepath where the browser's folder is located, including logs and other related data
-        /// </summary>
-        private readonly string _folderPath;
 
         /// <summary>
         /// SemaphoreSlim limiting total # of active contexts
@@ -86,19 +86,19 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             ID = playwright.GetNextBrowserID();
             Type = type;
             Version = version;
-            
+            FolderPath = LogManager.CreateBrowserFolder(ID, Type, Version);
+
             _parent = playwright;
             _settings = options.Value;
             _contextFactory = contextFactory;            
-            _folderPath = LogManager.CreateBrowserFolder(ID, Type, Version);
             _contextLimit = new SemaphoreSlim(_settings.ContextLimit);
-            _logger = provider.CreateLogger<Browser>(_folderPath);
+            _logger = provider.CreateLogger<Browser>(FolderPath);
             _nextContextID = 0;
             _requestCount = 0;
         }
 
         /// <summary>
-        /// Initializes the browser by creating a new browser instance and setting up its context manager.
+        /// Initializes the browser by creating a new browser instance.
         /// This method must be called after the browser object has been created.
         /// </summary>
         /// <exception cref="LaunchException">Thrown if the browser cannot be initialized.</exception>
@@ -107,7 +107,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             try
             {
                 Instance = await CreateBrowserInstance(_parent.Instance, Type, Version);
-                // this.ContextManager = new ContextManager(this);
                 _logger.LogInformation($"Successfully initialized Browser (ID: {ID}, Type: {Type}, Version: {Version})");
             }
             catch (Exception e)
@@ -118,7 +117,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         }
 
         /// <summary>
-        /// Sends a request to the Browser Manager for processing. This will initiate the request, but does not wait for completion.
+        /// Sends a request to the Context refor processing.
         /// </summary>
         /// <param name="request">The request to process within the browser.</param>
         public async Task ProcessRequest(ProcessRequest request)
@@ -126,15 +125,14 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             request.LogInfo($"Browser (ID: {ID}, Type: {Type}, Version {Version}) received request.");
 
             request.SetStatus(State.Queued, $"Waiting for lock on Context");
-            await _contextLimit.WaitAsync();
+            await _contextLimit.WaitAsync(request.CancelToken);
             request.SetStatus(State.Processing, $"Lock aquired");
 
+            Context context;
             try
             {
 
-                Context context = await _contextFactory.CreateContext(this);
-                await context.ProcessRequest(request);
-                await context.CloseAsync();
+                context = await _contextFactory.CreateContext(this);
 
             }
             catch (LaunchException e)
@@ -142,8 +140,15 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 _logger.LogError($"{e.Message}\nError:{e.InnerException}");
                 throw;
             }
+
+            try
+            {
+                await context.ProcessRequest(request);
+
+            }
             finally
             {
+                await context.CloseAsync();
                 _contextLimit.Release();
             }
 

@@ -1,9 +1,13 @@
 ﻿using AutomationTestingProgram.Core;
+using AutomationTestingProgram.ModelsOLD;
 using DocumentFormat.OpenXml.Drawing;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
+using NPOI.POIFS.Properties;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
@@ -16,10 +20,16 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         
         /// <summary>
         /// A unique identifier for this Context object, specific to the parent Browser instance.  
-        /// Note: This ID is not a globally unique across all contexts, just those with the same parent. 
+        /// Note: This ID is not globally unique across all contexts, just those with the same parent. 
         /// </summary>
         public int ID { get; }
-        
+
+        /// <summary>
+        /// The filepath where the context's folder is located, including logs
+        /// and other related data.
+        /// </summary>
+        public string FolderPath { get; }
+
 
         /// <summary>
         /// The parent Browser instance that this Context object belongs to. 
@@ -31,100 +41,130 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         private ContextSettings _settings { get; }
 
-
-        public string FolderPath { get; }
-        public PageManager? PageManager { get; private set; }
-
-        private readonly ILogger<Context> Logger;
-        private int NextPageID = 0;
+        /// <summary>
+        /// Factory used to create Page Instances
+        /// </summary>
+        private IPageFactory _pageFactory { get; }
 
         /// <summary>
-        /// The Context object.
+        /// Int limiting total # of active pages. Used in conjunction with lock
+        /// </summary>
+        private int _pageLimit { get; set; }
+        private object _pageLimitLock = new object();
+        
+        /// <summary>
+        /// Keeps track of the next unique identifier for page instances created by this object.
+        /// </summary>
+        private int _nextPageID;
+
+        /// <summary>
+        /// The Logger object associated with this class.
+        /// </summary>
+        private readonly ICustomLogger _logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Context"/> class.
+        /// This constructor does not launch of initialize the context, it only sets up the basic properties.
+        /// Please call InitializeAsync() to finish set-up.
         /// </summary>
         /// <param name="browser">Browser (parent) instance </param>
-        public Context(Browser browser, IOptions<ContextSettings> options, ICustomLoggerProvider provider)
+        public Context(Browser browser, IOptions<ContextSettings> options, ICustomLoggerProvider provider, IPageFactory pageFactory)
         {
-            this.Parent = browser;
-            this.ID = browser.GetNextContextID();
-            this.CurrentUser = string.Empty;
-            this.FolderPath = LogManager.CreateContextFolder(browser.FolderPath, ID);
+            ID = browser.GetNextContextID();
+            FolderPath = LogManager.CreateContextFolder(browser.FolderPath, ID);
 
-            CustomLoggerProvider provider = new CustomLoggerProvider(this.FolderPath);
-            Logger = provider.CreateLogger<Context>()!;
+            _parent = browser;
+            _settings = options.Value;
+            _pageFactory = pageFactory;
+            _pageLimit = _settings.PageLimit;
+            _logger = provider.CreateLogger<Context>(FolderPath);
         }
 
         /// <summary>
-        /// Initializes the context object. MUST BE CALLED AFTER DEFINING THE OBJECT FROM THE CONSTRUCTOR.
+        /// Initializes the context by creating a new context instance.
+        /// This method must be called after the context object has been created.
         /// </summary>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="LaunchException">Thrown if the context cannot be initialized.</exception>
         public async Task InitializeAsync()
         {
             try
             {
-                this.Instance = await CreateContextInstanceAsync(this.Parent);
-                this.PageManager = new PageManager(this);
-                Logger.LogInformation($"Successfully initialized Context (ID: {this.ID})");
+                if (_parent.Instance == null)
+                    throw new Exception("Browser instance is null when trying to initialize Context");
+
+                Instance = await CreateContextInstanceAsync(_parent.Instance);
+                _logger.LogInformation($"Successfully initialized Context (ID: {this.ID})");
             }
             catch (Exception e)
             {
-                Logger.LogError($"Failed to initialize Context (ID: {this.ID}) because of\n{e}");
-                throw new Exception($"Failed to initialize Context (ID: {this.ID})", e);
+                _logger.LogError($"Failed to initialize Context (ID: {ID}) due to {e}");
+                throw new LaunchException($"Failed to initialize Context (ID: {ID}).", e);
             }
-        }
-
-        /// <summary>
-        /// Gets the id -> used by page objects created from this.PageManager
-        /// </summary>
-        /// <returns></returns>
-        public int GetNextPageID()
-        {
-            return Interlocked.Increment(ref NextPageID);
         }
 
         /// <summary>
         /// Creates and runs a page from this context object.
         /// </summary>
         /// <returns></returns>
-        public async Task ProcessRequest(Request request)
-        {           
-            request.SetPath(this.FolderPath);
+        public async Task ProcessRequest(ProcessRequest request)
+        {
+            request.LogInfo($"Context (ID: {ID}) received request.");
+
+            request.IsCancellationRequested();
+
+            request.LogInfo($"Linking Request and Context Folder");
             
-            List<FileBreakpoint> breakpoints = new List<FileBreakpoint>();
-            // Validation
             try
             {
-                if (PageManager == null)
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    throw new ArgumentNullException($"Page Manager for Context (ID: {this.ID}) inside of Browser (ID: {Parent.ID}, Type: {Parent.Type}, Version: {Parent.Version}) is null!" +
-                        $" Please make sure you call InitializeAsync() before use.");
+                    LogManager.MapRequestToContextFolders(request.FolderPath, FolderPath);
+                    request.LogInfo($"Link successfull created");
                 }
-
-                breakpoints = await ValidateFileAsync(request);
+                else
+                {
+                    request.LogInfo($"Link not created because server is not running on windows");
+                }
             }
             catch (Exception e)
             {
-                request.SetStatus(RequestState.Validating, "Request Failed validation", e);
-                await ContextManager.TerminateContextAsync(this, request);
-                return;
+                request.LogInfo($"Link failed creation due to {e}");
             }
 
-            // Processing
+            Page page;
+            try
+            {
+                request.LogInfo($"Starting Test Execution");
+                page = await _pageFactory.CreatePage(this);
+            }
+            catch (LaunchException e)
+            {
+                _logger.LogError($"{e.Message}\nError:{e.InnerException}");
+                throw;
+            }
             
             try
             {
-                request.SetStatus(RequestState.Processing, "Context Processing Request");
-                
+                await page.ProcessAsync(request.CancelToken);                
+                request.LogInfo($"Test Execution Complete");
             }
-            catch (Exception e)
+            finally
             {
-                Logger.LogError($"Context-Level Error encountered\n {e}");
-                request.SetStatus(RequestState.ProcessingFailure, "Context Processing Failure", e);
+                await page.CloseAllAsync();
             }
         }
 
         /// <summary>
-        /// Closes the context object. SHOULD ONLY BE CALLED WHEN TEST EXECUTION IS FINISHED (FAILURE, COMPLETE, ERROR)
+        /// Retrieves the next unique page ID for page instances.
+        /// </summary>
+        /// <returns>The next unique page ID</returns>
+        public int GetNextPageID()
+        {
+            return Interlocked.Increment(ref _nextPageID);
+        }
+
+        /// <summary>
+        /// Closes the context object. SHOULD ONLY BE CALLED WHEN TEST EXECUTION IS FINISHED (FAILURE, COMPLETE, CANCELLED)
         /// </summary>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
@@ -132,42 +172,31 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         {
             try
             {
-                if (Instance != null)
-                {
-                    await Instance.CloseAsync();
-                    Logger.LogInformation($"Context (ID: {this.ID}) closed successfully.");
-                }
+                _logger.LogInformation($"Closing Context...");
+                await Instance!.CloseAsync();
+                _logger.LogInformation($"Context (ID: {this.ID}) closed successfully.");
 
-                if (Logger is CustomLogger<Context> customLogger)
-                {
-                    customLogger.Flush();
-                }
             }
             catch (Exception e)
             {
-                Logger.LogError($"Failed to close Context (ID: {this.ID}) due to {e}");
-                if (Logger is CustomLogger<Context> customLogger)
-                {
-                    customLogger.Flush();
-                }
-                throw new Exception($"Failed to close Context (ID: {this.ID})", e);
+                _logger.LogError($"Failed to close Context (ID: {ID}) due to {e}");
+                _logger.LogInformation($"Disposing...");
+                await Instance!.DisposeAsync();
+                _logger.LogInformation($"Disposing Complete");
+            }
+            finally
+            {
+                _logger.Flush();
             }
         }
 
-        private async Task<IBrowserContext> CreateContextInstanceAsync(Browser browser)
+        private async Task<IBrowserContext> CreateContextInstanceAsync(IBrowser browser)
         {   
-            if (browser?.Instance == null) 
-            {
-                throw new ArgumentNullException($"Context (ID: {this.ID}) cannot be created because" +
-                    $" Browser (ID: {Parent.ID}, Type: {Parent.Type}, Version: {Parent.Version})" +
-                    $" instance is null!");
-            }
-
             var options = new BrowserNewContextOptions
             {
                 
             };
-            return await browser.Instance.NewContextAsync(options);
+            return await browser.NewContextAsync(options);
         }
 
         

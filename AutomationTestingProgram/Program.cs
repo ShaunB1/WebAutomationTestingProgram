@@ -12,9 +12,11 @@ using AutomationTestingProgram.Core;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using System.Runtime;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
+// GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
 DotNetEnv.Env.Load();
@@ -159,6 +161,7 @@ void RegisterServices(ContainerBuilder builder)
     builder.RegisterType<PlaywrightObject>().SingleInstance();
     builder.RegisterType<BrowserFactory>().As<IBrowserFactory>().SingleInstance();
     builder.RegisterType<ContextFactory>().As<IContextFactory>().SingleInstance();
+    builder.RegisterType<PageFactory>().As<IPageFactory>().SingleInstance();
 }
 
 void ConfigureApplicationLifetime(WebApplication app)

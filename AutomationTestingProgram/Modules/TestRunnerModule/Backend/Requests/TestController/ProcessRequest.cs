@@ -14,11 +14,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         protected override ICustomLogger Logger { get; }
 
         /// <summary>
-        /// The file provided with the request
-        /// </summary>
-        public IFormFile File { get; }
-
-        /// <summary>
         /// The browser TYPE used to process the request
         /// </summary>
         public string BrowserType { get; }
@@ -33,6 +28,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public string Environment { get; }
 
+        private PlaywrightObject playwright;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessRequest"/> class.
@@ -41,15 +38,16 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <param name="File">The file to be processed in the request.</param>
         /// <param name="Type">The type of the browser (e.g., "Chrome", "Firefox") that will handle the request.</param>
         /// <param name="Version">The version of the browser (e.g., "91", "93") that will be used to process the request.</param>
-        public ProcessRequest(ICustomLoggerProvider provider, ClaimsPrincipal User, IFormFile File, string Type, string Version, string Environment)
+        public ProcessRequest(ICustomLoggerProvider provider, PlaywrightObject playwright, ClaimsPrincipal User, string Type, string Version, string Environment)
             : base(User, isLoggingEnabled:true)
         {            
             this.Logger = provider.CreateLogger<ProcessRequest>(FolderPath);
             
-            this.File = File;
             this.BrowserType = Type;
             this.BrowserVersion = Version;
             this.Environment = Environment;
+
+            this.playwright = playwright;
         }
 
         /// <summary>
@@ -82,11 +80,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
             IsCancellationRequested();
 
-            for (int i = 0; i <= 5; i++)
-            {
-                await Task.Delay(20000, CancelToken);
-                LogInfo($"{i}");
-            }
+            await playwright.ProcessRequestAsync( this );
 
             this.SetStatus(State.Completed, $"Process Request (ID: {ID}, BrowserType: {BrowserType}," +
                 $" BrowserVersion: {BrowserVersion}, Environment: {Environment}) completed successfully");

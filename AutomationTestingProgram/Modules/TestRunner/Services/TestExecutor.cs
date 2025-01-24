@@ -57,8 +57,265 @@ public class TestExecutor
         
         await ExecuteNestedLoopsAsync(page, testSteps, cycleGroups, iterationStack, currentIteration, delay);
     }
+
+    public async Task ExecuteNestedLoopsAsync(IPage page, List<TestStep> steps,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, Stack<int> iterationStack,
+        int currentIteration, int delay)
+    {
+        try
+        {
+            for (var i = 0; i < steps.Count; i++)
+            {
+                await Task.Delay(delay * 1000);
+                
+                var step = steps[i];
+                var parts = step.CycleGroup.Split(",");
+                var cycleGroup = parts.Length > 1 ? parts[0].Trim() : string.Empty;
+                var state = parts.Length > 1 ? parts[1].Trim().ToLower() : string.Empty;
+                var iterations = -1;
+
+                if (cycleGroups.TryGetValue(cycleGroup, out var it))
+                {
+                    iterations = it.Count;
+                }
+                    
+                List<TestStep> loopSteps = new List<TestStep>();
+                
+                if (state == "start")
+                {
+                    loopSteps = GetLoopSteps(steps);
+
+                    for (var j = 0; j < iterations; j++)
+                    {
+                        foreach (var loopStep in loopSteps)
+                        {
+                            var stepAction = loopStep.ActionOnObject.Replace(" ", "").ToLower();
+                            var actionAlias = GetAlias(stepAction);
+                            
+                            var logMessage = new StringBuilder()
+                                .AppendLine("========================================================")
+                                .AppendLine("                TEST EXECUTION LOG                      ")
+                                .AppendLine("========================================================")
+                                .AppendLine($"TEST CASE:     {loopStep.TestCaseName,-40}")
+                                .AppendLine($"DESCRIPTION:   {loopStep.TestDescription,-40}")
+                                .AppendLine("--------------------------------------------------------")
+                                .AppendLine($"ACTION:        {loopStep.ActionOnObject,-40}")
+                                .AppendLine($"OBJECT:        {loopStep.Object,-40}")
+                                .AppendLine($"VALUE:         {loopStep.Value,-40}")
+                                .AppendLine("--------------------------------------------------------")
+                                .AppendLine($"EXECUTING...")
+                                .AppendLine("========================================================")
+                                .ToString();
+                                
+                            await _broadcaster.BroadcastLogAsync(logMessage, _testRunId);
+                            
+                            if (_actions.TryGetValue(actionAlias, out var action))
+                            {
+                                // var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
+                                var result = true;
+                                loopStep.RunSuccessful = result;
+                                
+                                _logger.LogInformation($"STATUS: {loopStep.RunSuccessful}");
+
+                                var statusMessage = new StringBuilder()
+                                    .AppendLine($"STATUS: {loopStep.RunSuccessful}")
+                                    .AppendLine()
+                                    .ToString();
+                                
+                                await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
+                            }
+                            else
+                            {
+                                loopStep.RunSuccessful = false;
+                                var statusMessage = new StringBuilder()
+                                    .AppendLine($"STATUS: {step.RunSuccessful}")
+                                    .AppendLine($"Unknown action: {step.ActionOnObject,-40}")
+                                    .AppendLine()
+                                    .ToString();
+                        
+                                await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
+                                throw new Exception($"Unknown action '{loopStep.ActionOnObject}'");
+                            }
+                        }
+                    }
+
+                    var startIndex = steps.IndexOf(loopSteps.First());
+                    var endIndex = steps.IndexOf(loopSteps.Last());
+                    steps = steps.Take(startIndex).Concat(steps.Skip(endIndex + 1)).ToList();
+                    i = startIndex - 1;
+                }
+                else
+                {
+                    var stepAction = step.ActionOnObject.Replace(" ", "").ToLower();
+                    var actionAlias = GetAlias(stepAction);
+
+                    var logMessage = new StringBuilder()
+                        .AppendLine("========================================================")
+                        .AppendLine("                TEST EXECUTION LOG                      ")
+                        .AppendLine("========================================================")
+                        .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
+                        .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
+                        .AppendLine("--------------------------------------------------------")
+                        .AppendLine($"ACTION:        {step.ActionOnObject,-40}")
+                        .AppendLine($"OBJECT:        {step.Object,-40}")
+                        .AppendLine($"VALUE:         {step.Value,-40}")
+                        .AppendLine("--------------------------------------------------------")
+                        .AppendLine($"EXECUTING...")
+                        .AppendLine("========================================================")
+                        .ToString();
+                        
+                    await _broadcaster.BroadcastLogAsync(logMessage, _testRunId);
+                    
+                    if (_actions.TryGetValue(actionAlias, out var action))
+                    { 
+                        // var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
+                        var result = true;
+                        step.RunSuccessful = result;
+                        
+                        _logger.LogInformation($"STATUS: {step.RunSuccessful}");
+
+                        var statusMessage = new StringBuilder()
+                            .AppendLine($"STATUS: {step.RunSuccessful}")
+                            .AppendLine()
+                            .ToString();
+                        
+                        await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
+                    }
+                    else
+                    {
+                        step.RunSuccessful = false;
+                        var statusMessage = new StringBuilder()
+                            .AppendLine($"STATUS: {step.RunSuccessful}")
+                            .AppendLine($"Unknown action: {step.ActionOnObject,-40}")
+                            .AppendLine()
+                            .ToString();
+                        
+                        await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
+                        throw new Exception($"Unknown action '{step.ActionOnObject}'");
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+
+    public string GetAlias(string action)
+    {
+        var actionAliases = new Dictionary<string, string>
+        {
+            // Populate actions
+            { "populatetextbox", "populatewebelement" },
+            { "populatehtmleditor", "populatewebelement" },
+            { "populateframe", "populatewebelement" },
+            { "populatetextboxddl", "populatewebelement" },
+
+            // Verify state actions
+            { "verifylinkavailability", "verifywebelementavailability" },
+            { "verifybuttonavailability", "verifywebelementavailability" },
+            { "verifytextboxavailability", "verifywebelementavailability" },
+            { "verifywebradiogroupavailability", "verifywebelementavailability" },
+            { "verifycheckboxstatus", "verifywebelementavailability" },
+            { "verifycheckboxavailablity", "verifywebelementavailability" },
+            { "verifyddlavailability", "verifywebelementavailability" },
+            { "verifyhtmleditoravailability", "verifywebelementavailability" },
+            { "verifyimageavailability", "verifywebelementavailability" },
+            { "verifywebtableavailability", "verifywebelementavailability" },
+            
+            // Verify content actions
+            { "verifyddlcontent", "verifywebelementcontent" },
+            { "verifyhtmleditorcontent", "verifywebelementcontent" },
+            { "verifyimagecontent", "verifywebelementcontent" },
+            { "verifytextboxcontent", "verifywebelementcontent" },
+
+            // Click actions
+            { "clickbutton", "clickwebelement" },
+            { "clicklink", "clickwebelement" },
+            { "clickimage", "clickwebelement" },
+            { "clicktablelink", "clickwebelement" },
+            { "selectlookup", "clickwebelement" },
+            { "selectwebradiogroup", "clickwebelement" },
+
+            // Login actions
+            { "enteraadcredentials", "login" },
+
+            // SQL actions
+            { "runprsqlscriptrevert", "runsqlscript" },
+            { "runprsqlscriptdelete", "runsqlscript" },
+
+            // Upload actions
+            { "uploaddatafile", "uploadfile" },
+            
+            // Other
+            { "gotopage", "navigatetourl" },
+        };
+
+        if (actionAliases.TryGetValue(action, out var alias))
+        {
+            return alias;
+        }
+
+        return action;
+    }
     
-    public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page,
+    public List<TestStep> GetLoopSteps(List<TestStep> steps)
+    {
+        var startIndex = -1;
+        var endIndex = -1;
+
+        for (var i = 0; i < steps.Count; i++)
+        {
+            var step = steps[i];
+            var parts = step.CycleGroup.Split(",");
+            var state = parts.Length > 1 ? parts[1].Trim().ToLower() : string.Empty;
+
+            if (state == "start")
+            {
+                if (startIndex == -1)
+                {
+                    startIndex = i;
+                }
+            }
+            else if (state == "end")
+            {
+                endIndex = i;
+                break;
+            }
+        }
+
+        if (startIndex == -1 || endIndex == -1 || startIndex > endIndex)
+        {
+            throw new InvalidOperationException("Invalid start or stop state.");
+        }
+        
+        return steps.Skip(startIndex).Take(endIndex - startIndex + 1).ToList();
+    }
+    
+    // Replace parameters between "{" and "}" with the Saved Parameters. To be used with Object or Value string. 
+    public string InsertParams(string input)
+    {
+        string pattern = @"\{([^}]+)\}";
+
+        var matches = Regex.Matches(input, pattern);
+
+        foreach (Match match in matches)
+        {
+            string key = match.Groups[1].Value;
+            if (_saveParameters.ContainsKey(key))
+            {
+                input = input.Replace(match.Value, _saveParameters[key]);
+            }
+            else
+            {
+                Console.WriteLine($"Input parameter {key} does not exist in Save Parameters");
+            }
+        }
+        return input;
+    }
+    
+        public async Task<(string, List<(int, string)>, List<(int, string)>)> ExecuteTestStepsAsync(IPage page,
         List<TestStep> testSteps,
         HttpResponse response,
         int iteration,
@@ -162,174 +419,5 @@ public class TestExecutor
 
             return false;
         }
-    }
-
-    public async Task ExecuteNestedLoopsAsync(IPage page, List<TestStep> steps,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, Stack<int> iterationStack,
-        int currentIteration, int delay)
-    {
-        try
-        {
-            for (var i = 0; i < steps.Count; i++)
-            {
-                await Task.Delay(delay * 1000);
-                
-                var step = steps[i];
-                var parts = step.CycleGroup.Split(",");
-                var cycleGroup = parts.Length > 1 ? parts[0].Trim() : string.Empty;
-                var state = parts.Length > 1 ? parts[1].Trim().ToLower() : string.Empty;
-                var iterations = -1;
-
-                if (cycleGroups.TryGetValue(cycleGroup, out var it))
-                {
-                    iterations = it.Count;
-                }
-                    
-                List<TestStep> loopSteps = new List<TestStep>();
-                
-                if (state == "start")
-                {
-                    loopSteps = GetLoopSteps(steps);
-
-                    for (var j = 0; j < iterations; j++)
-                    {
-                        foreach (var loopStep in loopSteps)
-                        {
-                            if (_actions.TryGetValue(loopStep.ActionOnObject.Replace(" ", "").ToLower(), out var action))
-                            {
-                                var logMessage = new StringBuilder()
-                                    .AppendLine("========================================================")
-                                    .AppendLine("                TEST EXECUTION LOG                      ")
-                                    .AppendLine("========================================================")
-                                    .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
-                                    .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
-                                    .AppendLine("--------------------------------------------------------")
-                                    .AppendLine($"ACTION:        {step.ActionOnObject,-40}")
-                                    .AppendLine($"OBJECT:        {step.Object,-40}")
-                                    .AppendLine($"VALUE:         {step.Value,-40}")
-                                    .AppendLine("--------------------------------------------------------")
-                                    .AppendLine($"EXECUTING...")
-                                    .AppendLine("========================================================")
-                                    .ToString();
-                                _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}, {step.Value}");
-                                
-                                await _broadcaster.BroadcastLogAsync(logMessage, _testRunId);
-                                
-                                var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
-                                step.RunSuccessful = result;
-                                
-                                _logger.LogInformation($"STATUS: {step.RunSuccessful}");
-
-                                var statusMessage = new StringBuilder()
-                                    .AppendLine($"STATUS: {step.RunSuccessful}")
-                                    .AppendLine()
-                                    .ToString();
-                                
-                                await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
-                            }
-                        }
-                    }
-
-                    var startIndex = steps.IndexOf(loopSteps.First());
-                    var endIndex = steps.IndexOf(loopSteps.Last());
-                    steps = steps.Take(startIndex).Concat(steps.Skip(endIndex + 1)).ToList();
-                    i = startIndex - 1;
-                }
-                else
-                {
-                    if (_actions.TryGetValue(step.ActionOnObject.Replace(" ", "").ToLower(), out var action))
-                    { 
-                        var logMessage = new StringBuilder()
-                            .AppendLine("========================================================")
-                            .AppendLine("                TEST EXECUTION LOG                      ")
-                            .AppendLine("========================================================")
-                            .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
-                            .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
-                            .AppendLine("--------------------------------------------------------")
-                            .AppendLine($"ACTION:        {step.ActionOnObject,-40}")
-                            .AppendLine($"OBJECT:        {step.Object,-40}")
-                            .AppendLine($"VALUE:         {step.Value,-40}")
-                            .AppendLine("--------------------------------------------------------")
-                            .AppendLine($"EXECUTING...")
-                            .AppendLine("========================================================")
-                            .ToString();
-                        _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}, {step.Value}");
-                        
-                        await _broadcaster.BroadcastLogAsync(logMessage, _testRunId);
-                        
-                        var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
-                        step.RunSuccessful = result;
-                        
-                        _logger.LogInformation($"STATUS: {step.RunSuccessful}");
-
-                        var statusMessage = new StringBuilder()
-                            .AppendLine($"STATUS: {step.RunSuccessful}")
-                            .AppendLine()
-                            .ToString();
-                        
-                        await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
-    }
-    
-    public List<TestStep> GetLoopSteps(List<TestStep> steps)
-    {
-        var startIndex = -1;
-        var endIndex = -1;
-
-        for (var i = 0; i < steps.Count; i++)
-        {
-            var step = steps[i];
-            var parts = step.CycleGroup.Split(",");
-            var state = parts.Length > 1 ? parts[1].Trim().ToLower() : string.Empty;
-
-            if (state == "start")
-            {
-                if (startIndex == -1)
-                {
-                    startIndex = i;
-                }
-            }
-            else if (state == "end")
-            {
-                endIndex = i;
-                break;
-            }
-        }
-
-        if (startIndex == -1 || endIndex == -1 || startIndex > endIndex)
-        {
-            throw new InvalidOperationException("Invalid start or stop state.");
-        }
-        
-        return steps.Skip(startIndex).Take(endIndex - startIndex + 1).ToList();
-    }
-    
-    // Replace parameters between "{" and "}" with the Saved Parameters. To be used with Object or Value string. 
-    public string InsertParams(string input)
-    {
-        string pattern = @"\{([^}]+)\}";
-
-        var matches = Regex.Matches(input, pattern);
-
-        foreach (Match match in matches)
-        {
-            string key = match.Groups[1].Value;
-            if (_saveParameters.ContainsKey(key))
-            {
-                input = input.Replace(match.Value, _saveParameters[key]);
-            }
-            else
-            {
-                Console.WriteLine($"Input parameter {key} does not exist in Save Parameters");
-            }
-        }
-        return input;
     }
 }

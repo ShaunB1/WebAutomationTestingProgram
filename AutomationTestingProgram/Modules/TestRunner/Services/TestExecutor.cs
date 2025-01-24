@@ -5,6 +5,7 @@ using Microsoft.Playwright;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using Microsoft.AspNetCore.SignalR;
 
 public class TestExecutor
 {
@@ -15,14 +16,14 @@ public class TestExecutor
     private readonly bool _recordTrace = false;
     private readonly bool _recordVideo = false;
     private readonly ILogger<TestController> _logger;
-    private readonly WebSocketLogBroadcaster _broadcaster;
     private Dictionary<string, string> _envVars = new Dictionary<string, string>();
     private Dictionary<string, string> _saveParameters = new Dictionary<string, string>();
+    private readonly IHubContext<TestHub> _hubContext;
 
-    public TestExecutor(ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster, string testRunId)
+    public TestExecutor(ILogger<TestController> logger, IHubContext<TestHub> hubContext, string testRunId)
     {
         _logger = logger;
-        _broadcaster = broadcaster;
+        _hubContext = hubContext;
         _testRunId = testRunId;
         
         var jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StaticFiles\\actions.json");

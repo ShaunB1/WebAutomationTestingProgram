@@ -32,6 +32,7 @@ builder.Services.Configure<FormOptions>(options =>
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();
 builder.Services.AddScoped<AzureKeyVaultService>();
 builder.Services.AddScoped<PasswordResetService>();
+builder.Services.AddScoped<TestHub>();
 
 builder.Services.AddControllers();
 
@@ -101,41 +102,6 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/static"
 });
 
-app.UseWebSockets();
-
-app.Use(async (context, next) =>
-{
-    if (context.WebSockets.IsWebSocketRequest)
-    {
-        var path = context.Request.Path;
-
-        if (path == "/ws/logs")
-        {
-            var testRunId = context.Request.Query["testRunId"].ToString();
-
-            if (string.IsNullOrEmpty(testRunId))
-            {
-                context.Response.StatusCode = 400;
-                await context.Response.WriteAsync("Invalid test run ID.");
-                return;
-            }
-            
-            var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-            
-            await HandleLogsCommunication(webSocket, context, testRunId);
-        }
-        else
-        {
-            context.Response.StatusCode = 400;
-            await context.Response.WriteAsync("Endpoint not found.");
-        }
-    }
-    else
-    {
-        await next();
-    }
-});
-
 app.UseRouting(); // adds routing capabilities
 
 app.UseAuthentication();
@@ -147,40 +113,3 @@ app.MapHub<TestHub>("/testHub");
 app.MapFallbackToFile("index.html"); // fallback to index.html for SPA routes
 
 app.Run();
-
-async Task HandleLogsCommunication(WebSocket webSocket, HttpContext context, string testRunId)
-{
-    var broadcaster = context.RequestServices.GetRequiredService<WebSocketLogBroadcaster>();
-    var clientId = broadcaster.AddClient(webSocket, testRunId);
-    var clientIdMessage = Encoding.UTF8.GetBytes($"ClientId: {clientId}");
-
-    await webSocket.SendAsync(new ArraySegment<byte>(clientIdMessage), WebSocketMessageType.Text, true, CancellationToken.None);
-    
-    try
-    {
-        var buffer = new byte[1024 * 4];
-
-        while (webSocket.State == WebSocketState.Open)
-        {
-            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-
-            if (result.MessageType == WebSocketMessageType.Close)
-            {
-                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by client.", CancellationToken.None);
-                broadcaster.RemoveClient(clientId);
-                Console.WriteLine($"Client {clientId} disconnected.");
-            }
-            else
-            {
-                var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                Console.WriteLine($"Received from logs client: {message}");
-            }
-        }
-    }
-    catch (Exception exception)
-    {
-        Console.WriteLine(exception);
-        broadcaster.RemoveClient(clientId);
-        throw;
-    }
-}

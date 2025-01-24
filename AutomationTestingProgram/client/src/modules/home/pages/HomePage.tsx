@@ -1,11 +1,10 @@
-import React, {useEffect, useMemo, useRef, useState} from "react";
-import SetArguments from "../components/SetArguments/SetArguments.tsx";
-import DataTable from "../components/DataTable/DataTable.tsx";
-import {Autocomplete, Box, Button, List, ListItem, Paper, Stack, TextField, Typography} from "@mui/material";
-import {AuthenticatedTemplate, UnauthenticatedTemplate, useMsal} from "@azure/msal-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Autocomplete, Box, Button, List, ListItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
 import envData from "@assets/environment_list.json";
-import {getToken} from "@auth/authConfig.ts";
-import * as test from "node:test";
+import { getToken } from "@auth/authConfig.ts";
+import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
+
 interface TableData {
     name: string;
 }
@@ -24,14 +23,11 @@ const Home: React.FC = () => {
     const [envInputValue, setEnvInputValue] = useState('');
     const [browser, setBrowser] = useState<string | null>(null);
     const [browserInputValue, setBrowserInputValue] = useState('');
+    const [connection, setConnection] = useState<HubConnection | null>(null);
     const [delay, setDelay] = useState(0);
 
     const { instance, accounts } = useMsal();
     const logContainerRef = useRef<HTMLDivElement>(null);
-    // const host = process.env.NODE_ENV === "production" ? process.env.VITE_HOST : process.env.LOCAL_HOST;
-
-    const host = window.location.protocol + "//" + window.location.host;
-    console.log("WS HOST: ", host);
 
     const envOptions: string[] = useMemo<string[]>(() => {
         return envData.map((env: any) => {
@@ -41,13 +37,53 @@ const Home: React.FC = () => {
     const browserOptions = ["Chrome", "Edge", "Firefox"];
 
     useEffect(() => {
+        const setupConnection = async () => {
+            await instance.initialize();
+
+            const token = await getToken(instance, accounts);
+
+            const signalRConnection = new HubConnectionBuilder()
+                .withUrl("/testHub", {
+                    accessTokenFactory: () => token,
+                })
+                .withAutomaticReconnect()
+                .build();
+
+            try {
+                await signalRConnection.start();
+
+                signalRConnection.on("OnConnected", (message) => {
+                    console.log(message);
+                });
+
+                signalRConnection.on("OnDisconnected", (message) => {
+                    console.log(message);
+                });
+
+                signalRConnection.on("BroadcastLog", (testRunId, message) => {
+                    console.log(testRunId, message);
+                    setTestRuns(prevTestRuns =>
+                        prevTestRuns.map(testRun =>
+                            testRun.id === testRunId
+                                ? { ...testRun, logs: [...testRun.logs, message] }
+                                : testRun
+                        )
+                    );
+                });
+            } catch (err) {
+                console.log(err);
+            }
+            setConnection(signalRConnection);
+        };
+        setupConnection();
+    }, []);
+
+    useEffect(() => {
         const browserChoice = localStorage.getItem('browser');
         if (browserChoice != null) {
             setBrowser(browserChoice);
         }
-    }, []);
 
-    useEffect(() => {
         const envChoice = localStorage.getItem('environment');
         if (envChoice != null) {
             setEnv(envChoice);
@@ -69,7 +105,11 @@ const Home: React.FC = () => {
         }
 
         const testRunId = crypto.randomUUID();
-        const socket = new WebSocket(`/ws/logs?testRunId=${testRunId}`);
+        try {
+            await connection?.invoke('AddClient', testRunId);
+        } catch (err) {
+            console.log(err);
+        }
 
         const testRun: TestRun = {
             id: testRunId,
@@ -77,38 +117,6 @@ const Home: React.FC = () => {
         }
 
         setTestRuns(prevTestRuns => [...prevTestRuns, testRun]);
-
-        socket.onopen = (event) => {
-            console.log(`WebSocket ${testRunId} connected.`)
-        }
-
-        socket.onmessage = (event) => {
-            const message = event.data as string;
-            if (message.startsWith("ClientId")) {
-                // const clientId = message.split(":")[1];
-                // testRun.id = clientId;
-            } else {
-                const data = JSON.parse(event.data);
-                const { testRunId, logMessage } = data;
-                console.log(testRunId, logMessage);
-                console.log(testRun.id === testRunId);
-                setTestRuns(prevTestRuns =>
-                    prevTestRuns.map(testRun =>
-                        testRun.id === testRunId
-                            ? { ...testRun, logs: [...testRun.logs, logMessage] }
-                            : testRun
-                    )
-                );
-            }
-        }
-
-        socket.onclose = () => {
-            console.log(`WebSocket ${testRun.id} closed `);
-        }
-
-        socket.onerror = (error) => {
-            console.error("WebSocket error:", error);
-        }
 
         const formData = new FormData();
         formData.append("file", file);
@@ -133,12 +141,16 @@ const Home: React.FC = () => {
                 alert("File uploaded successfully!");
             } else {
                 alert("Failed to upload file.");
-                socket.close();
             }
         } catch (e) {
             console.error("Error uploading file: ", e);
             alert("An error occurred while uploading the file.");
-            socket.close();
+        }
+
+        try {
+            await connection?.invoke('RemoveClient', testRunId);
+        } catch (err) {
+            console.log(err);
         }
     }
 
@@ -160,38 +172,6 @@ const Home: React.FC = () => {
         }
     }
 
-    // useEffect(() => {
-    //     const socket = new WebSocket(`wss://${host}/ws/logs`);
-    //     console.log(`WS Host: ${host}`);
-    //
-    //     socket.onopen = (event) => {
-    //         console.log("Connected to WebSocket server.");
-    //     }
-    //
-    //     socket.onmessage = (event) => {
-    //         const message = event.data;
-    //
-    //         if (message.startsWith("ClientId")) {
-    //             const clientId = message.split(":")[1];
-    //             console.log("Received ClientId: ", clientId);
-    //         } else {
-    //             setLogs((prevLogs) => [...prevLogs, event.data as string]);
-    //         }
-    //     }
-    //
-    //     socket.onerror = (error) => {
-    //         console.error("WebSocket error:", error);
-    //     }
-    //
-    //     socket.onclose = (event) => {
-    //         console.log("Disconnected from WebSocket server");
-    //     }
-    //
-    //     return () => {
-    //         socket.close();
-    //     }
-    // }, [])
-
     return (
         <>
             <AuthenticatedTemplate>
@@ -212,12 +192,12 @@ const Home: React.FC = () => {
                                     />
                                 </Button>
                                 <Typography variant={"body2"} color={"textSecondary"}
-                                            sx={{
-                                                maxWidth: '125px',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
+                                    sx={{
+                                        maxWidth: '125px',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                    }}
                                 >
                                     {file ? file.name : "No file chosen"}
                                 </Typography>
@@ -279,12 +259,12 @@ const Home: React.FC = () => {
                         }}
                     >
                         {testRuns.map((testRun, index) => (
-                            <Box key={index} 
-                                 sx={{
-                                     width: "45%",
-                                     display: "flex",
-                                     flexWrap: "wrap",
-                                     justifyContent: "center",
+                            <Box key={index}
+                                sx={{
+                                    width: "45%",
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    justifyContent: "center",
                                 }}
                             >
                                 <Paper
@@ -310,7 +290,7 @@ const Home: React.FC = () => {
                                         }}
                                     >
                                         <Typography variant={"h6"} color={"white"}>
-                                            Test Run {index+1}
+                                            Test Run {index + 1}
                                         </Typography>
                                     </Box>
                                     <List>
@@ -355,7 +335,7 @@ const Home: React.FC = () => {
                 {/*        Add Table*/}
                 {/*    </Button>*/}
                 {/*</Box>*/}
-                
+
                 {/*{tables.map((table, index) => (*/}
                 {/*    <div key={index} style={{ marginBottom: "40px" }}>*/}
                 {/*        <DataTable testCaseName={table.name} />*/}

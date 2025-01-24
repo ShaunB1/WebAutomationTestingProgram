@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
           target: `http://${host}`,
           changeOrigin: true,
         },
-        "/ws": {
+        "/testHub": {
           target: `http://${host}`,
           changeOrigin: true,
           ws: true

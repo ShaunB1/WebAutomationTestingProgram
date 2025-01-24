@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using AutomationTestingProgram.Core;
-using AutomationTestingProgram.ModelsOLD;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AutomationTestingProgram.Controllers; // Dont change namespace

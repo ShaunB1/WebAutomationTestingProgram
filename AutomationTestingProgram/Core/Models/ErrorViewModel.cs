@@ -1,4 +1,4 @@
-namespace AutomationTestingProgram.ModelsOLD;
+namespace AutomationTestingProgram.Core;
 
 public class ErrorViewModel
 {

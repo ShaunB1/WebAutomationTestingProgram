@@ -2,7 +2,7 @@
 using System.Net.WebSockets;
 using System.Text;
 
-namespace AutomationTestingProgram.Services;
+namespace AutomationTestingProgram.Core;
 
 public class WebSocketLogBroadcaster : TextWriter
 {

@@ -15,19 +15,21 @@
     "@azure/msal-react": "^2.2.0",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
-    "@mui/icons-material": "^6.3.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@mui/icons-material": "^6.3.0",
     "@mui/material": "^6.1.7",
     "@types/papaparse": "^5.3.15",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-pivottable": "^0.11.6",
     "ag-grid-react": "^32.3.2",
+    "dompurify": "^3.2.3",
     "papaparse": "^5.4.1",
     "react": "^18.3.1",
     "react-beautiful-dnd": "^13.1.1",
     "react-data-grid": "^7.0.0-beta.47",
     "react-dom": "^18.3.1",
     "react-pivottable": "^0.11.0",
+    "react-quill": "^2.0.0",
     "react-router-dom": "^6.28.0",
     "react-table": "^7.8.0",
     "xlsx": "^0.18.5"
@@ -35,6 +37,7 @@
   "devDependencies": {
     "@eslint/js": "^9.11.1",
     "@swc/core": "^1.7.26",
+    "@types/dompurify": "^3.2.0",
     "@types/react": "^18.3.10",
     "@types/react-data-grid": "^4.0.12",
     "@types/react-dom": "^18.3.0",
@@ -49,6 +52,6 @@
     "globals": "^15.9.0",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.7.0",
-    "vite": "^5.4.8"
+    "vite": "^5.4.12"
   }
 }

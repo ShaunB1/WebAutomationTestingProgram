@@ -26,9 +26,10 @@ router.get("/", (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 }));
 router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, task, start_date, end_date } = req.body;
+    const { name, task, description, start_date, end_date, priority } = req.body;
+    console.log(req.body);
     try {
-        const result = yield pool_1.default.query("INSERT INTO completed_tasks (worker, task, start_date, end_date) VALUES ($1, $2, $3, $4) RETURNING *", [name, task, start_date, end_date]);
+        const result = yield pool_1.default.query("INSERT INTO completed_tasks (worker, task, start_date, end_date, description, priority) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *", [name, task, start_date, end_date, description, priority]);
         res.json(result.rows);
     }
     catch (e) {

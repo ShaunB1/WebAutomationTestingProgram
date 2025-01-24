@@ -25,9 +25,10 @@ router.get("/", (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 }));
 router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, draggable_id, droppable_id, start_date, description } = req.body;
+    const { name, draggable_id, droppable_id, start_date, description, priority } = req.body;
+    console.log(req.body);
     try {
-        const result = yield pool_1.default.query("INSERT INTO tasks (name, draggable_id, droppable_id, start_date, description) VALUES ($1, $2, $3, $4, $5) RETURNING *", [name, draggable_id, droppable_id, start_date, description]);
+        const result = yield pool_1.default.query("INSERT INTO tasks (name, draggable_id, droppable_id, start_date, description, priority) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *", [name, draggable_id, droppable_id, start_date, description, priority]);
         res.status(200).json(result.rows[0]);
     }
     catch (e) {
@@ -53,6 +54,17 @@ router.delete("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     const { droppable_id, draggable_id } = req.body;
     try {
         const result = yield pool_1.default.query("DELETE FROM tasks WHERE draggable_id = $1 RETURNING *", [draggable_id]);
+        res.json(result.rows);
+    }
+    catch (e) {
+        console.log(e);
+        res.status(500).send("Server Error");
+    }
+}));
+router.patch("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let { draggable_id, name, description, priority } = req.body;
+    try {
+        const result = yield pool_1.default.query("UPDATE tasks SET name = $1, description = $2, priority = $4 WHERE draggable_id = $3 RETURNING *", [name, description, draggable_id, priority]);
         res.json(result.rows);
     }
     catch (e) {

@@ -19,6 +19,14 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@modules/*": ["src/modules/*"],
+      "@assets/*": ["src/assets/*"],
+      "@auth/*": ["src/auth/*"],
+      "@interfaces/*": ["src/interfaces/*"],
+    }
   },
   "include": ["src"]
 }

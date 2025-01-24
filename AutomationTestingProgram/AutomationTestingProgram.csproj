@@ -31,7 +31,7 @@
 	<ItemGroup>
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
-		<Folder Include="client\src\utils\" />
+		<Folder Include="Modules\TestRunner\" />
 		<Folder Include="wwwroot\" />
 	</ItemGroup>
 
@@ -62,26 +62,44 @@
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-DT0luH8i.js" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-DsuYRK7M.js" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-uBzdGwA-.css" />
+		<_ContentIncludedByDefault Remove="wwwroot\assets\index-6taKtAMF.css" />
+		<_ContentIncludedByDefault Remove="wwwroot\assets\index-BFjJ9ENj.js" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Remove="Infrastructure\**" />
 		<Compile Remove="Modules\TestRunnerModule\Services\Playwright\Managers\**" />
+		<Compile Remove="Shared\**" />
 		<Compile Remove="TestData\**" />
+		<Compile Remove="client\src\utils\**" />
+		<Compile Remove="Tests\**" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<EmbeddedResource Remove="Infrastructure\**" />
 		<EmbeddedResource Remove="Modules\TestRunnerModule\Services\Playwright\Managers\**" />
+		<EmbeddedResource Remove="Shared\**" />
 		<EmbeddedResource Remove="TestData\**" />
+		<EmbeddedResource Remove="client\src\utils\**" />
+		<EmbeddedResource Remove="Tests\**" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<Content Remove="Infrastructure\**" />
 		<Content Remove="Modules\TestRunnerModule\Services\Playwright\Managers\**" />
+		<Content Remove="Shared\**" />
 		<Content Remove="TestData\**" />
+		<Content Remove="client\src\utils\**" />
+		<Content Remove="Tests\**" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Remove="Infrastructure\**" />
 		<None Remove="Modules\TestRunnerModule\Services\Playwright\Managers\**" />
+		<None Remove="Shared\**" />
 		<None Remove="TestData\**" />
+		<None Remove="client\src\utils\**" />
+		<None Remove="Tests\**" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -95,16 +113,14 @@
 			<EmbedInteropTypes>true</EmbedInteropTypes>
 		</COMReference>
 	</ItemGroup>
-
+	
 	<ItemGroup>
-		<None Include="Core\StaticFiles\environment_list.csv">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-			<TargetPath>environment_list.csv</TargetPath>
-		</None>
-		<None Include="Core\StaticFiles\KeychainAccounts2023.xls">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-			<TargetPath>KeychainAccounts2023.xls</TargetPath>
-		</None>
+	  <None Update="Core\StaticFiles\Private\environment_list.csv">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Core\StaticFiles\Private\KeychainAccounts2023.xls">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>

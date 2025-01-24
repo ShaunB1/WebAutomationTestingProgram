@@ -36,4 +36,13 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(500).send("Server Error");
     }
 }));
+router.delete("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { name } = req.body;
+        const result = yield pool_1.default.query("DELETE FROM workers WHERE name = $1 RETURNING *", [name]);
+        res.json(result.rows);
+    }
+    catch (e) {
+    }
+}));
 exports.default = router;

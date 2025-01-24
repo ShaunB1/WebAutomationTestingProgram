@@ -12,6 +12,8 @@ using AutomationTestingProgram.Modules.TestRunnerModule;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using System.Runtime;
+using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
@@ -50,7 +52,43 @@ void ConfigureServices(WebApplicationBuilder builder)
     // Controllers + other stuff
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+
+    string tenantId = builder.Configuration["AzureAd:TenantId"];
+    string clientId = builder.Configuration["AzureAd:ClientId"];
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.OAuth2,
+            Flows = new OpenApiOAuthFlows
+            {
+                Implicit = new OpenApiOAuthFlow
+                {
+                    AuthorizationUrl = new Uri($"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize"),
+                    TokenUrl = new Uri($"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token"),
+                    Scopes = new Dictionary<string, string>
+                    {
+                        { $"api://{clientId}/.default", "Access your API" }
+                    }
+                }
+            }
+        });
+
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "oauth2"
+                    }
+                },
+                new[] { $"api://{clientId}/.default" }
+            }
+        });
+    });
 
     // HttpClient -- NOTE: Must inject IHttpClientFactory to use
     builder.Services.AddHttpClient("HttpClient", client =>
@@ -114,6 +152,7 @@ void ConfigureAppSettings(WebApplicationBuilder builder)
     // Other
     builder.Services.Configure<MicrosoftGraphSettings>(builder.Configuration.GetSection("MicrosoftGraph"));
     builder.Services.Configure<IOSettings>(builder.Configuration.GetSection("IO"));
+    builder.Services.Configure<PathSettings>(builder.Configuration.GetSection("PATHS"));
 
     // Request
     builder.Services.Configure<RequestSettings>(builder.Configuration.GetSection("Request"));
@@ -230,17 +269,25 @@ void ConfigureMiddleware(WebApplication app)
     {
         app.UseDeveloperExceptionPage();
         app.UseSwagger();
-        app.UseSwaggerUI();
+        string clientId = builder.Configuration["AzureAd:ClientId"];
+        app.UseSwaggerUI(c => {
+            c.OAuthClientId(clientId);
+        });
     }
 
     app.UseHttpsRedirection(); // client and server comms encrypted
     app.UseStaticFiles(); // can request static assets for frontend
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", "Public")),
+        RequestPath = "/static"
+    });
 
     app.UseRequestLocalization();
     app.UseMiddleware<RequestMiddleware>();
 
     app.UseWebSockets();
-    WebSocketHandling(app);
 
     app.UseRouting(); // adds routing capabilities
 
@@ -250,60 +297,4 @@ void ConfigureMiddleware(WebApplication app)
     app.MapControllers();
 
     app.MapFallbackToFile("index.html"); // fallback to index.html for SPA routes
-}
-
-void WebSocketHandling(WebApplication app)
-{
-    app.Use(async (context, next) =>
-    {
-        if (context.WebSockets.IsWebSocketRequest)
-        {
-            var path = context.Request.Path;
-            var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-
-            if (path == "/ws/logs")
-            {
-                await HandleLogsCommunication(webSocket, context);
-            }
-            else
-            {
-                await webSocket.CloseAsync(WebSocketCloseStatus.ProtocolError, "Invalid endpoint.", CancellationToken.None);
-            }
-        }
-        else
-        {
-            await next();
-        }
-    });
-}
-
-async Task HandleLogsCommunication(WebSocket webSocket, HttpContext context)
-{
-    var broadcaster = context.RequestServices.GetRequiredService<WebSocketLogBroadcaster>();
-    broadcaster.AddClient(webSocket);
-
-    try
-    {
-        var buffer = new byte[1024 * 4];
-
-        while (webSocket.State == WebSocketState.Open)
-        {
-            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-
-            if (result.MessageType == WebSocketMessageType.Close)
-            {
-                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by client.", CancellationToken.None);
-            }
-            else
-            {
-                var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                Console.WriteLine($"Received from logs client: {message}");
-            }
-        }
-    }
-    catch (Exception exception)
-    {
-        Console.WriteLine(exception);
-        throw;
-    }
 }

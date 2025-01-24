@@ -38,7 +38,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const body_parser_1 = __importDefault(require("body-parser"));
 const fs_1 = __importDefault(require("fs"));
 const tasks_1 = __importDefault(require("./routes/tasks"));
 const workers_1 = __importDefault(require("./routes/workers"));
@@ -46,11 +45,12 @@ const completed_tasks_1 = __importDefault(require("./routes/completed_tasks"));
 const https = __importStar(require("node:https"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
-app.use(body_parser_1.default.json());
+app.use(express_1.default.json());
+app.use(express_1.default.urlencoded({ extended: true }));
 app.use("/api/tasks", tasks_1.default);
 app.use("/api/workers", workers_1.default);
 app.use("/api/completed_tasks", completed_tasks_1.default);
-const PORT = parseInt(process.env.PORT || "5000", 10);
+const PORT = parseInt(process.env.PORT, 10) || 5000;
 const options = {
     key: fs_1.default.readFileSync("../private.key"),
     cert: fs_1.default.readFileSync("../certificate.crt"),

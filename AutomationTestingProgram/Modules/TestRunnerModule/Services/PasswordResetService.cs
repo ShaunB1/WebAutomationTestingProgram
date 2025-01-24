@@ -82,7 +82,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             {
                 HttpResponseMessage response = await _httpClient.PostAsync(forgotPasswordURL, content);
                 string responseBody = await response.Content.ReadAsStringAsync();
-                
+
                 var responseObject = JsonSerializer.Deserialize<PasswordResetResponse>(responseBody);
 
                 if (response.IsSuccessStatusCode && responseObject != null && responseObject.result == 0)

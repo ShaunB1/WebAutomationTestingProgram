@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
+using Microsoft.AspNetCore.SignalR;
 
 [Authorize]
 [ApiController]
@@ -16,16 +17,16 @@ public class TestController : ControllerBase
     private readonly HandleTestCase _caseHandler;
     private readonly bool _reportToDevops;
     private readonly ILogger<TestController> _logger;
-    private readonly WebSocketLogBroadcaster _broadcaster;
+    private readonly IHubContext<TestHub> _hubContext;
 
-    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster)
+    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, IHubContext<TestHub> hubContext)
     {
         _azureDevOpsSettings = azureDevOpsSettings.Value;
         _planHandler = new HandleTestPlan();
         _caseHandler = new HandleTestCase();
         _reportToDevops = false;
         _logger = logger;
-        _broadcaster = broadcaster;
+        _hubContext = hubContext;
     }
 
     [HttpPost("test_post")]
@@ -90,9 +91,9 @@ public class TestController : ControllerBase
                     browser == "edge" ? "msedge" : null
             });
             
-            var executor = new TestExecutor(_logger, _broadcaster, testRunId);
+            var executor = new TestExecutor(_logger, _hubContext, testRunId);
             var fileName = Path.GetFileNameWithoutExtension(file.Name);
-            var reportHandler = new HandleReporting(_logger, _broadcaster, testRunId);
+            var reportHandler = new HandleReporting(_logger, _hubContext, testRunId);
 
             if (_reportToDevops)
             {

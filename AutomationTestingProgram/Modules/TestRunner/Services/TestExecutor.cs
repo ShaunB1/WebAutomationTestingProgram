@@ -5,6 +5,8 @@ using Microsoft.Playwright;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using Microsoft.AspNetCore.SignalR;
+using DocumentFormat.OpenXml.Bibliography;
 
 public class TestExecutor
 {
@@ -15,14 +17,14 @@ public class TestExecutor
     private readonly bool _recordTrace = false;
     private readonly bool _recordVideo = false;
     private readonly ILogger<TestController> _logger;
-    private readonly WebSocketLogBroadcaster _broadcaster;
     private Dictionary<string, string> _envVars = new Dictionary<string, string>();
     private Dictionary<string, string> _saveParameters = new Dictionary<string, string>();
+    private readonly IHubContext<TestHub> _hubContext;
 
-    public TestExecutor(ILogger<TestController> logger, WebSocketLogBroadcaster broadcaster, string testRunId)
+    public TestExecutor(ILogger<TestController> logger, IHubContext<TestHub> hubContext, string testRunId)
     {
         _logger = logger;
-        _broadcaster = broadcaster;
+        _hubContext = hubContext;
         _testRunId = testRunId;
         
         var jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StaticFiles\\actions.json");
@@ -106,8 +108,7 @@ public class TestExecutor
                                 .AppendLine($"EXECUTING...")
                                 .AppendLine("========================================================")
                                 .ToString();
-                                
-                            await _broadcaster.BroadcastLogAsync(logMessage, _testRunId);
+                            await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, logMessage);
                             
                             if (_actions.TryGetValue(actionAlias, out var action))
                             {
@@ -121,8 +122,8 @@ public class TestExecutor
                                     .AppendLine($"STATUS: {loopStep.RunSuccessful}")
                                     .AppendLine()
                                     .ToString();
-                                
-                                await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
+
+                                await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, statusMessage);
                             }
                             else
                             {
@@ -132,8 +133,8 @@ public class TestExecutor
                                     .AppendLine($"Unknown action: {step.ActionOnObject,-40}")
                                     .AppendLine()
                                     .ToString();
-                        
-                                await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
+
+                                await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, statusMessage);
                                 throw new Exception($"Unknown action '{loopStep.ActionOnObject}'");
                             }
                         }
@@ -163,8 +164,8 @@ public class TestExecutor
                         .AppendLine($"EXECUTING...")
                         .AppendLine("========================================================")
                         .ToString();
-                        
-                    await _broadcaster.BroadcastLogAsync(logMessage, _testRunId);
+
+                    await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, logMessage);
                     
                     if (_actions.TryGetValue(actionAlias, out var action))
                     { 
@@ -178,8 +179,8 @@ public class TestExecutor
                             .AppendLine($"STATUS: {step.RunSuccessful}")
                             .AppendLine()
                             .ToString();
-                        
-                        await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
+
+                        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, statusMessage);
                     }
                     else
                     {
@@ -188,9 +189,9 @@ public class TestExecutor
                             .AppendLine($"STATUS: {step.RunSuccessful}")
                             .AppendLine($"Unknown action: {step.ActionOnObject,-40}")
                             .AppendLine()
-                            .ToString();
-                        
-                        await _broadcaster.BroadcastLogAsync(statusMessage, _testRunId);
+                        .ToString();
+
+                        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, statusMessage);
                         throw new Exception($"Unknown action '{step.ActionOnObject}'");
                     }
                 }
@@ -340,8 +341,7 @@ public class TestExecutor
                     step.Value = InsertParams(step.Value);
 
                     _logger.LogInformation($"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}, {step.Value}");
-                    await _broadcaster.BroadcastLogAsync(
-                        $"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}", _testRunId);
+                    await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
 
                     var success = await RetryActionAsync(async () =>
                     {
@@ -374,7 +374,7 @@ public class TestExecutor
                     if (!success)
                     {
                         // _logger.LogInformation($"FAILED: {step.Object}");
-                        await _broadcaster.BroadcastLogAsync($"FAILED: {step.Object}", _testRunId);
+                        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"FAILED: {step.Object}");
                         step.Outcome = "Failed";
                         stepsFailed.Add((step.SequenceIndex, step.TestDescription));
                         failCount++;
@@ -390,7 +390,7 @@ public class TestExecutor
             catch (Exception e)
             {
                 // _logger.LogInformation(e.ToString());
-                await _broadcaster.BroadcastLogAsync(e.ToString(), _testRunId);
+                await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, e.ToString());
                 var indexedStackTrace = new List<(int, string)>();
 
                 // return ("Failed", stepsFailed, new List<(int, string)>(index+1, e.StackTrace?.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)));
@@ -412,7 +412,7 @@ public class TestExecutor
                 catch (Exception e)
                 {
                     // _logger.LogInformation($"Attempt {attempt} failed with error: {e.Message}");
-                    await _broadcaster.BroadcastLogAsync($"Attempt {attempt} failed with error: {e.Message}", _testRunId);
+                    await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Attempt {attempt} failed with error: {e.Message}");
                     await Task.Delay(1000);
                 }
             }

@@ -12,12 +12,37 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Identity.Web;
 using Newtonsoft.Json;
 using Microsoft.OpenApi.Models;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
+
+string tenantId = builder.Configuration["AzureAd:TenantId"];
+string clientId = builder.Configuration["AzureAd:ClientId"];
 
 // AAD Authentication boilerplate
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+
+// SignalR requires custom authorization options
+builder.Services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        { 
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/testHub"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
+});
 
 DotNetEnv.Env.Load();
 
@@ -35,9 +60,7 @@ builder.Services.AddScoped<PasswordResetService>();
 builder.Services.AddScoped<TestHub>();
 
 builder.Services.AddControllers();
-
-string tenantId = builder.Configuration["AzureAd:TenantId"];
-string clientId = builder.Configuration["AzureAd:ClientId"];
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -74,8 +97,6 @@ builder.Services.AddSwaggerGen(c =>
             }
         });
 });
-
-builder.Services.AddSignalR();
 
 var app = builder.Build(); // represents configured web app
 

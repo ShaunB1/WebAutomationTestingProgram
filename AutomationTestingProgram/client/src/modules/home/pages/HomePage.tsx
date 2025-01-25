@@ -44,7 +44,7 @@ const Home: React.FC = () => {
 
             const signalRConnection = new HubConnectionBuilder()
                 .withUrl("/testHub", {
-                    accessTokenFactory: () => token,
+                    accessTokenFactory: () => token
                 })
                 .withAutomaticReconnect()
                 .build();
@@ -61,7 +61,6 @@ const Home: React.FC = () => {
                 });
 
                 signalRConnection.on("BroadcastLog", (testRunId, message) => {
-                    console.log(testRunId, message);
                     setTestRuns(prevTestRuns =>
                         prevTestRuns.map(testRun =>
                             testRun.id === testRunId
@@ -70,12 +69,29 @@ const Home: React.FC = () => {
                         )
                     );
                 });
+
+                signalRConnection.on('AddClient', (message) => {
+                    console.log(message);
+                });
+
+                signalRConnection.on('RemoveClient', (message) => {
+                    console.log(message);
+                });
             } catch (err) {
                 console.log(err);
             }
             setConnection(signalRConnection);
         };
         setupConnection();
+
+        // Gracefully quit SignalR before unmount
+        return () => {
+            connection?.stop().then(() => {
+                console.log('SignalR connection stopped');
+            }).catch((err) => {
+                console.error('Error stopping SignalR connection:', err);
+            });
+        }
     }, []);
 
     useEffect(() => {

@@ -41,7 +41,6 @@ public class TestController : ControllerBase
         return Ok("GET request successful.");
     }
 
-    // We want to authorization for all endpoints, but if you are testing then comment out the line below
     [Authorize]
     [HttpPost("run")]
     public async Task<IActionResult> RunTests(

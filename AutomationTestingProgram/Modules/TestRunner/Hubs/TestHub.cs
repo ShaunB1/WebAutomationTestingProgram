@@ -1,17 +1,13 @@
-﻿using DocumentFormat.OpenXml.InkML;
-using DocumentFormat.OpenXml.Presentation;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Identity.Client;
-using Newtonsoft.Json;
+﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Security.Claims;
-using System.Web.Http;
+using Microsoft.AspNetCore.Authorization;
 
 [Authorize]
 public class TestHub : Hub
 {
     private static readonly ConcurrentDictionary<string, HashSet<string>> _connections = new ConcurrentDictionary<string, HashSet<string>>();
+
     public async Task AddClient(string testRunId)
     {
         string username = Context.User.Identity.Name;
@@ -29,13 +25,13 @@ public class TestHub : Hub
     public async Task RemoveClient(string testRunId)
     {
         string username = Context.User.Identity.Name;
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, testRunId);
         if (_connections.TryGetValue(Context.ConnectionId, out var groups))
         {
             groups.Remove(Context.ConnectionId);
         }
         Console.WriteLine($"User: {username} with Connection ID: {Context.ConnectionId} has left Test Run: {testRunId}");
-        await Clients.Group(testRunId).SendAsync("AddClient", $"User: {username} with Connection ID: {Context.ConnectionId} has left Test Run: {testRunId}");
+        await Clients.Group(testRunId).SendAsync("RemoveClient", $"User: {username} with Connection ID: {Context.ConnectionId} has left Test Run: {testRunId}");
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, testRunId);
     }
 
     public override async Task OnConnectedAsync()

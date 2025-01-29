@@ -13,6 +13,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using System.Runtime;
 using Microsoft.OpenApi.Models;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
@@ -50,7 +51,10 @@ void ConfigureServices(WebApplicationBuilder builder)
     ConfigureFileUpload(builder);
 
     // Controllers + other stuff
-    builder.Services.AddControllers();
+    builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<CustomActionFilter>();
+    });
     builder.Services.AddEndpointsApiExplorer();
 
     string tenantId = builder.Configuration["AzureAd:TenantId"];
@@ -114,6 +118,29 @@ void ConfigureAuthentication(WebApplicationBuilder builder)
     // AAD Authentication
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+
+    string tenantId = builder.Configuration["AzureAd:TenantId"];
+    string clientId = builder.Configuration["AzureAd:ClientId"];
+
+    // SignalR requires custom authorization options
+    builder.Services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+    {
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/testHub"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
 }
 
 void ConfigureCulture(WebApplicationBuilder builder)
@@ -189,7 +216,6 @@ void RegisterServices(ContainerBuilder builder)
     .SingleInstance();
 
     builder.RegisterType<ShutDownService>().SingleInstance();
-    builder.RegisterType<TestHub>().OwnedByLifetimeScope();
 
     // TESTRUNNER MODULE
 
@@ -200,6 +226,9 @@ void RegisterServices(ContainerBuilder builder)
     builder.RegisterType<BrowserFactory>().As<IBrowserFactory>().SingleInstance();
     builder.RegisterType<ContextFactory>().As<IContextFactory>().SingleInstance();
     builder.RegisterType<PageFactory>().As<IPageFactory>().SingleInstance();
+
+    builder.RegisterType<ReaderFactory>().As<IReaderFactory>().SingleInstance();
+    builder.RegisterType<>().SingleInstance();
 }
 
 void ConfigureApplicationLifetime(WebApplication app)

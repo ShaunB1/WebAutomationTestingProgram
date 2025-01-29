@@ -5,7 +5,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
     public interface IPageFactory
     {
-        Task<Page> CreatePage(Context context);
+        Page CreatePage(Context context);
     }
 
     public class PageFactory : IPageFactory
@@ -19,10 +19,14 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             _provider = provider;
         }
 
-        public async Task<Page> CreatePage(Context context)
+        /// <summary>
+        /// Creates a new Page instance.
+        /// </summary>
+        /// <param name="context">The context object used to create this instance.</param>
+        /// <returns></returns>
+        public Page CreatePage(Context context)
         {
             Page page = new Page(context, _settings, _provider);
-            await page.InitializeAsync();
             return page;
         }
     }

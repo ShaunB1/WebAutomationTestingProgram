@@ -10,7 +10,7 @@ public class Login : WebAction
         Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
         Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
-        /*string username = step.Object;
+        string username = step.Object;
         string password = step.Value;
 
         // If password is blank or commented, attempt to get from Azure Key Vault
@@ -148,7 +148,7 @@ public class Login : WebAction
         {
             Console.WriteLine($"Something went wrong while logging in: {ex.Message}");
             return false;
-        }*/
+        }
         return true;
     }
 }

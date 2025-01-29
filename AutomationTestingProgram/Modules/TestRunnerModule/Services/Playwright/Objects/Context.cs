@@ -29,6 +29,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public string FolderPath { get; }
 
+        /// <summary>
+        /// The request linked to the Context
+        /// </summary>
+        public ProcessRequest Request { get; }
+
 
         /// <summary>
         /// The parent Browser instance that this Context object belongs to. 
@@ -41,9 +46,14 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         private ContextSettings _settings { get; }
 
         /// <summary>
-        /// Factory used to create Page Instances
+        /// PageFactory used to create Page Objects
         /// </summary>
         private IPageFactory _pageFactory { get; }
+
+        /// <summary>
+        /// The TestExecutor to run tests. 
+        /// </summary>
+        private IPlaywrightExecutor _executor { get; }
 
         /// <summary>
         /// Int limiting total # of active pages. Used in conjunction with lock
@@ -67,14 +77,16 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// Please call InitializeAsync() to finish set-up.
         /// </summary>
         /// <param name="browser">Browser (parent) instance </param>
-        public Context(Browser browser, IOptions<ContextSettings> options, ICustomLoggerProvider provider, IPageFactory pageFactory)
+        public Context(Browser browser, ProcessRequest request, IOptions<ContextSettings> options, ICustomLoggerProvider provider, IPageFactory pageFactory, IPlaywrightExecutor executor)
         {
             ID = browser.GetNextContextID();
             FolderPath = LogManager.CreateContextFolder(browser.FolderPath, ID);
+            Request = request;
 
             _parent = browser;
             _settings = options.Value;
             _pageFactory = pageFactory;
+            _executor = executor;
             _pageLimit = _settings.PageLimit;
             _logger = provider.CreateLogger<Context>(FolderPath);
         }
@@ -105,36 +117,36 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// Creates and runs a page from this context object.
         /// </summary>
         /// <returns></returns>
-        public async Task ProcessRequest(ProcessRequest request)
+        public async Task ProcessRequest()
         {
-            request.LogInfo($"Context (ID: {ID}) received request.");
+            Request.LogInfo($"Context (ID: {ID}) received request.");
 
-            request.IsCancellationRequested();
+            Request.IsCancellationRequested();
 
-            request.LogInfo($"Linking Request and Context Folder");
+            Request.LogInfo($"Linking Request and Context Folder");
             
             try
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    LogManager.MapRequestToContextFolders(request.FolderPath, FolderPath);
-                    request.LogInfo($"Link successfull created");
+                    LogManager.MapRequestToContextFolders(Request.FolderPath, FolderPath);
+                    Request.LogInfo($"Link successfull created");
                 }
                 else
                 {
-                    request.LogInfo($"Link not created because server is not running on windows");
+                    Request.LogInfo($"Link not created because server is not running on windows");
                 }
             }
             catch (Exception e)
             {
-                request.LogInfo($"Link failed creation due to {e}");
+                Request.LogInfo($"Link failed creation due to {e}");
             }
 
             Page page;
             try
             {
-                request.LogInfo($"Starting Test Execution");
-                page = await _pageFactory.CreatePage(this);
+                Request.LogInfo($"Starting Test Execution");
+                page = _pageFactory.CreatePage(this);
             }
             catch (LaunchException e)
             {
@@ -143,9 +155,10 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             }
             
             try
-            {
-                await page.ProcessAsync(request.CancelToken);                
-                request.LogInfo($"Test Execution Complete");
+            {             
+                _executor.
+                
+                Request.LogInfo($"Test Execution Complete");
             }
             finally
             {
@@ -160,6 +173,39 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         public int GetNextPageID()
         {
             return Interlocked.Increment(ref _nextPageID);
+        }
+
+        /// <summary>
+        /// Refreshes the Context instance.
+        /// </summary>
+        /// <returns></returns>
+        public async Task RefreshAsync()
+        {
+            try
+            {
+                _logger.LogInformation($"Context refresh request received. Refreshing...");
+                await Instance!.CloseAsync();
+                _logger.LogInformation($"Context refreshed successfully.");
+
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Failed to close Context Instance during refresh due to {e}");
+                _logger.LogInformation($"Disposing...");
+                await Instance!.DisposeAsync();
+                _logger.LogInformation($"Disposing Complete");
+            }
+
+            try
+            {
+                Instance = await CreateContextInstanceAsync(_parent.Instance!);
+                _logger.LogInformation($"Successfully re-initialized Context Instance");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Failed to re-initialize Context Instance due to {e}");
+                throw new LaunchException($"Failed to re-initialize Context Instance.", e);
+            }
         }
 
         /// <summary>
@@ -197,8 +243,5 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             };
             return await browser.NewContextAsync(options);
         }
-
-        
-
     }
 }

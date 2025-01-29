@@ -112,26 +112,4 @@ public class TestController : ControllerBase
             return StatusCode(500, new { Error = e.Message });
         }
     }
-    
-    //public IActionResult SaveTestSteps([FromForm] List<TestStep> testSteps)
-    //{
-    //    using (var workbook = new XLWorkbook())
-    //    {
-    //        var worksheet = workbook.Worksheets.Add("TestSteps");
-    //        worksheet.Cell(1, 1).Value = "TestCaseName";
-    //        worksheet.Cell(1, 2).Value = "TestDescription";
-
-    //        for (int i = 0; i < testSteps.Count; i++)
-    //        {
-    //            worksheet.Cell(i + 2, 1).Value = testSteps[i].TestCaseName;
-    //            worksheet.Cell(i + 2, 2).Value = testSteps[i].TestDescription;
-    //        }
-
-    //        using (var stream = new MemoryStream())
-    //        {
-    //            workbook.SaveAs(stream);
-    //            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Testing.xlsx");
-    //        }
-    //    }
-    //}
 }

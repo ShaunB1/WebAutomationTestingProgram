@@ -1,6 +1,7 @@
 using AutomationTestingProgram.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule;
 
@@ -8,12 +9,14 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule;
 [Route("api/[controller]")]
 public class TestController : CoreController
 {
+    private readonly IHubContext<TestHub> _hubContext;
     private readonly PlaywrightObject _playwright;
 
-    public TestController(ICustomLoggerProvider provider, PlaywrightObject playwright):
+    public TestController(ICustomLoggerProvider provider, PlaywrightObject playwright, IHubContext<TestHub> hubContext):
         base(provider) 
     { 
         _playwright = playwright;
+        _hubContext = hubContext;
     }
 
     /* API Request Examples:
@@ -28,7 +31,7 @@ public class TestController : CoreController
     /// <summary>
     /// Receives api requests to validate files
     /// </summary>
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("validate")] 
     public async Task<IActionResult> ValidateRequest([FromForm] ValidationRequestModel model)
     {
@@ -40,12 +43,16 @@ public class TestController : CoreController
     /// <summary>
     /// Receives api requests to process files
     /// </summary>
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("run")] 
     public async Task<IActionResult> RunRequest([FromForm] ProcessRequestModel model)
     {
-        ProcessRequest request = new ProcessRequest(_provider, _playwright, HttpContext.User, model.Type, model.Version, model.Environment);
+        ProcessRequest request = new ProcessRequest(_provider, _hubContext, _playwright, HttpContext.User, model);
         await CopyFileToFolder(model.File, request.FolderPath);
-        return await HandleRequest(request);
+        string email = HttpContext.User.FindFirst("preferred_username")!.Value;
+        await _hubContext.Clients.User(email).SendAsync("AddGroup", email, request.ID);
+        IActionResult result =  await HandleRequest(request);
+        await _hubContext.Clients.User(email).SendAsync("RemoveGroup", email, request.ID);
+        return result;
     }
 }

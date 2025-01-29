@@ -1,5 +1,6 @@
 ﻿
 using AutomationTestingProgram.Core;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 
@@ -12,6 +13,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
     {
         [JsonIgnore]
         protected override ICustomLogger Logger { get; }
+
+        /// <summary>
+        /// The name of the provided file
+        /// </summary>
+        public string FileName { get; }
 
         /// <summary>
         /// The browser TYPE used to process the request
@@ -28,7 +34,14 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public string Environment { get; }
 
+        /// <summary>
+        /// The delay used between each TestStep
+        /// </summary>
+        public double Delay { get; }
+
         private PlaywrightObject playwright;
+
+        private readonly IHubContext<TestHub> _hubContext;
 
 
         /// <summary>
@@ -38,16 +51,19 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <param name="File">The file to be processed in the request.</param>
         /// <param name="Type">The type of the browser (e.g., "Chrome", "Firefox") that will handle the request.</param>
         /// <param name="Version">The version of the browser (e.g., "91", "93") that will be used to process the request.</param>
-        public ProcessRequest(ICustomLoggerProvider provider, PlaywrightObject playwright, ClaimsPrincipal User, string Type, string Version, string Environment)
+        public ProcessRequest(ICustomLoggerProvider provider, IHubContext<TestHub> hubContext, PlaywrightObject playwright, ClaimsPrincipal User, ProcessRequestModel model)
             : base(User, isLoggingEnabled:true)
         {            
             this.Logger = provider.CreateLogger<ProcessRequest>(FolderPath);
             
-            this.BrowserType = Type;
-            this.BrowserVersion = Version;
-            this.Environment = Environment;
+            this.FileName = model.File.FileName;
+            this.BrowserType = model.Type;
+            this.BrowserVersion = model.Version;
+            this.Environment = model.Environment;
+            this.Delay = model.Delay;
 
             this.playwright = playwright;
+            this._hubContext = hubContext;
         }
 
         /// <summary>
@@ -84,6 +100,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
             this.SetStatus(State.Completed, $"Process Request (ID: {ID}, BrowserType: {BrowserType}," +
                 $" BrowserVersion: {BrowserVersion}, Environment: {Environment}) completed successfully");
+
         }
     }
 }

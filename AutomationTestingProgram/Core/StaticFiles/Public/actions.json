@@ -1,4 +1,4 @@
-﻿
+﻿{
   "clickwebelement": "AutomationTestingProgram.Actions.ClickWebElement",
   "populatewebelement": "AutomationTestingProgram.Actions.PopulateWebElement",
   "navigatetourl": "AutomationTestingProgram.Actions.NavigateToURL",

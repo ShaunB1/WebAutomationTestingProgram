@@ -23,12 +23,12 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <summary>
         /// Initializes a new instance of the <see cref="PasswordResetRequest"/> class.
         /// </summary>
-        public PasswordResetRequest(ICustomLoggerProvider provider, PasswordResetService service, ClaimsPrincipal User, string Email)
+        public PasswordResetRequest(ICustomLoggerProvider provider, PasswordResetService service, ClaimsPrincipal User, PasswordResetRequestModel model)
             :base(User)
         {
             Logger = provider.CreateLogger<PasswordResetRequest>(FolderPath);
 
-            this.Email = Email;
+            this.Email = model.Email;
 
             this.passwordResetService = service;
         }        

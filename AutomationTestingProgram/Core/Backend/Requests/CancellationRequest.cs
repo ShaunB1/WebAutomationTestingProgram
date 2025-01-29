@@ -30,12 +30,12 @@ namespace AutomationTestingProgram.Core
         /// Instance is associated with the ID of the request to cancel.
         /// </summary>
         /// <param name="ID">The unique identifier of the request to cancel.</param>
-        public CancellationRequest(ICustomLoggerProvider provider, ClaimsPrincipal User, string ID)
+        public CancellationRequest(ICustomLoggerProvider provider, ClaimsPrincipal User, CancellationRequestModel model)
             : base(User)
         {
             Logger = provider.CreateLogger<CancellationRequest>(FolderPath);
 
-            CancelRequestID = ID;
+            CancelRequestID = model.ID;
         }
 
         /// <summary>

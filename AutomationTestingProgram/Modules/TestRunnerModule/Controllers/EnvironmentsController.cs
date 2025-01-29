@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AutomationTestingProgram.Core;
+using Microsoft.Extensions.Options;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule;
 
@@ -10,12 +11,14 @@ public class EnvironmentsController : CoreController
 {
     private readonly PasswordResetService _passwordResetService;
     private readonly AzureKeyVaultService _azureKeyVaultService;
+    private readonly string _keyChainFileName;
 
-    public EnvironmentsController(ICustomLoggerProvider provider, PasswordResetService passwordResetService, AzureKeyVaultService azureKeyVaultService)
+    public EnvironmentsController(ICustomLoggerProvider provider, IOptions<PathSettings> options, PasswordResetService passwordResetService, AzureKeyVaultService azureKeyVaultService)
         :base(provider)
     {
         _passwordResetService = passwordResetService;
         _azureKeyVaultService = azureKeyVaultService;
+        _keyChainFileName = options.Value.KeychainFilePath;
     }
 
     /* API Request Examples:
@@ -34,7 +37,7 @@ public class EnvironmentsController : CoreController
     [HttpGet("keychainAccounts")]
     public async Task<IActionResult> GetKeychainAccounts()
     {
-        KeyChainRetrievalRequest request = new KeyChainRetrievalRequest(_provider, HttpContext.User);
+        KeyChainRetrievalRequest request = new KeyChainRetrievalRequest(_provider, HttpContext.User, _keyChainFileName);
         return await HandleRequest(request);
     }
 
@@ -42,7 +45,7 @@ public class EnvironmentsController : CoreController
     [HttpGet("secretKey")]
     public async Task<IActionResult> GetSecretKey([FromQuery] SecretKeyRetrievalRequestModel model)
     {
-        SecretKeyRetrievalRequest request = new SecretKeyRetrievalRequest(_provider, _azureKeyVaultService, HttpContext.User, model.Email);
+        SecretKeyRetrievalRequest request = new SecretKeyRetrievalRequest(_provider, _azureKeyVaultService, HttpContext.User, model);
         return await HandleRequest(request);
     }
 
@@ -50,7 +53,7 @@ public class EnvironmentsController : CoreController
     [HttpPost("resetPassword")]
     public async Task<IActionResult> ResetPassword([FromBody] PasswordResetRequestModel model)
     {
-        PasswordResetRequest request = new PasswordResetRequest(_provider, _passwordResetService, HttpContext.User, model.Email);
+        PasswordResetRequest request = new PasswordResetRequest(_provider, _passwordResetService, HttpContext.User, model);
         return await HandleRequest(request);
     }
 }

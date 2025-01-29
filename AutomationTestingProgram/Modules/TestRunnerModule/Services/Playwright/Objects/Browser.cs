@@ -132,7 +132,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             try
             {
 
-                context = await _contextFactory.CreateContext(this);
+                context = await _contextFactory.CreateContext(this, request);
 
             }
             catch (LaunchException e)
@@ -143,7 +143,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
             try
             {
-                await context.ProcessRequest(request);
+                await context.ProcessRequest();
 
             }
             finally

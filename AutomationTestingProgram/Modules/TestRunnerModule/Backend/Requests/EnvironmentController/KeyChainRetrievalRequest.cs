@@ -19,16 +19,20 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public IList<object> Accounts { get; }
 
+        private string KeyChainFileName;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyChainRetrievalRequest"/> class.
         /// </summary>
-        public KeyChainRetrievalRequest(ICustomLoggerProvider provider, ClaimsPrincipal User)
+        public KeyChainRetrievalRequest(ICustomLoggerProvider provider, ClaimsPrincipal User, string keyChainFileName)
             :base(User)
         {
             Logger = provider.CreateLogger<KeyChainRetrievalRequest>(FolderPath);
 
             Accounts = new List<object>();
+
+            KeyChainFileName = keyChainFileName;
         }
 
         /// <summary>
@@ -66,7 +70,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 await IOManager.TryAquireSlotAsync();
 
 
-                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "KeychainAccounts2023.xls");
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, KeyChainFileName);
 
                 if (!File.Exists(filePath))
                 {

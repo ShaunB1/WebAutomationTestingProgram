@@ -3,23 +3,25 @@ using Microsoft.Extensions.Options;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
-    public interface IContextFactory
+    public interface IPlaywrightExecutorFactory
     {
-        Task<Context> CreateContext(Browser browser, ProcessRequest request);
+        Task<Context> CreateContext(Browser browser, string filePath);
     }
 
-    public class ContextFactory : IContextFactory
+    public class Executor : IContextFactory
     {
         private readonly IOptions<ContextSettings> _settings;
         private readonly ICustomLoggerProvider _provider;
-        private readonly IPlaywrightExecutor _executor;
+        private readonly TestExecutor _executor;
+        private readonly IReaderFactory _readerFactory;
         private readonly IPageFactory _pageFactory;
 
-        public ContextFactory(IOptions<ContextSettings> options, ICustomLoggerProvider provider, IPlaywrightExecutor executor, IPageFactory pageFactory)
+        public Executor(IOptions<ContextSettings> options, ICustomLoggerProvider provider, TestExecutor executor, IReaderFactory readerFactory, IPageFactory pageFactory)
         {
             _settings = options;
             _provider = provider;
             _executor = executor;
+            _readerFactory = readerFactory;
             _pageFactory = pageFactory;
         }
 
@@ -27,11 +29,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// Creates a new Context instance.
         /// </summary>
         /// <param name="browser">The browser object used to create this instance</param>
-        /// <param name="request">The request linked with the context</param>
+        /// <param name="filePath">The filepath of the file to execute with playwright</param>
         /// <returns></returns>
-        public async Task<Context> CreateContext(Browser browser, ProcessRequest request)
+        public async Task<Context> CreateContext(Browser browser, string filePath)
         {
-            Context context = new Context(browser, request, _settings, _provider, _pageFactory, _executor);
+            Context context = new Context(browser, filePath, _settings, _provider, _executor, _readerFactory, _pageFactory);
             await context.InitializeAsync();
             return context;
         }

@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.EMMA;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace AutomationTestingProgram.Core;
 
@@ -81,7 +82,7 @@ public class CoreController : ControllerBase
     [HttpPost("retrieve")]
     public async Task<IActionResult> GetActiveRequests([FromBody] RetrievalRequestModel model)
     {        
-        RetrievalRequest request = new RetrievalRequest(_provider, HttpContext.User, model.FilterType, model.FilterValue);
+        RetrievalRequest request = new RetrievalRequest(_provider, HttpContext.User, model);
         return await HandleRequest(request);
     }
 
@@ -92,7 +93,7 @@ public class CoreController : ControllerBase
     [HttpPost("stop")]
     public async Task<IActionResult> StopRequest([FromBody] CancellationRequestModel model)
     {
-        CancellationRequest request = new CancellationRequest(_provider, HttpContext.User, model.ID);
+        CancellationRequest request = new CancellationRequest(_provider, HttpContext.User, model);
         return await HandleRequest(request);
     }
 }

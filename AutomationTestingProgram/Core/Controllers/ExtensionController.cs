@@ -1,25 +1,23 @@
-﻿using AutomationTestingProgram.Actions;
-using DocumentFormat.OpenXml.Vml.Office;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NPOI.HPSF;
-using Sprache;
-using System.IO.Compression;
-using System.Web.Http.Results;
+using Microsoft.Extensions.Options;
+
+namespace AutomationTestingProgram.Core;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ExtensionController : ControllerBase
+public class ExtensionController : CoreController
 {
     private readonly string _extensionDownloadPath;
-    public ExtensionController()
+    public ExtensionController(ICustomLoggerProvider provider, IOptions<PathSettings> options)
+        :base(provider)
     {
-        _extensionDownloadPath = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json").Build()["ExtensionDownloadPath"];
+        _extensionDownloadPath = options.Value.ExtensionDownloadPath;
     }
 
     [Authorize]
     [HttpGet("download-zip")]
-    public async Task<IActionResult> DownloadZip()
+    public IActionResult DownloadZip()
     {
         try
         {

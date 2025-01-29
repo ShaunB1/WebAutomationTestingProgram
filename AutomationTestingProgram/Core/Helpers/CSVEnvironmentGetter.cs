@@ -27,7 +27,12 @@ public static class CSVEnvironmentGetter
     private const int DB_TYPE_COL = 13;
     private const int APP_TYPE_COL = 14;
 
-    private const string fileName = "environment_list.csv";
+    private static readonly string fileName;
+
+    static CSVEnvironmentGetter()
+    {
+        fileName = AppConfiguration.GetSection<PathSettings>("PATHS").EnvironmentsListPath;
+    }
 
     /// <summary>
     /// Verifies that the given environment exists/is valid.

@@ -28,12 +28,12 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <summary>
         /// Initializes a new instance of the <see cref="SecretKeyRetrievalRequest"/> class.
         /// </summary>
-        public SecretKeyRetrievalRequest(ICustomLoggerProvider provider, AzureKeyVaultService service, ClaimsPrincipal User, string Email)
+        public SecretKeyRetrievalRequest(ICustomLoggerProvider provider, AzureKeyVaultService service, ClaimsPrincipal User, SecretKeyRetrievalRequestModel model)
             :base(User)
         {
             Logger = provider.CreateLogger<SecretKeyRetrievalRequest>(FolderPath);
 
-            this.Email = Email;
+            this.Email = model.Email;
             this.SecretKey = string.Empty;
 
             this.azureKeyVaultService = service;

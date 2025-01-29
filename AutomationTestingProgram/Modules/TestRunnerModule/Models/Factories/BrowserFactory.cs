@@ -21,6 +21,13 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             _contextFactory = contextFactory;
         }
 
+        /// <summary>
+        /// Creates a new browser instance.
+        /// </summary>
+        /// <param name="playwright">The playwrightObject used to create this instance.</param>
+        /// <param name="type">The type of browser</param>
+        /// <param name="version">The browser version</param>
+        /// <returns></returns>
         public async Task<Browser> CreateBrowser (PlaywrightObject playwright, string type, string version)
         {
             Browser browser = new Browser(playwright, type, version, _settings, _provider, _contextFactory);

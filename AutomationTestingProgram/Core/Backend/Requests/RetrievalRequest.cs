@@ -29,21 +29,21 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Initializes a new instance of the <see cref="RetrievalRequest"/> class.
         /// </summary>
-        public RetrievalRequest(ICustomLoggerProvider provider, ClaimsPrincipal User, string filterType, string filterValue)
+        public RetrievalRequest(ICustomLoggerProvider provider, ClaimsPrincipal User, RetrievalRequestModel model)
             : base(User)
         {
             Logger = provider.CreateLogger<RetrievalRequest>(FolderPath);
 
-            if (Enum.TryParse(filterType, out FilterType parsedType))
+            if (Enum.TryParse(model.FilterType, out FilterType parsedType))
             {
                 FilterType = parsedType;
             }
             else
             {
-                throw new ArgumentException($"Invalid filter type: {filterType}");
+                throw new ArgumentException($"Invalid filter type: {model.FilterType}");
             }
 
-            FilterValue = filterValue;
+            FilterValue = model.FilterValue;
             RetrievedRequests = new List<IClientRequest>();
         }
 

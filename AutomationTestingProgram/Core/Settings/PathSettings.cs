@@ -5,5 +5,6 @@
         public string ExtensionDownloadPath { get; set; }
         public string KeychainFilePath { get; set; }
         public string EnvironmentsListPath { get; set; }
+        public string ActionsPath { get; set; }
     }
 }

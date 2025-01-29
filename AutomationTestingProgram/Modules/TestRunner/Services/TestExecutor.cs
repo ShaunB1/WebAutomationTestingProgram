@@ -1,12 +1,10 @@
 using System.Text;
 using AutomationTestingProgram.Actions;
-using AutomationTestingProgram.Models;
 using Microsoft.Playwright;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 using Microsoft.AspNetCore.SignalR;
-using DocumentFormat.OpenXml.Bibliography;
+using AutomationTestingProgram.Core;
 
 public class TestExecutor
 {
@@ -21,7 +19,55 @@ public class TestExecutor
     private Dictionary<string, string> _saveParameters = new Dictionary<string, string>();
     private readonly IHubContext<TestHub> _hubContext;
 
-    public TestExecutor(ILogger<TestController> logger, IHubContext<TestHub> hubContext, string testRunId)
+    private static Dictionary<string, string> actionAliases = new Dictionary<string, string>
+        {
+            // Populate actions
+            { "populatetextbox", "populatewebelement" },
+            { "populatehtmleditor", "populatewebelement" },
+            { "populateframe", "populatewebelement" },
+            { "populatetextboxddl", "populatewebelement" },
+
+            // Verify state actions
+            { "verifylinkavailability", "verifywebelementavailability" },
+            { "verifybuttonavailability", "verifywebelementavailability" },
+            { "verifytextboxavailability", "verifywebelementavailability" },
+            { "verifywebradiogroupavailability", "verifywebelementavailability" },
+            { "verifycheckboxstatus", "verifywebelementavailability" },
+            { "verifycheckboxavailablity", "verifywebelementavailability" },
+            { "verifyddlavailability", "verifywebelementavailability" },
+            { "verifyhtmleditoravailability", "verifywebelementavailability" },
+            { "verifyimageavailability", "verifywebelementavailability" },
+            { "verifywebtableavailability", "verifywebelementavailability" },
+            
+            // Verify content actions
+            { "verifyddlcontent", "verifywebelementcontent" },
+            { "verifyhtmleditorcontent", "verifywebelementcontent" },
+            { "verifyimagecontent", "verifywebelementcontent" },
+            { "verifytextboxcontent", "verifywebelementcontent" },
+
+            // Click actions
+            { "clickbutton", "clickwebelement" },
+            { "clicklink", "clickwebelement" },
+            { "clickimage", "clickwebelement" },
+            { "clicktablelink", "clickwebelement" },
+            { "selectlookup", "clickwebelement" },
+            { "selectwebradiogroup", "clickwebelement" },
+
+            // Login actions
+            { "enteraadcredentials", "login" },
+
+            // SQL actions
+            { "runprsqlscriptrevert", "runsqlscript" },
+            { "runprsqlscriptdelete", "runsqlscript" },
+
+            // Upload actions
+            { "uploaddatafile", "uploadfile" },
+            
+            // Other
+            { "gotopage", "navigatetourl" },
+        };
+
+    public TestExecutor(ICustomLoggerProvider provider, IHubContext<TestHub> hubContext, string testRunId)
     {
         _logger = logger;
         _hubContext = hubContext;
@@ -112,8 +158,7 @@ public class TestExecutor
                             
                             if (_actions.TryGetValue(actionAlias, out var action))
                             {
-                                // var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
-                                var result = true;
+                                var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
                                 loopStep.RunSuccessful = result;
                                 
                                 _logger.LogInformation($"STATUS: {loopStep.RunSuccessful}");
@@ -169,8 +214,7 @@ public class TestExecutor
                     
                     if (_actions.TryGetValue(actionAlias, out var action))
                     { 
-                        // var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
-                        var result = true;
+                        var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
                         step.RunSuccessful = result;
                         
                         _logger.LogInformation($"STATUS: {step.RunSuccessful}");
@@ -205,54 +249,6 @@ public class TestExecutor
 
     public string GetAlias(string action)
     {
-        var actionAliases = new Dictionary<string, string>
-        {
-            // Populate actions
-            { "populatetextbox", "populatewebelement" },
-            { "populatehtmleditor", "populatewebelement" },
-            { "populateframe", "populatewebelement" },
-            { "populatetextboxddl", "populatewebelement" },
-
-            // Verify state actions
-            { "verifylinkavailability", "verifywebelementavailability" },
-            { "verifybuttonavailability", "verifywebelementavailability" },
-            { "verifytextboxavailability", "verifywebelementavailability" },
-            { "verifywebradiogroupavailability", "verifywebelementavailability" },
-            { "verifycheckboxstatus", "verifywebelementavailability" },
-            { "verifycheckboxavailablity", "verifywebelementavailability" },
-            { "verifyddlavailability", "verifywebelementavailability" },
-            { "verifyhtmleditoravailability", "verifywebelementavailability" },
-            { "verifyimageavailability", "verifywebelementavailability" },
-            { "verifywebtableavailability", "verifywebelementavailability" },
-            
-            // Verify content actions
-            { "verifyddlcontent", "verifywebelementcontent" },
-            { "verifyhtmleditorcontent", "verifywebelementcontent" },
-            { "verifyimagecontent", "verifywebelementcontent" },
-            { "verifytextboxcontent", "verifywebelementcontent" },
-
-            // Click actions
-            { "clickbutton", "clickwebelement" },
-            { "clicklink", "clickwebelement" },
-            { "clickimage", "clickwebelement" },
-            { "clicktablelink", "clickwebelement" },
-            { "selectlookup", "clickwebelement" },
-            { "selectwebradiogroup", "clickwebelement" },
-
-            // Login actions
-            { "enteraadcredentials", "login" },
-
-            // SQL actions
-            { "runprsqlscriptrevert", "runsqlscript" },
-            { "runprsqlscriptdelete", "runsqlscript" },
-
-            // Upload actions
-            { "uploaddatafile", "uploadfile" },
-            
-            // Other
-            { "gotopage", "navigatetourl" },
-        };
-
         if (actionAliases.TryGetValue(action, out var alias))
         {
             return alias;

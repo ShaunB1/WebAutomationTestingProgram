@@ -121,6 +121,9 @@
 	  <None Update="Core\StaticFiles\Private\KeychainAccounts2023.xls">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
+	  <None Update="Core\StaticFiles\Public\actions.json">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>

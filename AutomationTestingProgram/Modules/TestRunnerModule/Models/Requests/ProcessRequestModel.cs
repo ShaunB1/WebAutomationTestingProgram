@@ -23,5 +23,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         [Required(ErrorMessage = "The environment is required.")]
         [AllowedEnvironments()]
         public string Environment { get; set; }
+
+        [Required(ErrorMessage = "The delay is required.")]
+        public double Delay { get; set; }
     }
 }

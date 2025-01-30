@@ -1,4 +1,4 @@
-using AutomationTestingProgram.Models;
+/*using AutomationTestingProgram.Models;
 using AutomationTestingProgram.Actions;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
@@ -112,4 +112,4 @@ public class TestController : ControllerBase
             return StatusCode(500, new { Error = e.Message });
         }
     }
-}
+}*/

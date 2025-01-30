@@ -1,6 +1,8 @@
 ﻿using AutomationTestingProgram.Core;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Graph.DeviceManagement.Reports.RetrieveDeviceAppInstallationStatusReport;
 using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
@@ -16,7 +18,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         {
             get
             {
-                return _pages?.ElementAt(_index);
+                return _pages?.Last();
             }
             private set { }
         }
@@ -76,6 +78,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         private readonly ICustomLogger _logger;
 
         /// <summary>
+        /// Hub Context used to log to Signal R
+        /// </summary>
+        private readonly IHubContext<TestHub> _hubContext;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Page"/> class.
         /// This constructor does not launch of initialize the page, it only sets up the basic properties.
         /// Please call InitializeAsync() to finish set-up.
@@ -107,11 +114,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         {
             if (_index == -1)
             {
-                _logger.LogInformation($"Initializing Page Instance...");
+                await LogInfo($"Initializing Page Instance...");
             }
             else
             {
-                _logger.LogInformation($"Refreshing Page Object - Closing all open instances");
+                await LogInfo($"Refreshing Page Object - Closing all open instances");
 
                 foreach (IPage page in _pages)
                 {
@@ -121,7 +128,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                     }
                     catch (Exception e)
                     {
-                        _logger.LogInformation($"Error closing page: {e}");
+                        await LogError($"Error closing page: {e}");
                     }                    
                 }
             }
@@ -135,21 +142,50 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                     throw new Exception("Context instance is null when trying to initialize Page");
 
                 _pages.Add(await CreatePageInstance(_parent.Instance, url));
-                _logger.LogInformation($"Successfully initialized Page Instance with url {url}");
+                await LogInfo($"Successfully initialized Page Instance with url {url}");
             }
             catch (Exception e)
             {
-                _logger.LogError($"Failed to initialize Page Instance with url {url} due to {e}");
+                await LogError($"Failed to initialize Page Instance with url {url} due to {e}");
                 throw new LaunchException($"Failed to initialize Page instance.", e);
             }
         }
 
         /// <summary>
-        /// Closes all pages associated with the page object.
+        /// Closes the current page instance
+        /// </summary>
+        /// <returns></returns>
+        public async Task CloseCurrentAsync()
+        {
+            try
+            {
+                await LogInfo($"Closing Page...");
+
+                if (_pages.Count > 0)
+                {
+                    await Instance!.CloseAsync();
+                    _pages.RemoveAt(_pages.Count - 1);
+
+                    await LogInfo($"Page Instance closed successfully.");
+                }
+                else
+                {
+                    throw new Exception("No page to close");
+                }
+
+            }
+            catch (Exception e)
+            {
+                await LogError($"Failed to close Page (ID: {ID}) due to {e}");
+            }
+        }
+
+        /// <summary>
+        /// Closes the Page Object
         /// </summary>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task CloseAllAsync()
+        public async Task CloseObjectAsync()
         {
             try
             {
@@ -167,28 +203,77 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             }
             finally
             {
+                _pages.Clear();
                 _logger.Flush();
             }
         }
 
-        public void LogInfo(string message)
+        public async Task LogInfo(string message)
         {
             _logger.LogInformation(message);
+            await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, message);
         }
 
-        public void LogWarning(string message)
+        public async Task LogWarning(string message)
         {
-                _logger.LogWarning(message);
+            _logger.LogWarning(message);
+            await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, message);
         }
 
-        public void LogError(string message)
+        public async Task LogError(string message)
         {
-                _logger.LogError(message);
+            _logger.LogError(message);
+            await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, message);
         }
 
-        public void LogCritical(string message)
+        public async Task LogCritical(string message)
         {
-                _logger.LogCritical(message);
+            _logger.LogCritical(message);
+            await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, message);
+        }
+
+        /// <summary>
+        /// Use when you need a logging delegate. Must pass LogLevel.
+        /// </summary>
+        /// <param name="level"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task Log(LogLevel level, string message)
+        {
+            switch (level)
+            {
+                case LogLevel.Critical:
+                    await LogCritical(message); break;
+                case LogLevel.Error:
+                    await LogError(message); break;
+                case LogLevel.Warning:
+                    await LogWarning(message); break;
+                case LogLevel.Information:
+                    await LogInfo(message); break;
+                default:
+                    throw new NotImplementedException($"Log level not implemented: {level.ToString()}");
+            }
+        }
+
+        public string RetrieveDownloadFolder()
+        {
+            return Path.Combine(FolderPath, LogManager.DownloadPath);
+        }
+
+        public string RetrieveResultsFolder()
+        {
+            return Path.Combine(FolderPath, LogManager.ResultsPath);
+        }
+
+        public string RetrieveScreenShotFolder()
+        {
+            return Path.Combine(FolderPath, LogManager.ScreenShotPath);
+        }
+
+        public string RetrieveTempFolder()
+        {
+            return Path.Combine(FolderPath, LogManager.TempFilePath);
         }
 
         private async Task<IPage> CreatePageInstance(IBrowserContext context, string url = "")

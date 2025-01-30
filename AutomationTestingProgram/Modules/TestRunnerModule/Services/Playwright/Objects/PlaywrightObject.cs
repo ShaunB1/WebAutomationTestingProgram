@@ -103,7 +103,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             Browser browser;
             try
             {
-                if (_activeBrowsers.TryGetValue((request.BrowserType, request.BrowserVersion), out browser))
+                if (_activeBrowsers.TryGetValue((request.BrowserType, request.BrowserVersion), out browser!))
                 {
                     // If Browser already active, increase linked Amount
                     browser.IncrementRequestCount(request);

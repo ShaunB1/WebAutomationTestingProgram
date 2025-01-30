@@ -1,4 +1,4 @@
-﻿using AutomationTestingProgram.Models;
+﻿/*using AutomationTestingProgram.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Playwright;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
@@ -131,4 +131,4 @@ public class HandleReporting
         _logger.LogInformation($"Completed test run {testRun.Id}");
         await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Completed test run {testRun.Id}");
     }
-}
+}*/

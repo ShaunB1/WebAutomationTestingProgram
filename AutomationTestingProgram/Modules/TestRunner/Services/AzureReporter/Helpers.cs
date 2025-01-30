@@ -1,29 +1,29 @@
-using System.Text;
+//using System.Text;
 
-namespace AutomationTestingProgram.Actions;
+//namespace AutomationTestingProgram.Actions;
 
-public class Helpers
-{
-    public static string GenerateStepsXml(List<TestStep> steps)
-    {
-        var sb = new StringBuilder();
-        var stepId = 1;
+//public class Helpers
+//{
+//    public static string GenerateStepsXml(List<TestStep> steps)
+//    {
+//        var sb = new StringBuilder();
+//        var stepId = 1;
         
-        sb.AppendLine("<steps>");
+//        sb.AppendLine("<steps>");
 
-        foreach (var step in steps)
-        {
-            sb.Append($@"
-            <step id='{stepId}' type='ActionStep'>
-               <parameterizedString isformatted='true'>{step.TestDescription}</parameterizedString>
-               <parameterizedString isformatted='true'>ACTION: {step.ActionOnObject}, OBJECT: {step.Object}, VALUE: {step.Value}</parameterizedString>
-            </step>
-         ");
-            stepId++;
-        }
+//        foreach (var step in steps)
+//        {
+//            sb.Append($@"
+//            <step id='{stepId}' type='ActionStep'>
+//               <parameterizedString isformatted='true'>{step.TestDescription}</parameterizedString>
+//               <parameterizedString isformatted='true'>ACTION: {step.ActionOnObject}, OBJECT: {step.Object}, VALUE: {step.Value}</parameterizedString>
+//            </step>
+//         ");
+//            stepId++;
+//        }
         
-        sb.AppendLine("</steps>");
+//        sb.AppendLine("</steps>");
         
-        return sb.ToString();
-    }
-}
+//        return sb.ToString();
+//    }
+//}

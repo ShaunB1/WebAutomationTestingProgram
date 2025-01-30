@@ -11,9 +11,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         {
             if (value is string environment)
             {
+                var csvEnvironmentGetter = (CSVEnvironmentGetter)validationContext.GetService(typeof(CSVEnvironmentGetter))!;
+
                 try
                 {
-                    CSVEnvironmentGetter.GetEnvironmentName(environment);
+                    csvEnvironmentGetter.GetEnvironmentName(environment);
                 }
                 catch
                 {

@@ -14,13 +14,8 @@
 
         /// <summary>
         /// Retrieves the current active test case
+        /// as well as index of current step.
         /// </summary>
-        TestCase GetCurrentTestCase();
-
-        /// <summary>
-        /// Retrieves the Next Test Step.
-        /// </summary>
-        /// <returns></returns>
-        Task<TestStep> GetTestStepAsync();
+        (TestCase TestCase, int TestStepIndex) GetNextTestStep();
     }
 }

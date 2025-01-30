@@ -26,10 +26,13 @@ namespace AutomationTestingProgram.Core
         /// </summary>
         public IList<IClientRequest> RetrievedRequests { get; private set; }
 
+        [JsonIgnore]
+        private RequestHandler _requestHandler { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="RetrievalRequest"/> class.
         /// </summary>
-        public RetrievalRequest(ICustomLoggerProvider provider, ClaimsPrincipal User, RetrievalRequestModel model)
+        public RetrievalRequest(ICustomLoggerProvider provider, RequestHandler requestHandler, ClaimsPrincipal User, RetrievalRequestModel model)
             : base(User)
         {
             Logger = provider.CreateLogger<RetrievalRequest>(FolderPath);
@@ -45,6 +48,8 @@ namespace AutomationTestingProgram.Core
 
             FilterValue = model.FilterValue;
             RetrievedRequests = new List<IClientRequest>();
+
+            _requestHandler = requestHandler;
         }
 
 
@@ -87,13 +92,13 @@ namespace AutomationTestingProgram.Core
             switch (FilterType)
             {
                 case FilterType.None:
-                    RetrievedRequests = RequestHandler.RetrieveRequests();
+                    RetrievedRequests = _requestHandler.RetrieveRequests();
                     break;
                 case FilterType.ID:
-                    RetrievedRequests.Add(RequestHandler.RetrieveRequest(FilterValue));
+                    RetrievedRequests.Add(_requestHandler.RetrieveRequest(FilterValue));
                     break;
                 case FilterType.Type:
-                    RetrievedRequests = RequestHandler.RetrieveRequests(FilterValue);
+                    RetrievedRequests = _requestHandler.RetrieveRequests(FilterValue);
                     break;
             }
 

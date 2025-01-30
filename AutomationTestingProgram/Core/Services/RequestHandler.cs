@@ -1,36 +1,37 @@
-﻿using System.Collections.Concurrent;
+﻿using Microsoft.Extensions.Options;
+using System.Collections.Concurrent;
 
 namespace AutomationTestingProgram.Core
 {
     /// <summary>
     /// The Request Handler handles all incoming requests.
     /// </summary>
-    public static class RequestHandler
+    public class RequestHandler
     {
         /// <summary>
         /// Settings used for Requests
         /// </summary>
-        private static readonly RequestSettings _settings;
+        private readonly RequestSettings _settings;
 
         /// <summary>
         /// Semaphore used to limit total # of active requests
         /// </summary>
-        private static readonly SemaphoreSlim _maxRequests;
+        private readonly SemaphoreSlim _maxRequests;
 
         /// <summary>
         /// Dictionary of all active requests, keyed by their id
         /// </summary>
-        private static readonly ConcurrentDictionary<string, IClientRequest> _requests;
+        private readonly ConcurrentDictionary<string, IClientRequest> _requests;
 
         /// <summary>
         /// Token detecting whether the application is shutting down. Used to prevent new requests
         /// from being received.
         /// </summary>
-        private static CancellationTokenSource _tokenSource;
+        private CancellationTokenSource _tokenSource;
 
-        static RequestHandler()
+        public RequestHandler(IOptions<RequestSettings> options)
         {
-            _settings = AppConfiguration.GetSection<RequestSettings>("Request");
+            _settings = options.Value;
             _maxRequests = new SemaphoreSlim(_settings.Limit);
             _requests = new ConcurrentDictionary<string, IClientRequest>();
             _tokenSource = new CancellationTokenSource();
@@ -41,7 +42,7 @@ namespace AutomationTestingProgram.Core
         /// </summary>
         /// <param name="request">The request to process</param>
         /// <returns>The result of the request</returns>
-        public static async Task ProcessAsync(IClientRequest request)
+        public async Task ProcessAsync(IClientRequest request)
         {
             try
             {
@@ -63,7 +64,7 @@ namespace AutomationTestingProgram.Core
         /// Tries to access a slot for a request to be processed
         /// </summary>
         /// <returns></returns>
-        public static async Task<bool> TryAcquireSlotAsync(int timeout = 30000) // 30 seconds
+        public async Task<bool> TryAcquireSlotAsync(int timeout = 30000) // 30 seconds
         {
             if (!_tokenSource.IsCancellationRequested)
                 return await _maxRequests.WaitAsync(timeout);
@@ -74,7 +75,7 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Releases a slot for other requests to start processing
         /// </summary>
-        public static void ReleaseSlot()
+        public void ReleaseSlot()
         {
             _maxRequests.Release();
         }
@@ -86,7 +87,7 @@ namespace AutomationTestingProgram.Core
         /// <param name="ID">The ID of the request to find</param>
         /// <returns></returns>
         /// <exception cref="KeyNotFoundException"></exception>
-        public static IClientRequest RetrieveRequest(string ID)
+        public IClientRequest RetrieveRequest(string ID)
         {
             if (!_requests.TryGetValue(ID, out var request))
             {
@@ -100,7 +101,7 @@ namespace AutomationTestingProgram.Core
         /// </summary>
         /// <param name="filter">The filter used</param>
         /// <returns></returns>
-        public static IList<IClientRequest> RetrieveRequests(string filter = "")
+        public IList<IClientRequest> RetrieveRequests(string filter = "")
         {
             if (string.IsNullOrEmpty(filter))
             {
@@ -130,7 +131,7 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Receives the ShutDown signal, preventing new requests from being accepted.
         /// </summary>
-        public static async Task ShutDownAsync()
+        public async Task ShutDownAsync()
         {
             _tokenSource.Cancel(); // Cancels the token source
 

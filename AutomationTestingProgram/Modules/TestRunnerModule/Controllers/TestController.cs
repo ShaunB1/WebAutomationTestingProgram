@@ -12,8 +12,8 @@ public class TestController : CoreController
     private readonly IHubContext<TestHub> _hubContext;
     private readonly PlaywrightObject _playwright;
 
-    public TestController(ICustomLoggerProvider provider, PlaywrightObject playwright, IHubContext<TestHub> hubContext):
-        base(provider) 
+    public TestController(ICustomLoggerProvider provider, RequestHandler handler, PlaywrightObject playwright, IHubContext<TestHub> hubContext):
+        base(provider, handler) 
     { 
         _playwright = playwright;
         _hubContext = hubContext;
@@ -37,7 +37,10 @@ public class TestController : CoreController
     {
         ValidationRequest request = new ValidationRequest(_provider, HttpContext.User);
         await CopyFileToFolder(model.File, request.FolderPath);
-        return await HandleRequest(request);
+        return await HandleRequest(request, async (req) =>
+        {
+            return "Validation successfull";
+        });
     }
 
     /// <summary>
@@ -49,10 +52,14 @@ public class TestController : CoreController
     {
         ProcessRequest request = new ProcessRequest(_provider, _hubContext, _playwright, HttpContext.User, model);
         await CopyFileToFolder(model.File, request.FolderPath);
+        string username = HttpContext.User.FindFirst("name")!.Value;
         string email = HttpContext.User.FindFirst("preferred_username")!.Value;
-        await _hubContext.Clients.User(email).SendAsync("AddGroup", email, request.ID);
-        IActionResult result =  await HandleRequest(request);
-        await _hubContext.Clients.User(email).SendAsync("RemoveGroup", email, request.ID);
+        await HubHelper.AddToGroupAsync(_hubContext, email, request.ID, username);
+        IActionResult result =  await HandleRequest(request, async (req) =>
+                                {
+                                    return "Run Successful";
+                                });
+        await HubHelper.RemoveFromGroupAsync(_hubContext, email, request.ID, username);
         return result;
     }
 }

@@ -11,36 +11,40 @@ public class CoreController : ControllerBase
 {
     protected readonly ICustomLoggerProvider _provider;
     private readonly ICustomLogger _logger;
+    private readonly RequestHandler _requestHandler;
 
-    public CoreController(ICustomLoggerProvider provider)
+    public CoreController(ICustomLoggerProvider provider, RequestHandler handler)
     {
         _provider = provider;
         _logger = _provider.CreateLogger<CoreController>();
+        _requestHandler = handler;
     }
 
-    protected async Task<IActionResult> HandleRequest<TRequest>(TRequest request) where TRequest : IClientRequest
+    protected async Task<IActionResult> HandleRequest<TRequest, TReturn>(TRequest request, Func<TRequest, Task<TReturn>> getProperty) where TRequest : IClientRequest
     {
         try
         {
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received.");
 
-            await RequestHandler.ProcessAsync(request);
+            await _requestHandler.ProcessAsync(request);
+
+            var result = await getProperty(request);
 
             // If request succeeds
             _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) successfully completed.");
-            return Ok(new { Message = $"Completed", Request = request });
+            return Ok(new { Result = result });
         }
         catch (OperationCanceledException e)
         {
             // If request cancelled
             _logger.LogWarning($"{request.GetType().Name} (ID: {request.ID}) cancelled.\nMessage: '{e.Message}'");
-            return StatusCode(500, new { Error = e.Message, Request = request });
+            return StatusCode(500, new { Error = e.Message });
         }
         catch (Exception e)
         {
             // If request fails
             _logger.LogError($"{request.GetType().Name} (ID: {request.ID}) failed.\nError: '{e.Message}'");
-            return StatusCode(500, new { Error = e.Message, Request = request });
+            return StatusCode(500, new { Error = e.Message });
         }
     }
 
@@ -82,8 +86,11 @@ public class CoreController : ControllerBase
     [HttpPost("retrieve")]
     public async Task<IActionResult> GetActiveRequests([FromBody] RetrievalRequestModel model)
     {        
-        RetrievalRequest request = new RetrievalRequest(_provider, HttpContext.User, model);
-        return await HandleRequest(request);
+        RetrievalRequest request = new RetrievalRequest(_provider, _requestHandler, HttpContext.User, model);
+        return await HandleRequest(request, async (req) =>
+        {
+            return req.RetrievedRequests;
+        });
     }
 
     /// <summary>
@@ -93,8 +100,11 @@ public class CoreController : ControllerBase
     [HttpPost("stop")]
     public async Task<IActionResult> StopRequest([FromBody] CancellationRequestModel model)
     {
-        CancellationRequest request = new CancellationRequest(_provider, HttpContext.User, model);
-        return await HandleRequest(request);
+        CancellationRequest request = new CancellationRequest(_provider, _requestHandler, HttpContext.User, model);
+        return await HandleRequest(request, async (req) =>
+        {
+            return $"Request {req.CancelRequestID} cancelled successfully";
+        });
     }
 }
 

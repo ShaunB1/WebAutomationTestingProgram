@@ -22,6 +22,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public string SecretKey { get; private set; }
 
+        [JsonIgnore]
         private AzureKeyVaultService azureKeyVaultService;
 
 
@@ -74,7 +75,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
 
                 await IOManager.TryAquireSlotAsync();
-                SecretKey = await azureKeyVaultService.GetKvSecret(this, Email);
+                SecretKey = await azureKeyVaultService.GetKvSecret(Log, Email);
 
                 SetStatus(State.Completed, $"SecretKeyRetrieval Request (ID: {ID}, Email: {Email}) completed successfully");
             }

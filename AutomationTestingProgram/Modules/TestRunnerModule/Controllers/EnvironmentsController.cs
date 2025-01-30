@@ -13,8 +13,8 @@ public class EnvironmentsController : CoreController
     private readonly AzureKeyVaultService _azureKeyVaultService;
     private readonly string _keyChainFileName;
 
-    public EnvironmentsController(ICustomLoggerProvider provider, IOptions<PathSettings> options, PasswordResetService passwordResetService, AzureKeyVaultService azureKeyVaultService)
-        :base(provider)
+    public EnvironmentsController(ICustomLoggerProvider provider, RequestHandler handler, IOptions<PathSettings> options, PasswordResetService passwordResetService, AzureKeyVaultService azureKeyVaultService)
+        :base(provider, handler)
     {
         _passwordResetService = passwordResetService;
         _azureKeyVaultService = azureKeyVaultService;
@@ -35,10 +35,14 @@ public class EnvironmentsController : CoreController
 
     [Authorize]
     [HttpGet("keychainAccounts")]
+    [ResponseCache(Duration = 14400, Location = ResponseCacheLocation.Client)] // Cached for four hours
     public async Task<IActionResult> GetKeychainAccounts()
     {
         KeyChainRetrievalRequest request = new KeyChainRetrievalRequest(_provider, HttpContext.User, _keyChainFileName);
-        return await HandleRequest(request);
+        return await HandleRequest(request, async (req) =>
+        {
+            return req.Accounts;
+        });
     }
 
     [Authorize]
@@ -46,7 +50,10 @@ public class EnvironmentsController : CoreController
     public async Task<IActionResult> GetSecretKey([FromQuery] SecretKeyRetrievalRequestModel model)
     {
         SecretKeyRetrievalRequest request = new SecretKeyRetrievalRequest(_provider, _azureKeyVaultService, HttpContext.User, model);
-        return await HandleRequest(request);
+        return await HandleRequest(request, async (req) =>
+        {
+            return req.SecretKey;
+        });
     }
 
     [Authorize]
@@ -54,6 +61,9 @@ public class EnvironmentsController : CoreController
     public async Task<IActionResult> ResetPassword([FromBody] PasswordResetRequestModel model)
     {
         PasswordResetRequest request = new PasswordResetRequest(_provider, _passwordResetService, HttpContext.User, model);
-        return await HandleRequest(request);
+        return await HandleRequest(request, async (req) =>
+        {
+            return $"Password for {req.Email} reset successfully";
+        });
     }
 }

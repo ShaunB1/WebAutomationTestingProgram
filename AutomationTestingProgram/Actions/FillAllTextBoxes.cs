@@ -1,17 +1,26 @@
-﻿using Microsoft.Playwright;
+﻿using AutomationTestingProgram.Modules.TestRunnerModule;
+using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Actions;
 
 public class FillAllTextBoxes : WebAction
 {
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
+    public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
     {
         try
         {
+            IPage page = pageObject.Instance!;
+
+            await pageObject.LogInfo("Locating all inputs...");
+
             var inputElements = await page.QuerySelectorAllAsync("input");
             var text = step.Value;
+
+            await pageObject.LogInfo($"Inputs successfully located: {inputElements.Count}");
 
             foreach (var inputElement in inputElements)
             {
@@ -29,8 +38,16 @@ public class FillAllTextBoxes : WebAction
                     }
                 }
             }
-        
+
+            await pageObject.LogInfo("All inputs are filled");
+
+
+            await pageObject.LogInfo("Locating all textareas...");
+
             var textAreaElements = await page.QuerySelectorAllAsync("textarea");
+
+            await pageObject.LogInfo($"Textareas successfully located: {textAreaElements.Count}");
+
 
             foreach (var textAreaElement in textAreaElements)
             {
@@ -49,12 +66,12 @@ public class FillAllTextBoxes : WebAction
                 }
             }
 
-            return true;
+            await pageObject.LogInfo("All textareas are filled");
+
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            Console.WriteLine(e);
-            return false;
+            throw;
         }
     }
 }

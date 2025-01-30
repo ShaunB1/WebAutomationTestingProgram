@@ -1,16 +1,12 @@
-using System.Text.RegularExpressions;
+/*using System.Text.RegularExpressions;
 using ClosedXML;
 using Microsoft.Graph.Models;
 using Microsoft.Playwright;
 using Newtonsoft.Json.Linq;
-using AutomationTestingProgram.Modules.TestRunnerModule;
-using Microsoft.AspNetCore.SignalR;
-using AutomationTestingProgram.Core;
-using Microsoft.TeamFoundation;
 
 namespace AutomationTestingProgram.Actions;
 
-class ElDict
+class ElDictOLD
 {
     public int IFrame { get; set; }
     public string Tag { get; set; }
@@ -18,16 +14,48 @@ class ElDict
     public Dictionary<string, object> Attributes { get; set; }
 }
 
-public abstract class WebAction
+public abstract class WebActionOLD
 {
-    public abstract Task ExecuteAsync(Page page,
-        string groupID,
+    public abstract Task<bool> ExecuteAsync(IPage page,
         TestStep step,
         Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams);
+        Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups,
+        int currentIteration,
+        string cycleGroupName);
+
+    public string GetIterationData(
+        TestStep step,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups,
+        int currentIteration,
+        string cycleGroupName
+    )
+    {
+        if (cycleGroups.TryGetValue(cycleGroupName, out var iterations))
+        {
+            var iterationData = iterations[currentIteration];
+            string variableName;
+            if (step.Value.StartsWith("{") && step.Value.EndsWith("}"))
+            {
+                variableName = step.Value.Trim('{', '}');
+            }
+            else
+            {
+                variableName = step.Value;
+            }
+            
+            
+            if (iterationData.TryGetValue(variableName, out var value))
+            {
+                return value;
+            }
+        }
+
+        return "";
+    }
 
     public async Task<IElementHandle> LocateElementAsync(IPage page, string locator, string locatorType)
-    { 
+    {
         var types = new List<string> { "htmlid", "xpath", "innertext" };
         locatorType = locatorType.ToLower().Replace(" ", "");
         
@@ -145,12 +173,13 @@ public abstract class WebAction
                 }
                 else
                 {
-                    throw new Exception($"NOT IN FRAME. EXPECTED: {iframe} ACTUAL: {iframeIndex}");
+                    Console.WriteLine($"NOT IN FRAME. EXPECTED: {iframe} ACTUAL: {iframeIndex}");
                 }
             }
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Console.WriteLine(e);
             throw;
         }
         
@@ -166,6 +195,12 @@ public abstract class WebAction
                 var interactiveElements = new string[] { "input", "select", "textarea", "fieldset", "optgroup", "option" };
                 var tag = await element.EvaluateAsync<string>("el => el.tagName.toLowerCase()");
                 var text = "";
+
+                var text2 = await element.EvaluateAsync<string>(@"node => node.textContent?.trim() || ''");
+                if (text2.Contains("Algoma University (ALGM)"))
+                {
+                    Console.WriteLine("Mental Health Services Grant 2023 - 2024");
+                }
                 
                 if (interactiveElements.Contains(tag))
                 {
@@ -288,4 +323,4 @@ public abstract class WebAction
             return iframes;
         }
     }
-}
+}*/

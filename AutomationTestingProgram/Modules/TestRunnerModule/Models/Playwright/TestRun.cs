@@ -8,10 +8,14 @@
         public string Name { get; }
 
         /// <summary>
-        /// The total # of Test Cases in the whole run
-        /// Can be increased with looping (dynamic) -> Only cycles
+        /// The total # of Test Cases in the whole run.
         /// </summary>
-        public int TestCaseNum { get; set; }
+        public int TestCaseNum => TestCases.Count;
+
+        /// <summary>
+        /// List of all TestCases within this TestRun
+        /// </summary>
+        public IList<TestCase> TestCases { get; }
 
 
         /// <summary>
@@ -39,8 +43,8 @@
         public TestRun(string name)
         {
             Name = name;
-            TestCaseNum = 0;
             FailureCounter = 0;
+            TestCases = new List<TestCase>();
         }
     }
 

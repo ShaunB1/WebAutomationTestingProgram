@@ -17,6 +17,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public string Email { get; }
 
+        [JsonIgnore]
         private PasswordResetService passwordResetService;
 
 
@@ -67,7 +68,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 this.SetStatus(State.Processing, $"Processing PasswordReset Request (ID: {ID}, Email: {Email})");
 
                 await IOManager.TryAquireSlotAsync();
-                await passwordResetService.ResetPassword(this, Email);
+                await passwordResetService.ResetPassword(Log, Email);
 
                 SetStatus(State.Completed, $"PasswordReset Request (ID: {ID}, Email: {Email}) completed successfully");
             }

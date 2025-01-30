@@ -12,14 +12,14 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
     {
         private readonly IOptions<ContextSettings> _settings;
         private readonly ICustomLoggerProvider _provider;
-        private readonly IPlaywrightExecutor _executor;
+        private readonly IPlaywrightExecutorFactory _executorFactory;
         private readonly IPageFactory _pageFactory;
 
-        public ContextFactory(IOptions<ContextSettings> options, ICustomLoggerProvider provider, IPlaywrightExecutor executor, IPageFactory pageFactory)
+        public ContextFactory(IOptions<ContextSettings> options, ICustomLoggerProvider provider, IPlaywrightExecutorFactory executorFactory, IPageFactory pageFactory)
         {
             _settings = options;
             _provider = provider;
-            _executor = executor;
+            _executorFactory = executorFactory;
             _pageFactory = pageFactory;
         }
 
@@ -31,7 +31,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <returns></returns>
         public async Task<Context> CreateContext(Browser browser, ProcessRequest request)
         {
-            Context context = new Context(browser, request, _settings, _provider, _pageFactory, _executor);
+            Context context = new Context(browser, request, _settings, _provider, _pageFactory, _executorFactory);
             await context.InitializeAsync();
             return context;
         }

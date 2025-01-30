@@ -1,13 +1,13 @@
 ﻿namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
-    public class PasswordResetLimitException : Exception
+    public class PasswordAlreadyResetException : Exception
     {
-        public PasswordResetLimitException(string message)
+        public PasswordAlreadyResetException(string message)
             : base(message)
         {
         }
 
-        public PasswordResetLimitException(string message, Exception innerException)
+        public PasswordAlreadyResetException(string message, Exception innerException)
             : base(message, innerException)
         {
         }

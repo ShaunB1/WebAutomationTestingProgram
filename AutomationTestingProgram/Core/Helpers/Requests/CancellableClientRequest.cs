@@ -48,9 +48,17 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Initializes variables to be used for all Cancellable Request Types
         /// </summary>
-        public CancellableClientRequest(ClaimsPrincipal User, bool isLoggingEnabled = true)
+        public CancellableClientRequest(ClaimsPrincipal User, bool isLoggingEnabled = true, string id = "")
         {
-            this.ID = Guid.NewGuid().ToString();
+            if (!string.IsNullOrEmpty(id))
+            {
+                ID = id;
+            }
+            else
+            {
+                this.ID = Guid.NewGuid().ToString();
+            }
+                
             this.User = User;
             this.ResponseSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             this.State = State.Received;
@@ -202,6 +210,25 @@ namespace AutomationTestingProgram.Core
         {
             if (Logger != null)
                 Logger.LogCritical(message);
+        }
+
+        public Task Log(LogLevel level, string message)
+        {
+            switch (level)
+            {
+                case LogLevel.Critical:
+                    LogCritical(message); break;
+                case LogLevel.Error:
+                    LogError(message); break;
+                case LogLevel.Warning:
+                    LogWarning(message); break;
+                case LogLevel.Information:
+                    LogInfo(message); break;
+                default:
+                    throw new NotImplementedException($"Log level not implemented: {level.ToString()}");
+            }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

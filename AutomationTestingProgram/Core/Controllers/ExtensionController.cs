@@ -6,17 +6,17 @@ namespace AutomationTestingProgram.Core;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ExtensionController : CoreController
+public class ExtensionController : ControllerBase
 {
     private readonly string _extensionDownloadPath;
-    public ExtensionController(ICustomLoggerProvider provider, IOptions<PathSettings> options)
-        :base(provider)
+    public ExtensionController(IOptions<PathSettings> options)
     {
         _extensionDownloadPath = options.Value.ExtensionDownloadPath;
     }
 
     [Authorize]
     [HttpGet("download-zip")]
+    [ResponseCache(Duration = 14400, Location = ResponseCacheLocation.Client)] // Cached for four hours
     public IActionResult DownloadZip()
     {
         try

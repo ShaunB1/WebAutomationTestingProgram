@@ -1,9 +1,14 @@
-﻿using AutomationTestingProgram.Actions;
+﻿using Autofac;
+using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Core;
+using DocumentFormat.OpenXml.InkML;
+using Microsoft.ApplicationInsights.Extensibility.Implementation;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using NPOI.HPSF;
+using System.Linq;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -13,10 +18,10 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
     /// <summary>
     /// Class for executing Playwright Actions
     /// </summary>
-    public class PlaywrightExecutor
+    public class PlaywrightExecutor : IPlaywrightExecutor
     {   
         // STATIC VARIABLES *********************************************************
-
+        public static IComponentContext? ComponentContext { get; set; }
         private static readonly Dictionary<string, WebAction> actions = new Dictionary<string, WebAction>();
         private static Dictionary<string, string> actionAliases = new Dictionary<string, string>
         {
@@ -105,11 +110,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         private IReader _reader;
 
-        /// <summary>
-        /// Hub used to broadcast logs to front-end with SignalR
-        /// </summary>
-        private readonly IHubContext<TestHub> _hubContext;
-
 
         static PlaywrightExecutor()
         {
@@ -124,9 +124,10 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
             var actionDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent);
 
+            var serviceProvider =
 
             actions = actionDict
-                .Select(kvp =>
+                .Select<KeyValuePair<string, string>, KeyValuePair<string, WebAction>>(kvp =>
                 {
                     var actionType = Type.GetType(kvp.Value, throwOnError: false);
 
@@ -135,14 +136,15 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                         throw new InvalidOperationException($"Action type '{kvp.Value}' not found.");
                     }
 
-                    var webAction = (WebAction?)Activator.CreateInstance(actionType);
-                    return new { Key = kvp.Key, Action = webAction };
+                    var webAction = (WebAction?)ComponentContext!.ResolveOptional(actionType) ?? (WebAction?)Activator.CreateInstance(actionType);
+                    return new KeyValuePair<string, WebAction>(kvp.Key, webAction);
                 })
-                .Where(item => item != null)
+                .Where(item => item.Value != null)
                 .ToDictionary(
-                    item => item!.Key,
-                    item => item!.Action!
+                    item => item.Key,
+                    item => item.Value
                 );
+
         }
 
         /// <summary>
@@ -167,7 +169,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             _cancellationToken = _request.CancelToken;
 
             _reader = readerFactory.CreateReader(Path.Combine(_request.FolderPath, _request.FileName));
-            _hubContext = hubContext;
         }
 
         public async Task ExecuteTestFileAsync(Page page)
@@ -175,10 +176,9 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             double.TryParse(_envVars["delay"], out double delay);
 
             TestRun testRun = _reader.TestRun;
+            testRun.StartedDate = DateTime.Now;
 
-            TestCase testCase = _reader.GetCurrentTestCase();
-            testCase.StartedDate = DateTime.Now;
-
+            // Request starts processing
             StringBuilder logMessage = new StringBuilder()
                           .AppendLine("========================================================")
                           .AppendLine("                REQUEST INFORMATION                     ")
@@ -191,34 +191,100 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                           .AppendLine($"DELAY:            {_request.Delay,-40}")
                           .AppendLine("========================================================");
 ;
-            page.LogInfo(logMessage.ToString());
-            await _hubContext.Clients.Group(_request.ID).SendAsync("BroadcastLog", _request.ID, logMessage.ToString());
+            await page.LogInfo(logMessage.ToString());
+
+            TestCase? testCase = null;
+            TestStep step;
 
             try
-            {
+            {   // Test Run starts
+                logMessage.Clear()
+                         .AppendLine("                                                        ")
+                         .AppendLine("========================================================")
+                         .AppendLine("          TEST EXECUTION LOG - TEST RUN START           ")
+                         .AppendLine("========================================================")
+                         .AppendLine($"TEST RUN:     {testRun.Name,-40}")
+                         .AppendLine($"CASE NUM:      {testRun.TestCaseNum,-40}")
+                         .AppendLine($"START DATE:    {testRun.StartedDate,-40}")
+                         .AppendLine("--------------------------------------------------------")
+                         .AppendLine($"EXECUTING...")
+                         .AppendLine("========================================================")
+                         .AppendLine("                                                        ");
+
+                await page.LogInfo(logMessage.ToString());
+
+
                 while (!_reader.isComplete)
                 {
                     _request.IsCancellationRequested();
                     await Task.Delay(TimeSpan.FromSeconds(delay));
 
-                    TestStep step = await _reader.GetTestStepAsync();
+                    var data = _reader.GetNextTestStep();
 
-                    if (!testCase.Equals(_reader.GetCurrentTestCase()))
+                    // No previous test case
+                    if (testCase == null || testCase.Name != data.TestCase.Name)
                     {
-                        testCase = _reader.GetCurrentTestCase();
+                        testCase = data.TestCase;
                         testCase.StartedDate = DateTime.Now;
+
+                        // New Test Case Starts
+                        logMessage.Clear()
+                         .AppendLine("                                                        ")
+                         .AppendLine("========================================================")
+                         .AppendLine("          TEST EXECUTION LOG - TEST CASE START          ")
+                         .AppendLine("========================================================")
+                         .AppendLine($"TEST CASE:     {testCase.Name,-40}")
+                         .AppendLine($"STEP NUM:      {testCase.TestStepNum,-40}")
+                         .AppendLine($"START DATE:    {testCase.StartedDate,-40}")
+                         .AppendLine("--------------------------------------------------------")
+                         .AppendLine($"EXECUTING...")
+                         .AppendLine("========================================================")
+                         .AppendLine("                                                        ");
+
+                        await page.LogInfo(logMessage.ToString());
                     }
+
+                    step = testCase.TestSteps[data.TestStepIndex];
+
 
                     try
                     {
-                        await ExecuteTestStep(step);
+                        await ExecuteTestStep(page, step);
+
+                        // If Step Completes
+
+                        // If last test step in test case
+                        if (data.TestStepIndex + 1 >= testCase.TestSteps.Count)
+                        {
+                            testCase.Result = Result.Successful;
+                            testCase.CompletedDate = DateTime.Now;
+                            
+                            logMessage.Clear()
+                                .AppendLine("                                                        ")
+                                .AppendLine("========================================================")
+                                .AppendLine("         TEST EXECUTION LOG - TEST CASE COMPLETE        ")
+                                .AppendLine("========================================================")
+                                .AppendLine($"TEST CASE:     {testCase.Name,-40}")
+                                .AppendLine($"STEP NUM:      {testCase.TestStepNum,-40}")
+                                .AppendLine($"START DATE:    {testCase.StartedDate,-40}")
+                                .AppendLine($"END DATE:      {testCase.CompletedDate,-40}")
+                                .AppendLine("--------------------------------------------------------")
+                                .AppendLine($"RESULT:        {testCase.Result,-40}")
+                                .AppendLine($"STEP FAILURES: {testCase.FailureCounter,-40}")
+                                .AppendLine("========================================================")
+                                .AppendLine("                                                        ");
+
+                            await page.LogInfo(logMessage.ToString());
+
+                        }
                     }
                     catch (OperationCanceledException)
-                    {
+                    {   // If Request Cancelled within Step
                         throw;
                     }
-                    catch (Exception e)
-                    {
+                    catch (Exception) // If Step Fails (Error logged in Test Step Logs)
+                    {   
+
                         testCase.FailureCounter++;
 
                         // Either 5 failed steps, or over 33% failed steps -> TEST CASE FAILS
@@ -228,23 +294,79 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                             testCase.Result = Result.Failed;
                             testCase.CompletedDate = DateTime.Now;
                             testRun.FailureCounter++;
+
+                            logMessage.Clear()
+                                .AppendLine("                                                        ")
+                                .AppendLine("========================================================")
+                                .AppendLine("          TEST EXECUTION LOG - TEST CASE FAILED         ")
+                                .AppendLine("========================================================")
+                                .AppendLine($"TEST CASE:     {testCase.Name,-40}")
+                                .AppendLine($"STEP NUM:      {testCase.TestStepNum,-40}")
+                                .AppendLine($"START DATE:    {testCase.StartedDate,-40}")
+                                .AppendLine($"END DATE:      {testCase.CompletedDate,-40}")
+                                .AppendLine("--------------------------------------------------------")
+                                .AppendLine($"RESULT:        {testCase.Result,-40}")
+                                .AppendLine($"STEP FAILURES: {testCase.FailureCounter,-40}")
+                                .AppendLine("========================================================")
+                                .AppendLine("                                                        ");
+
+                            await page.LogError(logMessage.ToString());
                         }
-                    }
-                    
 
-                    
+                        // Either 5 failed cases, or over 33% failed cases -> TEST RUN FAILS
+                        if (testRun.FailureCounter >= 5 ||
+                            testRun.FailureCounter / (double)testRun.TestCaseNum >= 0.33)
+                        {
+                            testRun.CompletedDate = DateTime.Now;
+                            testRun.Result = Result.Failed;
 
-                    // Either 5 failed cases, or over 33% failed cases -> TEST RUN FAILS
-                    if (testRun.FailureCounter >= 5 ||
-                        testRun.FailureCounter / (double)testRun.TestCaseNum >= 0.33)
-                    {
-                        testRun.Result = Result.Failed;
-                        testRun.CompletedDate = DateTime.Now;
+                            logMessage.Clear()
+                             .AppendLine("                                                        ")
+                             .AppendLine("========================================================")
+                             .AppendLine("         TEST EXECUTION LOG - TEST RUN FAILED           ")
+                             .AppendLine("========================================================")
+                             .AppendLine($"TEST RUN:      {testRun.Name,-40}")
+                             .AppendLine($"CASE NUM:      {testRun.TestCaseNum,-40}")
+                             .AppendLine($"START DATE:    {testRun.StartedDate,-40}")
+                             .AppendLine($"END DATE:      {testRun.CompletedDate,-40}")
+                             .AppendLine("--------------------------------------------------------")
+                             .AppendLine($"RESULT:        {testRun.Result,-40}")
+                             .AppendLine($"CASE FAILURES: {testRun.FailureCounter,-40}")
+                             .AppendLine("========================================================")
+                             .AppendLine("                                                        ");
+
+                            await page.LogError(logMessage.ToString());
+
+                            throw;
+                        }
                     }
                 }
             }
-            catch (OperationCanceledException e)
+            catch (OperationCanceledException e) // Request Cancelled (cancelled Test Run)
             {
+
+                testRun.CompletedDate = DateTime.Now;
+                testRun.Result = Result.Uncomplete;
+
+                logMessage.Clear()
+                 .AppendLine("                                                        ")
+                 .AppendLine("========================================================")
+                 .AppendLine("        TEST EXECUTION LOG - TEST RUN CANCELLED         ")
+                 .AppendLine("========================================================")
+                 .AppendLine($"TEST RUN:      {testRun.Name,-40}")
+                 .AppendLine($"CASE NUM:      {testRun.TestCaseNum,-40}")
+                 .AppendLine($"START DATE:    {testRun.StartedDate,-40}")
+                 .AppendLine($"END DATE:      {testRun.CompletedDate,-40}")
+                 .AppendLine("--------------------------------------------------------")
+                 .AppendLine($"RESULT:        {testRun.Result,-40}")
+                 .AppendLine($"CASE FAILURES: {testRun.FailureCounter,-40}")
+                 .AppendLine("========================================================")
+                 .AppendLine("                                                        ");
+
+                await page.LogError(logMessage.ToString());
+
+
+
                 logMessage.Clear()
                           .AppendLine("========================================================")
                           .AppendLine("                REQUEST CANCELLED                       ")
@@ -259,12 +381,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                           .AppendLine($"DELAY:            {_request.Delay,-40}")
                           .AppendLine("========================================================");
 
-                page.LogInfo(logMessage.ToString());
-                await _hubContext.Clients.Group(_request.ID).SendAsync("BroadcastLog", _request.ID, logMessage.ToString());
+                await page.LogError(logMessage.ToString());
 
                 throw;
             }
-            catch (Exception e)
+            catch (Exception e) // Test Run Failed
             {
                 logMessage.Clear()
                           .AppendLine("========================================================")
@@ -287,11 +408,48 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 }                          
                 logMessage.AppendLine("========================================================");
 
-                page.LogInfo(logMessage.ToString());
-                await _hubContext.Clients.Group(_request.ID).SendAsync("BroadcastLog", _request.ID, logMessage.ToString());
+                await page.LogError(logMessage.ToString());
 
                 throw;
             }
+
+            // Test Run Complete
+            testRun.CompletedDate = DateTime.Now;
+            testRun.Result = Result.Successful;
+
+            logMessage.Clear()
+             .AppendLine("                                                        ")
+             .AppendLine("========================================================")
+             .AppendLine("        TEST EXECUTION LOG - TEST RUN COMPLETE          ")
+             .AppendLine("========================================================")
+             .AppendLine($"TEST RUN:      {testRun.Name,-40}")
+             .AppendLine($"CASE NUM:      {testRun.TestCaseNum,-40}")
+             .AppendLine($"START DATE:    {testRun.StartedDate,-40}")
+             .AppendLine($"END DATE:      {testRun.CompletedDate,-40}")
+             .AppendLine("--------------------------------------------------------")
+             .AppendLine($"RESULT:        {testRun.Result,-40}")
+             .AppendLine($"CASE FAILURES: {testRun.FailureCounter,-40}")
+             .AppendLine("========================================================")
+             .AppendLine("                                                        ");
+
+            await page.LogInfo(logMessage.ToString());
+
+            logMessage.Clear()
+                          .AppendLine("========================================================")
+                          .AppendLine("                 REQUEST COMPLETE                       ")
+                          .AppendLine("========================================================")
+                          .AppendLine($"TEST EXECUTION COMPLETE                                ")
+                          .AppendLine("--------------------------------------------------------")
+                          .AppendLine($"ID:               {_request.ID,-40}")
+                          .AppendLine($"BROWSER TYPE:     {_request.BrowserType,-40}")
+                          .AppendLine($"BROWSER VERSION:  {_request.BrowserVersion,-40}")
+                          .AppendLine("--------------------------------------------------------")
+                          .AppendLine($"ENVIRONMENT:      {_request.Environment,-40}")
+                          .AppendLine($"DELAY:            {_request.Delay,-40}")
+                          .AppendLine("========================================================");
+
+            await page.LogInfo(logMessage.ToString());
+
         }
 
         /// <summary>
@@ -300,49 +458,148 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         /// <param name="step"></param>
         /// <returns></returns>
-        public async Task ExecuteTestStep(TestStep step)
+        public async Task ExecuteTestStep(Page page, TestStep step)
         {
+            _request.IsCancellationRequested();
+
+            // Sanitizing
+
+            StringBuilder logMessage = new StringBuilder();
+
             string ActionOnObject = GetAlias(step.ActionOnObject.Replace(" ", "").ToLower());
             step.Object = InsertParams(step.Object);
             step.Value = InsertParams(step.Value);
 
+            if (step.LocalAttempts <= 0)
+            {
+                step.LocalAttempts = 3;
+            }
+
+            if (step.LocalTimeout <= 1)
+            {
+                step.LocalTimeout = 30;
+            }
+
+            if (!new[] { 1, 2, 3, 4, 5 }.Contains(step.TestStepType))
+            {
+                step.TestStepType = 2;
+            }
+
+            if (step.Control.Equals("#"))
+            {
+                logMessage.Clear()
+                        .AppendLine("========================================================")
+                        .AppendLine("         TEST EXECUTION LOG - TEST STEP SKIPPED        ")
+                        .AppendLine("========================================================")
+                        .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
+                        .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
+                        .AppendLine($"STEP NUM:      {step.StepNum,-40}")
+                        .AppendLine("--------------------------------------------------------")
+                        .AppendLine($"CONTROL:       {step.Control,-40}")
+                        .AppendLine($"SKIPPED")
+                        .AppendLine("========================================================");
+
+                await page.LogInfo(logMessage.ToString());
+
+                return;
+            }
+
+            step.StartedDate = DateTime.Now;
             logMessage.Clear()
-                      .AppendLine("========================================================")
-                      .AppendLine("                TEST EXECUTION LOG                      ")
-                      .AppendLine("========================================================")
-                      .AppendLine($"TEST CASE:     {testCase.Name,-40}")
-                      .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
-                      .AppendLine($"STEP NUM:      {step.StepNum,-40}")
-                      .AppendLine("--------------------------------------------------------")
-                      .AppendLine($"ACTION:        {ActionOnObject,-40}")
-                      .AppendLine($"OBJECT:        {step.Object,-40}")
-                      .AppendLine($"VALUE:         {step.Value,-40}")
-                      .AppendLine($"COMMENT:       {step.Comments,-40}")
-                      .AppendLine("--------------------------------------------------------")
-                      .AppendLine($"EXECUTING...")
-                      .AppendLine("========================================================");
+                            .AppendLine("========================================================")
+                            .AppendLine("          TEST EXECUTION LOG - TEST STEP START          ")
+                            .AppendLine("========================================================")
+                            .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
+                            .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
+                            .AppendLine($"STEP NUM:      {step.StepNum,-40}")
+                            .AppendLine($"ATTEMPTS:      {step.LocalAttempts + 1,-40}")
+                            .AppendLine($"START DATE:    {step.StartedDate,-40}")
+                            .AppendLine("--------------------------------------------------------")
+                            .AppendLine($"ACTION:        {ActionOnObject,-40}")
+                            .AppendLine($"OBJECT:        {step.Object,-40}")
+                            .AppendLine($"VALUE:         {step.Value,-40}")
+                            .AppendLine($"COMMENT:       {step.Comments,-40}")
+                            .AppendLine("--------------------------------------------------------")
+                            .AppendLine($"EXECUTING...")
+                            .AppendLine("========================================================");
 
-            page.LogInfo(logMessage.ToString());
-            await _hubContext.Clients.Group(_request.ID).SendAsync("BroadcastLog", _request.ID, logMessage.ToString());
+            await page.LogInfo(logMessage.ToString());
 
-
-
-            if (actions.TryGetValue(ActionOnObject, out var action))
+            // Allows for re-attempts;
+            while (true)
             {
+                try
+                {
+                    _request.IsCancellationRequested();
 
-            }
-            else
-            {
-                step.Result = Result.Failed;
-                step.CompletedDate = DateTime.Now;
-                step.Message = new StringBuilder()
-                          .AppendLine($"STATUS: {step.Result.ToString()}")
-                          .AppendLine($"Unknown action: {ActionOnObject,-40}")
-                          .AppendLine()
-                          .ToString();
-                await _hubContext.Clients.Group(_request.ID).SendAsync("BroadcastLog", _request.ID, step.Message);
-                testCase.FailureCounter++;
-            }
+                    if (actions.TryGetValue(ActionOnObject, out var action))
+                    {
+                        await action.ExecuteAsync(page, _request.ID, step, _envVars, _parameters);
+                    }
+                    else
+                    {
+                        throw new Exception($"Unknown Action provided: {ActionOnObject}");
+                    }
+
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    step.FailureCounter++;
+
+                    logMessage.Clear()
+                            .AppendLine("--------------------------------------------------------")
+                            .AppendLine("                       FAILURE                          ")
+                            .AppendLine("--------------------------------------------------------")
+                            .AppendLine($"ERROR:         {e.Message,-40}")
+                            .AppendLine($"STACKTRACE:    {e.StackTrace,-40}")
+                            .AppendLine($"ATTEMPT:       {step.FailureCounter,-40}")
+                            .AppendLine("--------------------------------------------------------");
+
+                    if (step.FailureCounter >= step.LocalAttempts)
+                    {   
+                        step.CompletedDate = DateTime.Now;
+                        step.Result = Result.Failed;
+
+                        // No more re-attempts -> Failure
+                        logMessage
+                            .AppendLine("========================================================")
+                            .AppendLine("          TEST EXECUTION LOG - TEST STEP FAILURE        ")
+                            .AppendLine("========================================================")
+                            .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
+                            .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
+                            .AppendLine($"STEP NUM:      {step.StepNum,-40}")
+                            .AppendLine($"START DATE:    {step.StartedDate,-40}")
+                            .AppendLine($"END DATE:      {step.CompletedDate,-40}")
+                            .AppendLine($"RESULT:        {step.Result,-40}")
+                            .AppendLine("--------------------------------------------------------")
+                            .AppendLine($"ACTION:        {ActionOnObject,-40}")
+                            .AppendLine($"OBJECT:        {step.Object,-40}")
+                            .AppendLine($"VALUE:         {step.Value,-40}")
+                            .AppendLine($"COMMENT:       {step.Comments,-40}")
+                            .AppendLine("========================================================");
+
+                        await page.LogError(logMessage.ToString());
+
+                        throw;
+                    }
+                    else // Re-attempt
+                    {
+                        logMessage
+                                .AppendLine("--------------------------------------------------------")
+                                .AppendLine("                       RE-ATTEMPTING                    ")
+                                .AppendLine("--------------------------------------------------------")
+                                .AppendLine($"WAITING 30 SECONDS FOR RE-ATTEMPT")
+                                .AppendLine("--------------------------------------------------------");
+
+                        await page.LogInfo(logMessage.ToString());
+                        await Task.Delay(TimeSpan.FromSeconds(30));
+                    }
+                }
+            }            
         }
 
         /// <summary>
@@ -383,8 +640,5 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             }
             return input;
         }
-
-
-
     }
 }

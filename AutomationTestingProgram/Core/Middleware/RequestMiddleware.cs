@@ -8,20 +8,21 @@
 
         private readonly RequestDelegate _next;
         private readonly ILogger<RequestMiddleware> _logger;
+        private readonly RequestHandler _handler;
 
         private static readonly List<string> RateLimitedControllers = new List<String>
         {
             "Test",
             "Environments",
             "Core",
-            "Extension",
         };
 
         // Constructor to inject middleware
-        public RequestMiddleware(RequestDelegate next, ILogger<RequestMiddleware> logger)
+        public RequestMiddleware(RequestDelegate next, ILogger<RequestMiddleware> logger, RequestHandler handler)
         {
             _next = next;
             _logger = logger;
+            _handler = handler;
         }
 
         // Handles request limiting
@@ -35,7 +36,7 @@
 
             if (isRateLimited)
             {
-                if (!await RequestHandler.TryAcquireSlotAsync(0)) // 5 min timeout?
+                if (!await _handler.TryAcquireSlotAsync(0)) // 5 min timeout?
                 {
                     context.Response.StatusCode = 503;
                     _logger.LogError($"Server Busy: Too many requests. Please try again later.");
@@ -52,7 +53,7 @@
             {
                 if (isRateLimited)
                 {
-                    RequestHandler.ReleaseSlot();
+                    _handler.ReleaseSlot();
                 }
             }
         }

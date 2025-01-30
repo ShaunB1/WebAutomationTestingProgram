@@ -169,6 +169,25 @@ namespace AutomationTestingProgram.Core
                 Logger.LogCritical(message);
         }
 
+        public Task Log(LogLevel level, string message)
+        {
+            switch (level)
+            {
+                case LogLevel.Critical:
+                    LogCritical(message); break;
+                case LogLevel.Error:
+                    LogError(message); break;
+                case LogLevel.Warning:
+                    LogWarning(message); break;
+                case LogLevel.Information:
+                    LogInfo(message); break;
+                default:
+                    throw new NotImplementedException($"Log level not implemented: {level.ToString()}");
+            }
+
+            return Task.CompletedTask;
+        }
+
         /// <summary>
         /// Flush all logs
         /// </summary>

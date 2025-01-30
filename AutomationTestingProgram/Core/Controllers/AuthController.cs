@@ -4,10 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : CoreController
+public class AuthController : ControllerBase
 {
-    public AuthController(ICustomLoggerProvider provider)
-        :base(provider) { }
+    public AuthController() { }
 
     [Authorize]
     [HttpGet("validateToken")]

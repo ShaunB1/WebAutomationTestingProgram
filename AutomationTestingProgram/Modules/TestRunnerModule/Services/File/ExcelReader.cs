@@ -5,6 +5,7 @@ using System.IO;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using NPOI.SS.Formula.Functions;
 using AutomationTestingProgram.Core;
+using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule;
 
@@ -13,7 +14,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule;
 /// </summary>
 public class ExcelReader : IReader
 {
-    public bool isComplete { get; private set; }
+    public bool isComplete { get; private set; } = false;
 
     /// <summary>
     /// The run associated with this excel reader.
@@ -21,39 +22,14 @@ public class ExcelReader : IReader
     public TestRun TestRun { get; }
 
     /// <summary>
-    /// The current list of all loaded test cases.
-    /// </summary>
-    private IList<TestCase> _testCases;
-
-    /// <summary>
-    /// The current list of all loaded test steps.
-    /// </summary>
-    private IList<TestStep> _testSteps;
-
-    /// <summary>
     /// The index of the current TestCase in the TestCases list
     /// </summary>
-    private int _currentTestCase;
+    private int _currentTestCase = 0;
 
     /// <summary>
     /// The index of the current TestStep in the TestSteps list
     /// </summary>
-    private int _currentTestStep;
-
-    /// <summary>
-    /// The current row in the Excel File
-    /// </summary>
-    private int _currentFileRow;
-
-    /// <summary>
-    /// Holds the last row in the Excel File.
-    /// </summary>
-    private int _lastRow;
-
-    /// <summary>
-    /// We currently only read 30 rows at a time. Should be settable in appsettings.
-    /// </summary>
-    private const int _numOfRows = 50;
+    private int _currentTestStep = 0;
 
     /// <summary>
     /// The path to the excel file
@@ -62,6 +38,12 @@ public class ExcelReader : IReader
 
     /* 
      * FOR NOW:
+     * 
+     * - Everything is saved in memory
+     *      -> While not very memory efficient, the data shouldn't take up too much memory.
+     *      Can work on adding a more memory efficient reader in the future.
+     * 
+     * 
      * - Cycles are ignored
      * - GoToStep is ignored
      * 
@@ -75,7 +57,6 @@ public class ExcelReader : IReader
     /// </summary>
     public ExcelReader(string FilePath)
     {
-        isComplete = false;
         
         _filePath = FilePath;
         if (!File.Exists(FilePath))
@@ -84,124 +65,39 @@ public class ExcelReader : IReader
         }
 
         TestRun = new TestRun(Path.GetFileNameWithoutExtension(_filePath));
-        _testCases = new List<TestCase>();
-        _testSteps = new List<TestStep>();
-        _currentTestCase = 0;
-        _currentTestStep = 0;
-
-        _currentFileRow = 1; // skip first row
 
         using (var fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
         {
             var workbook = new XSSFWorkbook(fs); // Only for .xlsx for now
             var sheet = workbook.GetSheetAt(0); // Gets the first sheet
 
-            _lastRow = GetLastNonEmptyRowNumber(sheet);
+            int lastRow = GetLastNonEmptyRowNumber(sheet);
 
-            if (_lastRow == 0)
+            if (lastRow == 0)
             {
                 throw new Exception("File is empty");
             }
 
-            for (int rowIndex = 1; rowIndex <= _lastRow; rowIndex++)
+            IList<TestCase> testCases = TestRun.TestCases;
+            TestCase? currentTestCase = null;
+            int stepNum = 1;
+
+            for (int rowIndex = 1; rowIndex <= lastRow; rowIndex++)
             {
                 IRow row = sheet.GetRow(rowIndex);
                 if (IsRowNullOrEmpty(row))
                     continue;
 
                 string testCaseName = GetCellString(row.GetCell(1));
-                if (_testCases.Count == 0 || _testCases.Last().Name != testCaseName)
+                if (currentTestCase == null || currentTestCase.Name != testCaseName)
                 {
-                    TestCase testCase = new TestCase(TestRun, testCaseName, rowIndex);
-                    _testCases.Add(testCase);
+                    currentTestCase = new TestCase(testCaseName);
+                    testCases.Add(currentTestCase);
+                    stepNum = 1;
                 }
 
-                _testCases.Last().TestStepNum++;
-            }
-        }
-
-        TestRun.TestCaseNum = _testCases.Count;
-        TestRun.StartedDate = DateTime.Now;
-    }
-
-    public TestCase GetCurrentTestCase()
-    {
-        return _testCases[_currentTestCase];
-    }
-
-    public async Task<TestStep> GetTestStepAsync()
-    {
-        if (isComplete)
-            throw new Exception("No more steps to read");
-
-        TestStep testStep;
-
-        if (_currentTestStep < _testSteps.Count)
-        {
-            testStep = _testSteps[_currentTestStep++];
-            if (testStep.TestCase.Name != _testCases[_currentTestCase].Name)
-                _currentTestCase++;
-
-            return testStep;
-        }
-
-        // Else, must fetch next batch
-        _testSteps.Clear();
-        _currentTestStep = 0;
-
-        await IOManager.TryAquireSlotAsync();
-        try
-        {
-            ReadNextChunck();
-        }
-        finally
-        {
-            IOManager.ReleaseSlot();
-        }
-
-        testStep = _testSteps[_currentTestStep++];
-        if (testStep.TestCase.Name != _testCases[_currentTestCase].Name)
-            _currentTestCase++;
-
-        return testStep;
-
-    }
-
-    /// <summary>
-    /// Reads the next 50 lines, populating all valid files, starting from _currentFileRow
-    /// </summary>
-    private void ReadNextChunck()
-    {
-        using (var fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
-        {
-            var workbook = new XSSFWorkbook(fs); // Only for .xlsx for now
-            var sheet = workbook.GetSheetAt(0); // Gets the first sheet
-
-            int endRow = Math.Min(_currentFileRow + _numOfRows, _lastRow);
-
-            int amount = endRow - _currentFileRow + 1;
-
-            int TestCaseIndex = _currentTestCase;
-            int stepNum = 0;
-
-            while (amount > 0)
-            {
-                IRow row = sheet.GetRow(_currentFileRow++);
-                if (IsRowNullOrEmpty(row))
-                {
-                    continue;
-                };
-
-                string TestCaseName = row.GetCell(1).ToString()!.Trim() ?? string.Empty;
-
-                if (TestCaseName != _testCases[TestCaseIndex].Name)
-                {
-                    TestCaseIndex++;
-                    stepNum = 0;
-                }
-
-                _testSteps.Add(new TestStep(
-                    _testCases[TestCaseIndex],
+                currentTestCase.TestSteps.Add(new TestStep(
+                    currentTestCase.Name,            // testCaseName
                     GetCellString(row.GetCell(2)),   // testDescription
                     stepNum++,                       // stepNum
                     GetCellString(row.GetCell(4)),   // actionOnObject
@@ -213,16 +109,33 @@ public class ExcelReader : IReader
                     GetCellInt(row.GetCell(10)),     // localTimeout
                     GetCellString(row.GetCell(11)),  // control
                     GetCellString(row.GetCell(12)),  // collection
-                    GetCellString(row.GetCell(13)),  // testStepType
-                    GetCellInt(row.GetCell(14))      // goToStep
+                    GetCellInt(row.GetCell(13)),  // testStepType
+                    GetCellString(row.GetCell(14))   // goToStep
                 ));
-                _testCases[_currentTestCase].TestSteps.Add(_testSteps.Last());
-                amount--;
             }
         }
+    }
 
-        if (_currentFileRow == _lastRow)
+    public (TestCase TestCase, int TestStepIndex) GetNextTestStep()
+    {
+        if (isComplete)
+            throw new Exception("No more steps to read");
+
+
+        // If no more steps in test case, move on to next test case
+        if (_currentTestStep < TestRun.TestCases[_currentTestCase].TestSteps.Count)
+        {
+            _currentTestCase++;
+            _currentTestStep = 0;
+        }
+
+        // If last _testCase && last step, set isComplete to true
+        if (_currentTestCase + 1 >= TestRun.TestCases.Count && _currentTestStep + 1 >= TestRun.TestCases[_currentTestCase].TestSteps.Count)
+        {
             isComplete = true;
+        }
+
+        return (TestRun.TestCases[_currentTestCase], _currentTestStep++);
     }
 
     private int GetCellInt(ICell cell)

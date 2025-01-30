@@ -1,6 +1,7 @@
 
 using System;
 using System.Threading.Tasks;
+using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Actions
@@ -10,43 +11,42 @@ namespace AutomationTestingProgram.Actions
     /// </summary>
     public class VerifyWebElementContent : WebAction
     {
-        public string Name { get; set; } = "Verify WebElement Content";
-
-        public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-            Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-            Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration,
-            string cycleGroupName)
+        public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
         {
-            //base.Execute();
-
             string expectedContent = step.Value.ToLower();
 
             try
             {
+                IPage page = pageObject.Instance!;
+
+                await pageObject.LogInfo("Locating element...");
+
                 // Locate the element using XPath and verify its text content
                 var locator = step.Object;
                 var locatorType = step.Comments;
                 var element = await LocateElementAsync(page, locator, locatorType);
-                
+
+                await pageObject.LogInfo("Element located");
+
                 string actualContent = await element.InnerTextAsync();
 
                 if (actualContent == expectedContent)
                 {
-                    step.RunSuccessful = true;
-                    step.Actual = $"Successfully verified web element content with XPath: {locator}";
+                    await pageObject.LogInfo($"Successfully verified web element content with XPath: {locator}");
+                    return;
                 }
                 else
                 {
-                    step.RunSuccessful = false;
-                    step.Actual = "Failure in verifying web element content";
-                    throw new Exception(step.Actual);
+                    throw new Exception("Failure in verifying web element content");
                 }
-                return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to check web element {step.Object}: {ex.Message}");
-                return false;
+                throw;
             }
         }
     }

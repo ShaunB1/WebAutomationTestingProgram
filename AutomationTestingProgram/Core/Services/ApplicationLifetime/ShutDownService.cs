@@ -7,10 +7,12 @@ namespace AutomationTestingProgram.Core;
 public class ShutDownService
 {
     private readonly ICustomLogger _logger;
+    private readonly RequestHandler _handler;
 
-    public ShutDownService(ICustomLoggerProvider provider)
+    public ShutDownService(ICustomLoggerProvider provider, RequestHandler handler)
     {
         _logger = provider.CreateLogger<ShutDownService>();
+        _handler = handler;
     }
 
     public async Task OnApplicationStopping()
@@ -23,7 +25,7 @@ public class ShutDownService
 
         LogManager.FlushAll(logMessage); // Sends shutdown message to all active logs.
 
-        await RequestHandler.ShutDownAsync(); // Waits until all requests are terminated
+        await _handler.ShutDownAsync(); // Waits until all requests are terminated
 
         _logger.Flush();
 

@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.InkML;
+﻿using AutomationTestingProgram.Modules.TestRunnerModule;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 using System.Reflection;
@@ -8,9 +9,11 @@ namespace AutomationTestingProgram.Actions;
 public class VerifyTxtFile : WebAction
 {
     private const string Seperator = "];[";
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
+    public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
     {
         string option = step.Comments;
         switch (option.ToLower())
@@ -18,7 +21,8 @@ public class VerifyTxtFile : WebAction
             case "":
             case "0":
             case "againsttextfile":
-                return VerifyAgainstTextFile(step);
+                VerifyAgainstTextFile(step);
+                return;
             // Can implement these other options later if needed
             //case "1":
             //case "againststring":
@@ -37,8 +41,7 @@ public class VerifyTxtFile : WebAction
             //    this.VerifyAgainstFileContents(true);
             //    break;
             default:
-                Console.WriteLine($"{option} is not an option for verify txt file");
-                return false;
+                throw new Exception($"{option} is not an option for verify txt file");
         }
     }
 
@@ -63,12 +66,9 @@ public class VerifyTxtFile : WebAction
             string actualContentNoWhitespace = new string(actualContent.Where(c => !char.IsWhiteSpace(c)).ToArray());
             string expectedContentNoWhitespace = new string(expectedContent.Where(c => !char.IsWhiteSpace(c)).ToArray());
 
-            Console.WriteLine(actualContentNoWhitespace);
-            Console.WriteLine(expectedContentNoWhitespace);
             return actualContentNoWhitespace == expectedContentNoWhitespace;
         } catch (Exception ex) {
-            Console.WriteLine(ex.ToString());
-            return false;
+            throw;
         }
     }
 

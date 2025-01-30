@@ -1,12 +1,15 @@
-﻿using Microsoft.Playwright;
+﻿using AutomationTestingProgram.Modules.TestRunnerModule;
+using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Actions;
 public class Comment : WebAction
 {
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
+    public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
     {
-        return true;
+        return;
     }
 }

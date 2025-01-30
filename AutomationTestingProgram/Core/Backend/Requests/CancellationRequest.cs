@@ -24,18 +24,23 @@ namespace AutomationTestingProgram.Core
         [JsonIgnore] // Will not serialize for security reasons. Can update to serialize only after validations pass with custom serialization logic
         private CancellableClientRequest? CancelRequest { get; set; }
 
+        [JsonIgnore]
+        private RequestHandler _requestHandler;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CancellationRequest"/> class.
         /// Instance is associated with the ID of the request to cancel.
         /// </summary>
         /// <param name="ID">The unique identifier of the request to cancel.</param>
-        public CancellationRequest(ICustomLoggerProvider provider, ClaimsPrincipal User, CancellationRequestModel model)
+        public CancellationRequest(ICustomLoggerProvider provider, RequestHandler requestHandler, ClaimsPrincipal User, CancellationRequestModel model)
             : base(User)
         {
             Logger = provider.CreateLogger<CancellationRequest>(FolderPath);
 
             CancelRequestID = model.ID;
+
+            _requestHandler = requestHandler;
         }
 
         /// <summary>
@@ -75,7 +80,7 @@ namespace AutomationTestingProgram.Core
         private void ValidateRequest()
         {
 
-            IClientRequest request = RequestHandler.RetrieveRequest(CancelRequestID);
+            IClientRequest request = _requestHandler.RetrieveRequest(CancelRequestID);
 
             if (request is NonCancellableClientRequest)
             {

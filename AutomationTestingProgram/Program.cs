@@ -15,6 +15,7 @@ using System.Runtime;
 using Microsoft.OpenApi.Models;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.FileProviders;
+using AutomationTestingProgram.Actions;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
@@ -109,6 +110,15 @@ void ConfigureServices(WebApplicationBuilder builder)
     {
         // Services Setup
         RegisterServices(containerBuilder);
+
+        containerBuilder.Register(c =>
+        {
+            // Resolve the IComponentContext and set it to PlaywrightExecutor
+            var componentContext = c.Resolve<IComponentContext>();
+            PlaywrightExecutor.ComponentContext = componentContext;
+            return componentContext;
+        }).As<IComponentContext>().SingleInstance();
+
     });
 
 }
@@ -165,9 +175,12 @@ void ConfigureLogging(WebApplicationBuilder builder)
 {
     builder.Logging.ClearProviders();
     builder.Logging.AddProvider(new CustomLoggerProvider(LogManager.GetRunFolderPath()));
-    builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
-    builder.Logging.AddFilter("Microsoft.AspNetCore.HttpLogging", LogLevel.None);
-    builder.Logging.AddFilter("WebSocket*", LogLevel.None);
+    builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Critical);
+    builder.Logging.AddFilter("Microsoft.AspNetCore.HttpLogging", LogLevel.Critical);
+    builder.Logging.AddFilter("WebSocket*", LogLevel.Critical);
+
+    // Suppress Microsoft.IdentityModel logs at INFO level
+    builder.Logging.AddFilter("Microsoft.IdentityModel", LogLevel.Critical);
 }
 
 void ConfigureAppSettings(WebApplicationBuilder builder)
@@ -216,11 +229,13 @@ void RegisterServices(ContainerBuilder builder)
     .SingleInstance();
 
     builder.RegisterType<ShutDownService>().SingleInstance();
+    builder.RegisterType<RequestHandler>().SingleInstance();
 
     // TESTRUNNER MODULE
 
     builder.RegisterType<AzureKeyVaultService>().SingleInstance();
     builder.RegisterType<PasswordResetService>().SingleInstance();
+    builder.RegisterType<CSVEnvironmentGetter>().SingleInstance();
 
     builder.RegisterType<PlaywrightObject>().SingleInstance();
     builder.RegisterType<BrowserFactory>().As<IBrowserFactory>().SingleInstance();
@@ -228,7 +243,10 @@ void RegisterServices(ContainerBuilder builder)
     builder.RegisterType<PageFactory>().As<IPageFactory>().SingleInstance();
 
     builder.RegisterType<ReaderFactory>().As<IReaderFactory>().SingleInstance();
-    builder.RegisterType<>().SingleInstance();
+    builder.RegisterType<ExecutorFactory>().As<IPlaywrightExecutorFactory>().SingleInstance();
+
+    // ACTIONS (only those that need DI)
+    builder.RegisterType<Login>().InstancePerDependency();
 }
 
 void ConfigureApplicationLifetime(WebApplication app)
@@ -309,14 +327,17 @@ void ConfigureMiddleware(WebApplication app)
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "StaticFiles", "Public")),
+        Path.Combine(Directory.GetCurrentDirectory(), "Core", "StaticFiles", "Public")),
         RequestPath = "/static"
     });
 
     app.UseRequestLocalization();
-    app.UseMiddleware<RequestMiddleware>();
+
+
 
     app.UseRouting(); // adds routing capabilities
+
+    app.UseMiddleware<RequestMiddleware>(); // needs routing
 
     app.UseAuthentication(); // Add authentication middleware
     app.UseAuthorization(); // Add authorization middleware

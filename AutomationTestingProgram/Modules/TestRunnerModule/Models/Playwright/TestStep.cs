@@ -4,7 +4,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule;
 /// Represents a TestStep for automated tests.
 /// </summary>
 public class TestStep(
-TestCase testCase,
+string testCaseName,
 string testDescription,
 int stepNum,
 string actionOnObject,
@@ -16,13 +16,13 @@ int localAttempts,
 int localTimeout,
 string control,
 string collection,
-string testStepType,
-int goToStep)
-{
+int testStepType,
+string goToStep)
+{   
     /// <summary>
-    /// The TestCase this step is part of.
+    /// Name of assocaited Test Case
     /// </summary>
-    public TestCase TestCase { get; } = testCase;
+    public string TestCaseName { get; } = testCaseName;
 
     /// <summary>
     /// The description of the TestStep
@@ -75,14 +75,14 @@ int goToStep)
     /// The # of attempts a step should make before being marked as a fail.
     /// Default: 3 attempts
     /// </summary>
-    public int LocalAttempts { get; } = localAttempts;
+    public int LocalAttempts { get; set; } = localAttempts;
 
     /// <summary>
     /// The timeout used by a step determining how long to wait for a certain Action to complete.
     /// Ex: Waiting a max of x seconds until we say -> element not found
     /// Default: 30 seconds
     /// </summary>
-    public int LocalTimeout { get; } = localTimeout;
+    public int LocalTimeout { get; set; } = localTimeout;
 
     /// <summary>
     /// Associated information on the control column (information depends on ActionOnObject)
@@ -115,11 +115,13 @@ int goToStep)
     ///                If step passes, goes to Test Step with Step # x, in SAME TEST CASE.
     ///                If step fails, goes to Test Steo with Step # y, in SAME TEST CASE.
     ///                NOTE: This will be changed in the future
+    ///                Can Only Loop Max: 10 times
     /// 5 -> INVERTED. If step fails, marked as pass.
     ///                If step passes, marked as fail.
+    ///                Follows same failure as 2.
     ///
     /// </summary>
-    public string TestStepType { get; } = testStepType;
+    public int TestStepType { get; set; } = testStepType;
 
     /// <summary>
     /// Field GoToStep must be filled in format: x,y
@@ -127,9 +129,10 @@ int goToStep)
     /// y -> If step fails.
     /// Note: Mark TestStepType as type 4 to use.
     /// </summary>
-    public int GoToStep { get; } = goToStep;
+    public string GoToStep { get; } = goToStep;
 
     // public string CycleGroup { get; } // Ingored for now
+
 
     /// <summary>
     /// The result of the TestStep
@@ -147,12 +150,7 @@ int goToStep)
     public DateTime CompletedDate { get; set; }
 
     /// <summary>
-    /// Associated message provided to test step.
+    /// Total # of failed attempts
     /// </summary>
-    public string Message { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Associated stack trace (if any) provided to test step
-    /// </summary>
-    public string StackTrace { get; set; } = string.Empty;
+    public int FailureCounter { get; set; } = 0;
 }

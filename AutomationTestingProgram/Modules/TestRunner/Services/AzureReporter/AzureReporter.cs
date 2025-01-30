@@ -1,4 +1,4 @@
-using Microsoft.TeamFoundation.TestManagement.WebApi;
+/*using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
@@ -29,4 +29,4 @@ public class AzureReporter
         _planClient = _connection.GetClient<TestPlanHttpClient>();
         _managementClient = _connection.GetClient<TestManagementHttpClient>();        
     }
-}
+}*/

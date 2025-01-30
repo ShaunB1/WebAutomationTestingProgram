@@ -96,6 +96,17 @@ namespace AutomationTestingProgram.Core
         /// <param name="message"></param>
         void LogCritical(string message);
 
+        /// <summary>
+        /// Used to pass logging as function delegate (if needed).
+        /// Must specify log level.
+        /// </summary>
+        /// <param name="level"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        Task Log(LogLevel level, string message);
+
+
+
     }
 
     /// <summary>

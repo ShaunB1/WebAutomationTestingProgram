@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.Playwright;
 using Newtonsoft.Json;
 
@@ -6,33 +7,36 @@ namespace AutomationTestingProgram.Actions;
 
 public class UploadFile : WebAction
 {
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
+    public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
     {
+        IPage page = pageObject.Instance!;
+
+        await pageObject.LogInfo("Locating upload...");
+        
         var locator = step.Object;
         var locatorType = step.Comments;
         var element = await LocateElementAsync(page, locator, locatorType);
+
+        await pageObject.LogInfo("Upload successfully located");
+
         string filePath;
-        
-        if (step.Value.StartsWith("{") && step.Value.EndsWith("}"))
-        {
-            filePath = GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
-        }
-        else
-        {
-            filePath = step.Value;
-        }
+
+        filePath = step.Value;
 
         try
         {
+            await pageObject.LogInfo("Uploading...");
+
             await element.SetInputFilesAsync(filePath);
-            return true;
+            await pageObject.LogInfo("Upload successful");
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            return false;
+            throw;
         }
     }
 }

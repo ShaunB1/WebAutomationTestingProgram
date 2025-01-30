@@ -39,8 +39,10 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public double Delay { get; }
 
+        [JsonIgnore]
         private PlaywrightObject playwright;
 
+        [JsonIgnore]
         private readonly IHubContext<TestHub> _hubContext;
 
 
@@ -52,7 +54,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <param name="Type">The type of the browser (e.g., "Chrome", "Firefox") that will handle the request.</param>
         /// <param name="Version">The version of the browser (e.g., "91", "93") that will be used to process the request.</param>
         public ProcessRequest(ICustomLoggerProvider provider, IHubContext<TestHub> hubContext, PlaywrightObject playwright, ClaimsPrincipal User, ProcessRequestModel model)
-            : base(User, isLoggingEnabled:true)
+            : base(User, isLoggingEnabled:true, model.TestRunID)
         {            
             this.Logger = provider.CreateLogger<ProcessRequest>(FolderPath);
             

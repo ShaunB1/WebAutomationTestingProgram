@@ -51,9 +51,9 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         private IPageFactory _pageFactory { get; }
 
         /// <summary>
-        /// The TestExecutor to run tests. 
+        /// The factory used to create executor instances to run tests. 
         /// </summary>
-        private IPlaywrightExecutor _executor { get; }
+        private IPlaywrightExecutorFactory _executorFactory { get; }
 
         /// <summary>
         /// Int limiting total # of active pages. Used in conjunction with lock
@@ -77,7 +77,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// Please call InitializeAsync() to finish set-up.
         /// </summary>
         /// <param name="browser">Browser (parent) instance </param>
-        public Context(Browser browser, ProcessRequest request, IOptions<ContextSettings> options, ICustomLoggerProvider provider, IPageFactory pageFactory, IPlaywrightExecutor executor)
+        public Context(Browser browser, ProcessRequest request, IOptions<ContextSettings> options, ICustomLoggerProvider provider, IPageFactory pageFactory, IPlaywrightExecutorFactory executorFactory)
         {
             ID = browser.GetNextContextID();
             FolderPath = LogManager.CreateContextFolder(browser.FolderPath, ID);
@@ -86,7 +86,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             _parent = browser;
             _settings = options.Value;
             _pageFactory = pageFactory;
-            _executor = executor;
+            _executorFactory = executorFactory;
             _pageLimit = _settings.PageLimit;
             _logger = provider.CreateLogger<Context>(FolderPath);
         }
@@ -155,14 +155,16 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             }
             
             try
-            {             
-                _executor.
+            {
+                IPlaywrightExecutor executor = _executorFactory.CreateExecutor(this);
+
+                await executor.ExecuteTestFileAsync(page);
                 
-                Request.LogInfo($"Test Execution Complete");
+                Request.LogInfo($"Test Execution Successful");
             }
             finally
             {
-                await page.CloseAllAsync();
+                await page.CloseObjectAsync();
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.TeamFoundation.TestManagement.WebApi;
+﻿/*using Microsoft.TeamFoundation.TestManagement.WebApi;
 
 namespace AutomationTestingProgram.Actions;
 
@@ -12,4 +12,4 @@ public class HandleTestPoint : AzureReporter
         Console.WriteLine($"Test Case: {testCaseId}, Test Point Count: {testPoints.Count(tp => tp.TestCase.Id == testCaseId.ToString())}");
         return testPoint;
     }
-}
+}*/

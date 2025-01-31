@@ -52,8 +52,6 @@ public class Login : WebAction
                 throw new Exception($"Login failed - Could not find environment key in environment variable dictionary");
             }
 
-            await pageObject.LogInfo("Login via AAD.");
-
             string url;
             IPage page;
 
@@ -148,8 +146,8 @@ public class Login : WebAction
             }
 
             // Hard wait for now, but we need to implement function that detects loading spinner completion
-            Task.Delay(10000).Wait();
-            await pageObject.LogInfo("HARD WAIT FOR LOADING SPINNER");
+            await pageObject.LogInfo("HARD WAIT FOR LOADING SPINNER - 30 Seconds");
+            Task.Delay(30000).Wait();
         }
         catch (Exception)
         {

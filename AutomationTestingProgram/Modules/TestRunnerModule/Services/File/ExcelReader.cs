@@ -88,7 +88,7 @@ public class ExcelReader : IReader
                 if (IsRowNullOrEmpty(row))
                     continue;
 
-                string testCaseName = GetCellString(row.GetCell(1));
+                string testCaseName = GetCellString(row.GetCell(0));
                 if (currentTestCase == null || currentTestCase.Name != testCaseName)
                 {
                     currentTestCase = new TestCase(testCaseName);
@@ -98,19 +98,19 @@ public class ExcelReader : IReader
 
                 currentTestCase.TestSteps.Add(new TestStep(
                     currentTestCase.Name,            // testCaseName
-                    GetCellString(row.GetCell(2)),   // testDescription
+                    GetCellString(row.GetCell(1)),   // testDescription
                     stepNum++,                       // stepNum
-                    GetCellString(row.GetCell(4)),   // actionOnObject
-                    GetCellString(row.GetCell(5)),   // objectName
-                    GetCellString(row.GetCell(6)),   // value
-                    GetCellString(row.GetCell(7)),   // comments
-                    GetCellString(row.GetCell(8)),   // release
-                    GetCellInt(row.GetCell(9)),      // localAttempts
-                    GetCellInt(row.GetCell(10)),     // localTimeout
-                    GetCellString(row.GetCell(11)),  // control
-                    GetCellString(row.GetCell(12)),  // collection
-                    GetCellInt(row.GetCell(13)),  // testStepType
-                    GetCellString(row.GetCell(14))   // goToStep
+                    GetCellString(row.GetCell(3)),   // actionOnObject
+                    GetCellString(row.GetCell(4)),   // objectName
+                    GetCellString(row.GetCell(5)),   // value
+                    GetCellString(row.GetCell(6)),   // comments
+                    GetCellString(row.GetCell(7)),   // release
+                    GetCellInt(row.GetCell(8)),      // localAttempts
+                    GetCellInt(row.GetCell(9)),     // localTimeout
+                    GetCellString(row.GetCell(10)),  // control
+                    GetCellString(row.GetCell(11)),  // collection
+                    GetCellInt(row.GetCell(12)),  // testStepType
+                    GetCellString(row.GetCell(13))   // goToStep
                 ));
             }
         }
@@ -123,7 +123,14 @@ public class ExcelReader : IReader
 
 
         // If no more steps in test case, move on to next test case
-        if (_currentTestStep < TestRun.TestCases[_currentTestCase].TestSteps.Count)
+        if (_currentTestStep >= TestRun.TestCases[_currentTestCase].TestSteps.Count)
+        {
+            _currentTestCase++;
+            _currentTestStep = 0;
+        }
+
+        // Test Case failed early, move on to next test case
+        if (TestRun.TestCases[_currentTestCase].Result == Result.Failed)
         {
             _currentTestCase++;
             _currentTestStep = 0;

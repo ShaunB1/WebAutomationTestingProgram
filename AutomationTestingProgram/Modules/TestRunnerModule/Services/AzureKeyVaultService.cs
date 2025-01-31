@@ -127,6 +127,10 @@ public class AzureKeyVaultService
             }
 
         }
+        catch (PasswordAlreadyResetException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw new Exception($"Error connecting to Azure Key Vault: {ex.Message}");

@@ -32,6 +32,8 @@ ConfigureApplicationLifetime(app);
 
 ConfigureMiddleware(app);
 
+PlaywrightExecutor.InitializeStaticVariables(app.Services.GetAutofacRoot());
+
 app.Run();
 
 void ConfigureServices(WebApplicationBuilder builder)
@@ -110,15 +112,6 @@ void ConfigureServices(WebApplicationBuilder builder)
     {
         // Services Setup
         RegisterServices(containerBuilder);
-
-        containerBuilder.Register(c =>
-        {
-            // Resolve the IComponentContext and set it to PlaywrightExecutor
-            var componentContext = c.Resolve<IComponentContext>();
-            PlaywrightExecutor.ComponentContext = componentContext;
-            return componentContext;
-        }).As<IComponentContext>().SingleInstance();
-
     });
 
 }
@@ -247,6 +240,10 @@ void RegisterServices(ContainerBuilder builder)
 
     // ACTIONS (only those that need DI)
     builder.RegisterType<Login>().InstancePerDependency();
+    builder.RegisterType<RunPrSQLScriptDelete>().InstancePerDependency();
+    builder.RegisterType<RunPrSQLScriptRevert>().InstancePerDependency();
+    builder.RegisterType<Login>().InstancePerDependency();
+
 }
 
 void ConfigureApplicationLifetime(WebApplication app)
@@ -258,7 +255,7 @@ void ConfigureApplicationLifetime(WebApplication app)
 }
 
 void ConfigureMiddleware(WebApplication app)
-{   
+{
     // Handles error responses
     app.Use(async (context, next) =>
     {
@@ -333,7 +330,7 @@ void ConfigureMiddleware(WebApplication app)
 
     app.UseRequestLocalization();
 
-
+    app.UseResponseCaching();
 
     app.UseRouting(); // adds routing capabilities
 

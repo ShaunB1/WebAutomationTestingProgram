@@ -58,12 +58,12 @@ public class EnvironmentsController : CoreController
 
     [Authorize]
     [HttpPost("resetPassword")]
-    public async Task<IActionResult> ResetPassword([FromBody] PasswordResetRequestModel model)
+    public async Task<IActionResult> ResetPassword([FromForm] PasswordResetRequestModel model)
     {
         PasswordResetRequest request = new PasswordResetRequest(_provider, _passwordResetService, HttpContext.User, model);
         return await HandleRequest(request, async (req) =>
         {
-            return $"Password for {req.Email} reset successfully";
+            return req.Email;
         });
     }
 }

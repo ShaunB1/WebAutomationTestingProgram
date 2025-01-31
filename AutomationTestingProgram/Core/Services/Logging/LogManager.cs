@@ -32,6 +32,9 @@ public static class LogManager
     private static readonly string ContextPath = "_contexts"; // Context folder. Each context gets its own folder within a browser folder.
     private static readonly string PagePath = "_pages"; // Page folder. Each page gets its own folder within a context folder.
 
+    // Subfolders/files within Context Folder
+    public static readonly string Storage = "empty_storage.json";
+
     // Subfolders within Page Folder
     public static readonly string DownloadPath = "_downloads"; // The path for downloaded files during playwright automation.
     public static readonly string ResultsPath = "_results"; // The path for any result files produced throughout a run
@@ -223,6 +226,9 @@ public static class LogManager
         {
             Directory.CreateDirectory(pagesFolder);
         }
+
+        string storageFilePath = Path.Combine(contextFolderPath, Storage);
+        System.IO.File.WriteAllText(storageFilePath, "{}");
 
         return contextFolderPath;
     }

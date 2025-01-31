@@ -14,6 +14,10 @@ public class ExtensionController : ControllerBase
         _extensionDownloadPath = options.Value.ExtensionDownloadPath;
     }
 
+    /*
+     * curl -X GET -H "Content-Type: application/json" https://localhost:7117/api/extension/download-zip
+     */
+
     [Authorize]
     [HttpGet("download-zip")]
     [ResponseCache(Duration = 14400, Location = ResponseCacheLocation.Client)] // Cached for four hours

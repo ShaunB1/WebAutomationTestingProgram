@@ -18,7 +18,7 @@ function EnvPage() {
     const [result, setResult] = useState<string | null>(null);
     const [fileName, setFileName] = useState<string | null>(null);
     const [fileLines, setFileLines] = useState<string[]>([]);
-    const [fileResults, setFileResults] = useState<ApiResponse[]>([]);
+    const [fileResults, setFileResults] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const { instance, accounts } = useMsal();
 
@@ -53,18 +53,23 @@ function EnvPage() {
         const token = await getToken(instance, accounts);
         const headers = new Headers();
         headers.append("Authorization", `Bearer ${token}`);
-        headers.append('Content-Type', 'application/json');
-
         if (fileLines?.length > 0) {
             for (const item of fileLines) {
-                const response = await fetch('/api/environments/resetPassword', {
+                const formData = new FormData();
+                formData.append("Email", item);
+                const response = await fetch("/api/environments/resetPassword", {
                     method: 'POST',
-                    body: JSON.stringify(item),
-                    headers: headers,
+                    body: formData,
+                    headers: headers
                 });
-                const result = await response.json();
-                console.log(JSON.stringify(result));
-                setFileResults(prevFileResults => [...prevFileResults, result]);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    setFileResults(prevFileResults => [...prevFileResults, `Failed password reset: ${errorData.error}`]);
+                }
+                else {
+                    const result = await response.json();
+                    setFileResults(prevFileResults => [...prevFileResults, `Successfully reset ${result.result}`]);
+                }
             }
             setFileLines([]);
             setFileName(null);
@@ -75,20 +80,21 @@ function EnvPage() {
                 return;
             }
             try {
+                const formData = new FormData();
+                formData.append("Email", resetEmail);
                 const response = await fetch("/api/environments/resetPassword", {
                     method: 'POST',
-                    body: JSON.stringify(resetEmail),
+                    body: formData,
                     headers: headers
                 });
                 setLoading(false);
                 if (!response.ok) {
                     const errorData = await response.json();
-                    setError(`Failed to reset password for ${errorData.email}`);
-                    throw new Error(errorData.message);
+                    setError(`Failed to reset password for ${resetEmail} becasue of ${errorData.error}`);
+                    throw new Error(errorData.error);
                 }
                 const result = await response.json();
-                console.log(JSON.stringify(result));
-                setResult(`Successfully reset password for ${result.email}`);
+                setResult(`Successfully reset password for ${result.result}`);
             } catch (err) {
                 console.error(err);
             }
@@ -131,11 +137,8 @@ function EnvPage() {
                     {fileResults?.length > 0 ? (
                         <ul>
                             {fileResults.map((item, index) => (
-                                <li key={index} style={{ color: (item.success ? 'black' : 'red') }}>
-                                    {item.success ?
-                                        `Successfully reset password for ${item.email}` :
-                                        `Failed to reset password for ${item.email}`
-                                    }
+                                <li key={index} >
+                                    {item}
                                 </li>
                             ))}
                         </ul>

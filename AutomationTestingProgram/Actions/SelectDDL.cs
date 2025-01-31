@@ -24,7 +24,7 @@ public class SelectDDL : WebAction
         await pageObject.LogInfo("DDL successfully located");
 
 
-        var option = step.Object;
+        var option = step.Value;
         
         try
         {

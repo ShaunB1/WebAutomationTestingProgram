@@ -1,5 +1,5 @@
 ﻿using AutomationTestingProgram.Core;
-using DocumentFormat.OpenXml.Drawing;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
@@ -146,7 +146,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             try
             {
                 Request.LogInfo($"Starting Test Execution");
-                page = _pageFactory.CreatePage(this);
+                page = await _pageFactory.CreatePage(this);
             }
             catch (LaunchException e)
             {
@@ -238,12 +238,20 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         }
 
         private async Task<IBrowserContext> CreateContextInstanceAsync(IBrowser browser)
-        {   
+        {
             var options = new BrowserNewContextOptions
             {
-                
+                AcceptDownloads = true // Allow downloads
             };
-            return await browser.NewContextAsync(options);
+
+            IBrowserContext context = await browser.NewContextAsync(options);
+
+            /*context.Page += async (_, page) =>
+            { 
+                // SetupPageDownloadHandler(page);
+            };*/
+
+            return context;
         }
     }
 }

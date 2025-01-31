@@ -33,7 +33,7 @@ function CredsContainer() {
                     throw new Error(`${errorData.error}`);
                 }
                 const result = await response.json();
-                setRowData(result);
+                setRowData(result.result);
             } catch (err) {
                 console.error(err);
             }
@@ -61,7 +61,7 @@ function CredsContainer() {
             }
             const result = await response.json();
             setError(false);
-            setValue(result.message);
+            setValue(result.result);
         } catch (err) {
             console.error(err);
         }

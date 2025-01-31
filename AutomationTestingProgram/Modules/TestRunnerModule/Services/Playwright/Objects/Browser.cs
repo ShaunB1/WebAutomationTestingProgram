@@ -266,7 +266,23 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             {
                 Headless = false,
                 Timeout = _settings.InitializationTimeout,
-                Channel = "chrome"
+                Channel = "chrome",
+                Args = new[]
+                {
+                    "--auth-server-allowlist='*'"
+                }
+                /*Args = new[]
+                    {
+                        "--disable-cache",            // Disable cache
+                        "--no-default-browser-check", // Disable default browser check
+                        "--no-first-run",             // Skip first run tasks
+                        "--disable-default-apps",     // Disable default apps
+                        "--disable-sync",             // Disable sync to avoid shared data
+                        "--disable-extensions",       // Disable extensions
+                        "--disable-popup-blocking",    // Disable popup blocking
+                        "--incognito"
+                    }*/
+                // may need for iframes: --disable-site-isolation-trials
             };
             return await playwright.Chromium.LaunchAsync(options);
         }
@@ -277,7 +293,11 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             {
                 Headless = false,
                 Timeout = _settings.InitializationTimeout,
-                Channel = "msedge"
+                Channel = "msedge",
+                Args = new[]
+                {
+                    "--auth-server-allowlist='*'"
+                }
             };
             return await playwright.Chromium.LaunchAsync(options);
         }

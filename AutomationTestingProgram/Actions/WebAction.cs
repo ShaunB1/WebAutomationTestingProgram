@@ -35,7 +35,8 @@ public abstract class WebAction
         {
             if (locatorType == "innertext")
             {
-                var elements = page.Locator($":has-text('{locator}')");
+                // Use an XPath expression to match elements with exact inner text
+                var elements = page.Locator($"//*[contains(text(), '{locator}')]");
                 var count = await elements.CountAsync();
 
                 for (int i = 0; i < count; i++)
@@ -49,6 +50,7 @@ public abstract class WebAction
                     }
                 }
             }
+
             else if (locatorType == "htmlid")
             {
                 var element = page.Locator($"#{locator}");

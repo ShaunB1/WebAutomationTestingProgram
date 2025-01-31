@@ -6,6 +6,7 @@ using Microsoft.ApplicationInsights.Extensibility.Implementation;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Newtonsoft.Json;
 using NPOI.HPSF;
 using System.Linq;
@@ -21,8 +22,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
     public class PlaywrightExecutor : IPlaywrightExecutor
     {   
         // STATIC VARIABLES *********************************************************
-        public static IComponentContext? ComponentContext { get; set; }
-        private static readonly Dictionary<string, WebAction> actions = new Dictionary<string, WebAction>();
+        private static Dictionary<string, WebAction> actions = new Dictionary<string, WebAction>();
         private static Dictionary<string, string> actionAliases = new Dictionary<string, string>
         {
             // Populate actions
@@ -111,7 +111,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         private IReader _reader;
 
 
-        static PlaywrightExecutor()
+        public static void InitializeStaticVariables(IComponentContext componentContext)
         {
             string actionsFilePath = AppConfiguration.GetSection<PathSettings>("PATHS").ActionsPath;
 
@@ -121,22 +121,32 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             }
 
             string jsonContent = File.ReadAllText(actionsFilePath);
-
             var actionDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonContent);
 
-            var serviceProvider =
-
             actions = actionDict
-                .Select<KeyValuePair<string, string>, KeyValuePair<string, WebAction>>(kvp =>
+                .Select(kvp =>
                 {
                     var actionType = Type.GetType(kvp.Value, throwOnError: false);
-
                     if (actionType == null || !typeof(WebAction).IsAssignableFrom(actionType))
                     {
-                        throw new InvalidOperationException($"Action type '{kvp.Value}' not found.");
+                        throw new InvalidOperationException($"Action type '{kvp.Value}' not found or is not a WebAction.");
                     }
 
-                    var webAction = (WebAction?)ComponentContext!.ResolveOptional(actionType) ?? (WebAction?)Activator.CreateInstance(actionType);
+                    WebAction? webAction = null;
+                    try
+                    {
+                        webAction = Activator.CreateInstance(actionType) as WebAction;
+                    }
+                    catch (Exception)
+                    {
+                        webAction = componentContext.Resolve(actionType) as WebAction;
+                    }
+
+                    if (webAction == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create an instance of '{kvp.Value}'.");
+                    }
+
                     return new KeyValuePair<string, WebAction>(kvp.Key, webAction);
                 })
                 .Where(item => item.Value != null)
@@ -144,8 +154,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                     item => item.Key,
                     item => item.Value
                 );
-
         }
+
 
         /// <summary>
         /// The playwrighr Executor instance for running tests
@@ -204,8 +214,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                          .AppendLine("          TEST EXECUTION LOG - TEST RUN START           ")
                          .AppendLine("========================================================")
                          .AppendLine($"TEST RUN:     {testRun.Name,-40}")
-                         .AppendLine($"CASE NUM:      {testRun.TestCaseNum,-40}")
-                         .AppendLine($"START DATE:    {testRun.StartedDate,-40}")
+                         .AppendLine($"NUM OF CASES: {testRun.TestCaseNum,-40}")
+                         .AppendLine($"START DATE:   {testRun.StartedDate,-40}")
                          .AppendLine("--------------------------------------------------------")
                          .AppendLine($"EXECUTING...")
                          .AppendLine("========================================================")
@@ -234,7 +244,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                          .AppendLine("          TEST EXECUTION LOG - TEST CASE START          ")
                          .AppendLine("========================================================")
                          .AppendLine($"TEST CASE:     {testCase.Name,-40}")
-                         .AppendLine($"STEP NUM:      {testCase.TestStepNum,-40}")
+                         .AppendLine($"NUM OF STEPS:  {testCase.TestStepNum,-40}")
                          .AppendLine($"START DATE:    {testCase.StartedDate,-40}")
                          .AppendLine("--------------------------------------------------------")
                          .AppendLine($"EXECUTING...")
@@ -265,7 +275,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                                 .AppendLine("         TEST EXECUTION LOG - TEST CASE COMPLETE        ")
                                 .AppendLine("========================================================")
                                 .AppendLine($"TEST CASE:     {testCase.Name,-40}")
-                                .AppendLine($"STEP NUM:      {testCase.TestStepNum,-40}")
+                                .AppendLine($"NUM OF STEPS:  {testCase.TestStepNum,-40}")
                                 .AppendLine($"START DATE:    {testCase.StartedDate,-40}")
                                 .AppendLine($"END DATE:      {testCase.CompletedDate,-40}")
                                 .AppendLine("--------------------------------------------------------")
@@ -301,7 +311,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                                 .AppendLine("          TEST EXECUTION LOG - TEST CASE FAILED         ")
                                 .AppendLine("========================================================")
                                 .AppendLine($"TEST CASE:     {testCase.Name,-40}")
-                                .AppendLine($"STEP NUM:      {testCase.TestStepNum,-40}")
+                                .AppendLine($"NUM OF STEPS:  {testCase.TestStepNum,-40}")
                                 .AppendLine($"START DATE:    {testCase.StartedDate,-40}")
                                 .AppendLine($"END DATE:      {testCase.CompletedDate,-40}")
                                 .AppendLine("--------------------------------------------------------")
@@ -326,7 +336,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                              .AppendLine("         TEST EXECUTION LOG - TEST RUN FAILED           ")
                              .AppendLine("========================================================")
                              .AppendLine($"TEST RUN:      {testRun.Name,-40}")
-                             .AppendLine($"CASE NUM:      {testRun.TestCaseNum,-40}")
+                             .AppendLine($"NUM OF CASES:  {testRun.TestCaseNum,-40}")
                              .AppendLine($"START DATE:    {testRun.StartedDate,-40}")
                              .AppendLine($"END DATE:      {testRun.CompletedDate,-40}")
                              .AppendLine("--------------------------------------------------------")
@@ -354,7 +364,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                  .AppendLine("        TEST EXECUTION LOG - TEST RUN CANCELLED         ")
                  .AppendLine("========================================================")
                  .AppendLine($"TEST RUN:      {testRun.Name,-40}")
-                 .AppendLine($"CASE NUM:      {testRun.TestCaseNum,-40}")
+                 .AppendLine($"NUM OF CASES:  {testRun.TestCaseNum,-40}")
                  .AppendLine($"START DATE:    {testRun.StartedDate,-40}")
                  .AppendLine($"END DATE:      {testRun.CompletedDate,-40}")
                  .AppendLine("--------------------------------------------------------")
@@ -423,7 +433,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
              .AppendLine("        TEST EXECUTION LOG - TEST RUN COMPLETE          ")
              .AppendLine("========================================================")
              .AppendLine($"TEST RUN:      {testRun.Name,-40}")
-             .AppendLine($"CASE NUM:      {testRun.TestCaseNum,-40}")
+             .AppendLine($"NUM OF CASES:  {testRun.TestCaseNum,-40}")
              .AppendLine($"START DATE:    {testRun.StartedDate,-40}")
              .AppendLine($"END DATE:      {testRun.CompletedDate,-40}")
              .AppendLine("--------------------------------------------------------")
@@ -470,12 +480,12 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             step.Object = InsertParams(step.Object);
             step.Value = InsertParams(step.Value);
 
-            if (step.LocalAttempts <= 0)
+            if (step.LocalAttempts <= 0 || step.LocalAttempts >= 11)
             {
                 step.LocalAttempts = 3;
             }
 
-            if (step.LocalTimeout <= 1)
+            if (step.LocalTimeout <= 1 || step.LocalTimeout >= 500)
             {
                 step.LocalTimeout = 30;
             }
@@ -512,7 +522,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                             .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
                             .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
                             .AppendLine($"STEP NUM:      {step.StepNum,-40}")
-                            .AppendLine($"ATTEMPTS:      {step.LocalAttempts + 1,-40}")
+                            .AppendLine($"ATTEMPTS:      {step.LocalAttempts,-40}")
                             .AppendLine($"START DATE:    {step.StartedDate,-40}")
                             .AppendLine("--------------------------------------------------------")
                             .AppendLine($"ACTION:        {ActionOnObject,-40}")
@@ -538,9 +548,28 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                     }
                     else
                     {
+                        step.LocalAttempts = 1;
                         throw new Exception($"Unknown Action provided: {ActionOnObject}");
                     }
 
+                    // STEP Passes
+                    step.CompletedDate = DateTime.Now;
+                    step.Result = Result.Successful;
+
+                    logMessage.Clear()
+                            .AppendLine("========================================================")
+                            .AppendLine("         TEST EXECUTION LOG - TEST STEP COMPLETE        ")
+                            .AppendLine("========================================================")
+                            .AppendLine($"STEP NUM:      {step.StepNum,-40}")
+                            .AppendLine($"START DATE:    {step.StartedDate,-40}")
+                            .AppendLine($"END DATE:      {step.CompletedDate,-40}")
+                            .AppendLine($"ATTEMPTS USED: {step.FailureCounter + 1,-40}")
+                            .AppendLine($"RESULT:        {step.Result,-40}")
+                            .AppendLine("========================================================");
+
+
+                    await page.LogInfo(logMessage.ToString());
+                    break;
                 }
                 catch (OperationCanceledException)
                 {
@@ -556,7 +585,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                             .AppendLine("--------------------------------------------------------")
                             .AppendLine($"ERROR:         {e.Message,-40}")
                             .AppendLine($"STACKTRACE:    {e.StackTrace,-40}")
-                            .AppendLine($"ATTEMPT:       {step.FailureCounter,-40}")
+                            .AppendLine($"ATTEMPT:       {step.FailureCounter + 1,-40}")
                             .AppendLine("--------------------------------------------------------");
 
                     if (step.FailureCounter >= step.LocalAttempts)

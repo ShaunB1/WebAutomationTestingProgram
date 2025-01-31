@@ -1,22 +1,26 @@
 ﻿using AutomationTestingProgram.Core;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
     public interface IPageFactory
     {
-        Page CreatePage(Context context);
+        Task<Page> CreatePage(Context context);
     }
 
     public class PageFactory : IPageFactory
     {
         private readonly IOptions<PageSettings> _settings;
         private readonly ICustomLoggerProvider _provider;
+        private readonly IHubContext<TestHub> _hubContext;
 
-        public PageFactory(IOptions<PageSettings> options, ICustomLoggerProvider provider)
+
+        public PageFactory(IOptions<PageSettings> options, ICustomLoggerProvider provider, IHubContext<TestHub> hubContext)
         {
             _settings = options;
             _provider = provider;
+            _hubContext = hubContext;
         }
 
         /// <summary>
@@ -24,9 +28,10 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         /// <param name="context">The context object used to create this instance.</param>
         /// <returns></returns>
-        public Page CreatePage(Context context)
+        public async Task<Page> CreatePage(Context context)
         {
-            Page page = new Page(context, _settings, _provider);
+            Page page = new Page(context, _settings, _provider, _hubContext);
+            await page.LogInfo($"Initializing Page Object...");
             return page;
         }
     }

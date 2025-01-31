@@ -25,7 +25,8 @@ public class TestController : CoreController
      *   curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\CGRT_REGRESSION.xlsx" https://localhost:7117/api/test/validate
      * - PROCESS
      * curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\Schools Table.xlsx" -F "Type=Chrome" -F "Version=92" -F "Environment=TestEnv" http://localhost:5223/api/test/run
-     * curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\USER_REGRESSION.xlsx" -F "Type=Chrome" -F "Version=92" -F "Environment=EDCS-9" https://localhost:7117/api/test/run
+     * curl -X POST -H "Content-Type: multipart/form-data" -F "File=@C:\\Users\\DobrinD\\Downloads\\EarlyON_Regression_Test.xlsx" -F "Type=Chrome" -F "Version=92" -F "Environment=EarlyON-AAD" -F "Delay=1" -F "TestRunID=dfe82f6d-c5e2-4a44-acfd-a726dda2ae5f" https://localhost:7117/api/test/run
+     * "C:\Users\DobrinD\Downloads\EarlyON_Regression_Test.xlsx"
      */
 
     /// <summary>
@@ -46,7 +47,7 @@ public class TestController : CoreController
     /// <summary>
     /// Receives api requests to process files
     /// </summary>
-    [Authorize]
+    [AllowAnonymous]
     [HttpPost("run")] 
     public async Task<IActionResult> RunRequest([FromForm] ProcessRequestModel model)
     {

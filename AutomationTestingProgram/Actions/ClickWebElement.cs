@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using AutomationTestingProgram.Modules.TestRunnerModule;
+using DocumentFormat.OpenXml.Drawing;
 using Microsoft.Playwright;
 using Newtonsoft.Json;
 
@@ -34,8 +35,18 @@ public class ClickWebElement : WebAction
                 throw new Exception("Element isn't visible");
             }
 
+            var initialUrl = page.Url;
+            
             await element.ClickAsync();
             await pageObject.LogInfo("Element successfully clicked");
+
+            await Task.Delay(1000); // Quick wait to detect change in url
+
+            if (page.Url != initialUrl)
+            {
+                await pageObject.LogInfo("Change in URL detected. 30 second wait");
+                await Task.Delay(30000);
+            }
         }
         catch (TimeoutException e)
         {

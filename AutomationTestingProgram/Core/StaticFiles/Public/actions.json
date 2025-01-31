@@ -8,6 +8,8 @@
   "presskey": "AutomationTestingProgram.Actions.PressKey",
   "selectddl": "AutomationTestingProgram.Actions.SelectDDL",
   "runsqlscript": "AutomationTestingProgram.Actions.RunSQLScript",
+  "runprsqlscriptdelete": "AutomationTestingProgram.Actions.RunPrSQLScriptDelete",
+  "runprsqlscriptrevert": "AutomationTestingProgram.Actions.RunPrSQLScriptRevert",
   "uploadfile": "AutomationTestingProgram.Actions.UploadFile",
   "closewindow": "AutomationTestingProgram.Actions.CloseWindow",
   "waitinseconds": "AutomationTestingProgram.Actions.WaitInSeconds",

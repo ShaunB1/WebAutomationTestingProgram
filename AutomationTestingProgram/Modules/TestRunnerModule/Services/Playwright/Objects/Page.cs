@@ -88,7 +88,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// Please call InitializeAsync() to finish set-up.
         /// </summary>
         /// <param name="context">Context (parent) instance </param>
-        public Page(Context context, IOptions<PageSettings> options, ICustomLoggerProvider provider)
+        public Page(Context context, IOptions<PageSettings> options, ICustomLoggerProvider provider, IHubContext<TestHub> hubContext)
         {
             ID = context.GetNextPageID();
             FolderPath = LogManager.CreatePageFolder(context.FolderPath, ID);
@@ -101,6 +101,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
             _index = -1;
             _pages = new List<IPage>();
+
+            _hubContext = hubContext;
 
         }
 
@@ -291,6 +293,18 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             }
 
             return page;
+        }
+
+        public void SetUpPageDownloadHandler(IPage page)
+        {
+            page.Download += async (_, download) =>
+            {
+                var downloadPath = Path.Combine(FolderPath, LogManager.DownloadPath, download.SuggestedFilename);
+
+                await download.SaveAsAsync(downloadPath);
+
+                await LogInfo($"Downloaded file: {download.SuggestedFilename}");
+            };
         }
        
     }

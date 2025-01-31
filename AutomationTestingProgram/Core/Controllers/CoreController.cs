@@ -96,7 +96,7 @@ public class CoreController : ControllerBase
     /// <summary>
     /// Receives api requests to stop execution of another request
     /// </summary>
-    [Authorize]
+    [AllowAnonymous]
     [HttpPost("stop")]
     public async Task<IActionResult> StopRequest([FromBody] CancellationRequestModel model)
     {

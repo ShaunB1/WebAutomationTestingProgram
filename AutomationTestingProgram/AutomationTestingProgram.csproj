@@ -31,7 +31,7 @@
 	<ItemGroup>
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
-		<Folder Include="Modules\TestRunner\" />
+		<Folder Include="Modules\TestRunnerOLD\" />
 		<Folder Include="wwwroot\" />
 	</ItemGroup>
 

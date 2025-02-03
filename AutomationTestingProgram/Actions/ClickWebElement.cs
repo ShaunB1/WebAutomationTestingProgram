@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using AutomationTestingProgram.Modules.TestRunnerModule;
+using DocumentFormat.OpenXml.Drawing;
 using Microsoft.Playwright;
 using Newtonsoft.Json;
 
@@ -6,51 +8,53 @@ namespace AutomationTestingProgram.Actions;
 
 public class ClickWebElement : WebAction
 {
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
+    public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
     {
+        IPage page = pageObject.Instance!;
+
+        await pageObject.LogInfo("Locating checkbox...");
+
         var locator = step.Object;
         var locatorType = step.Comments;
         var element = await LocateElementAsync(page, locator, locatorType);
 
+        await pageObject.LogInfo("Element successfully located");
+
+
         try
         {
-            var variableName = "ORG";
-            var pattern = $@"{{{variableName}}}";
 
-            Console.WriteLine($"CONTAINS PATTERN: {locator.Contains(pattern)}, {pattern}");
-            if (locator.Contains(pattern))
+            await element.EvaluateAsync("el => el.scrollIntoView()");
+            var isVisible = await element.IsVisibleAsync();
+            if (!isVisible)
             {
-                var newElement = step.Comments == "html id"
-                    ? page.Locator($"#{locator}")
-                    : step.Comments == "innertext"
-                        ? page.Locator($"text={locator}")
-                        : page.Locator(locator);
-                Console.WriteLine($"Clicking on {locator}");
-                await newElement.ClickAsync();
-            }
-            else
-            {
-                await element.EvaluateAsync("el => el.scrollIntoView()");
-                var isVisible = await element.IsVisibleAsync();
-                if (isVisible)
-                {
-                    await element.ClickAsync();
-                }
+                throw new Exception("Element isn't visible");
             }
 
-            return true;
+            var initialUrl = page.Url;
+            
+            await element.ClickAsync();
+            await pageObject.LogInfo("Element successfully clicked");
+
+            await Task.Delay(1000); // Quick wait to detect change in url
+
+            if (page.Url != initialUrl)
+            {
+                await pageObject.LogInfo("Change in URL detected. 30 second wait");
+                await Task.Delay(30000);
+            }
         }
-        catch (TimeoutException ex)
+        catch (TimeoutException e)
         {
-            Console.WriteLine($"Couldn't find element: {ex}");
-            return false;
+            throw new Exception($"Couldn't find element: {e}");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine(ex);
-            return false;
+            throw;
         }
     }
 }

@@ -121,11 +121,6 @@ const Home: React.FC = () => {
         }
 
         const testRunId = crypto.randomUUID();
-        try {
-            await connection?.invoke('AddClient', testRunId);
-        } catch (err) {
-            console.log(err);
-        }
 
         const testRun: TestRun = {
             id: testRunId,
@@ -135,17 +130,18 @@ const Home: React.FC = () => {
         setTestRuns(prevTestRuns => [...prevTestRuns, testRun]);
 
         const formData = new FormData();
-        formData.append("file", file);
-        formData.append('env', env);
-        formData.append('browser', browser.toLowerCase());
-        formData.append("delay", delay.toString());
+        formData.append("File", file);
+        formData.append("Type", browser.toLowerCase());
+        formData.append("Version", "113");
+        formData.append("Environment", env);        
+        formData.append("Delay", delay.toString());
+        formData.append("TestRunID", testRunId);
 
         try {
             const token = await getToken(instance, accounts);
             const headers = new Headers();
 
             headers.append("Authorization", `Bearer ${token}`);
-            headers.append("TestRunId", testRunId);
 
             const res = await fetch("/api/test/run", {
                 method: "POST",
@@ -154,19 +150,13 @@ const Home: React.FC = () => {
             });
 
             if (res.ok) {
-                alert("File uploaded successfully!");
+                alert("File completed successfully!");
             } else {
-                alert("Failed to upload file.");
+                alert("File failed.");
             }
         } catch (e) {
             console.error("Error uploading file: ", e);
             alert("An error occurred while uploading the file.");
-        }
-
-        try {
-            await connection?.invoke('RemoveClient', testRunId);
-        } catch (err) {
-            console.log(err);
         }
     }
 

@@ -1,21 +1,28 @@
+using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Actions;
 
 public class PressKey : WebAction
 {
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
+    public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
     {
         var key = step.Value.ToLower();
+
+        IPage page = pageObject.Instance!;
 
         if (key == "enter")
         {
             await page.Keyboard.PressAsync("Enter");
-            return true;
+            await pageObject.LogInfo("Pressend ENTER");
         }
-
-        return false;
+        else
+        {
+            await pageObject.LogInfo("Nothing pressed (only ENTER currently implemented)");
+        }
     }
 }

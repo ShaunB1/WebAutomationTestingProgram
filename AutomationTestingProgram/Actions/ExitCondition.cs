@@ -1,15 +1,20 @@
-﻿using Microsoft.Playwright;
+﻿using AutomationTestingProgram.Modules.TestRunnerModule;
+using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Actions;
 
 public class ExitCondition : WebAction
 {
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
+    public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
     {
         try
         {
+            IPage page = pageObject.Instance!;
+            
             var exitCondition = step.Value;
             var locator = step.Object;
 
@@ -21,17 +26,14 @@ public class ExitCondition : WebAction
                     var isVisible = await element.IsVisibleAsync();
                     if (isVisible)
                     {
-                        return true;
+                        return;
                     }
                 }
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            Console.WriteLine(e);
-            return false;
+            throw;
         }
-
-        return false;
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using System.Threading.Tasks;
 using AutomationTestingProgram.Actions;
+using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Actions
@@ -11,12 +12,11 @@ namespace AutomationTestingProgram.Actions
     /// </summary>
     public class VerifyURLValue : WebAction
     {
-        public string Name { get; set; } = "Verify URL Value";
-
-        public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-            Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-            Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration,
-            string cycleGroupName)
+        public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
         {
             //base.Execute();
 
@@ -24,6 +24,10 @@ namespace AutomationTestingProgram.Actions
 
             try
             {
+                IPage page = pageObject.Instance!;
+
+                await pageObject.LogInfo("Verifying url...");
+                
                 // Locate the element and get its URL (href attribute)
                 var locator = step.Object;
 
@@ -32,28 +36,20 @@ namespace AutomationTestingProgram.Actions
                 : step.Comments == "innertext"
                 ? page.Locator($"text={locator}")
                     : page.Locator(locator);
-                string actualURL = await element.GetAttributeAsync("href");
+                string actualURL = await element.GetAttributeAsync("href") ?? string.Empty;
 
                 if (actualURL == expectedURL)
                 {
-                    step.RunSuccessful = true;
-                    step.Actual = $"Expected URL and Found URL match: {expectedURL}";
+                    await pageObject.LogInfo($"Expected URL and Found URL match: {expectedURL}");
                 }
                 else
                 {
-                    step.RunSuccessful = false;
-                    step.Actual = $"Expected URL ({expectedURL}) does not match Found URL ({actualURL})";
-                    throw new Exception(step.Actual);
+                    throw new Exception($"Expected URL ({expectedURL}) does not match Found URL ({actualURL})");
                 }
-                return true;
             }
             catch (Exception ex)
             {
-                //Logger.Info("Could not verify URL value.");
-                //step.RunSuccessful = false;
-                //HandleException(ex);
-                Console.WriteLine($"Failed to check checkbox status {step.Object}: {ex.Message}");
-                return false;
+                throw;
             }
         }
     }

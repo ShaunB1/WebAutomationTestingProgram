@@ -1,18 +1,25 @@
-﻿using Microsoft.Playwright;
+﻿using AutomationTestingProgram.Modules.TestRunnerModule;
+using Microsoft.Playwright;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.Process.WebApi.Models;
 
 namespace AutomationTestingProgram.Actions;
 
 public class ChooseAllDDL : WebAction
 {
-    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
-        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
+    public override async Task ExecuteAsync(Page pageObject,
+        string groupID,
+        TestStep step,
+        Dictionary<string, string> envVars,
+        Dictionary<string, string> saveParams)
     {
         try
         {
+            IPage page = pageObject.Instance!;
+
+            await pageObject.LogInfo("Locating all DDL...");
             var selectElements = await page.QuerySelectorAllAsync("select");
+
+            await pageObject.LogInfo($"DDLs successfully located: {selectElements.Count}");
 
             foreach (var selectElement in selectElements)
             {
@@ -38,12 +45,11 @@ public class ChooseAllDDL : WebAction
                 }
             }
 
-            return true;
+            await pageObject.LogInfo("First option selected in all DDLs");
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            Console.WriteLine(e);
-            return false;
+            throw;
         }
     }
 }

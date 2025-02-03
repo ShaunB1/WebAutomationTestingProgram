@@ -1,8 +1,14 @@
-using System.Net.WebSockets;
-using System.Text;
+using AutomationTestingProgram.Actions;
+using AutomationTestingProgram.Infrastructure.Database;
+using AutomationTestingProgram.Models;
+using AutomationTestingProgram.Modules.AIConnector.Services;
+using AutomationTestingProgram.Modules.DBConnector;
+using DocumentFormat.OpenXml.InkML;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Identity.Web;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
@@ -22,7 +28,8 @@ var builder = WebApplication.CreateBuilder(args); // builder used to configure s
 // GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
-DotNetEnv.Env.Load();
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 ConfigureServices(builder);
 
@@ -49,7 +56,7 @@ void ConfigureServices(WebApplicationBuilder builder)
 
     // Settings Setup
     ConfigureAppSettings(builder);
-
+    
     // File Upload Setup
     ConfigureFileUpload(builder);
 
@@ -98,6 +105,13 @@ void ConfigureServices(WebApplicationBuilder builder)
     });
 
     builder.Services.AddSignalR(); // SignalR -> Websockets
+    
+    builder.Services.AddDbContext<AtpDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresDB"))
+    );
+    builder.Services.AddDBConnectorModule();
+
+    builder.Services.AddHttpClient<AiService>();
 
     // HttpClient -- NOTE: Must inject IHttpClientFactory to use
     builder.Services.AddHttpClient("HttpClient", client =>

@@ -67,7 +67,7 @@ const TaskBoardPage = () => {
 
         return Math.round(daysDifference);
     }
-
+    
     useEffect(() => {
         const fetchData = async () => {
             const [tasksResponse, workersResponse, completedTasksResponse] = await Promise.all([
@@ -84,7 +84,7 @@ const TaskBoardPage = () => {
             const dbTasks: any[] = await tasksResponse.json();
             const dbWorkers: any[] = await workersResponse.json();
             const dbCompletedTasks: any[] = await completedTasksResponse.json();
-
+            
             const savedWorkers: Worker[] = []
 
             dbWorkers.forEach(dbWorker => {
@@ -119,7 +119,7 @@ const TaskBoardPage = () => {
                     if (dbWorker.name === task.worker) {
                         const difference = calculateDays(task.start_date, task.end_date);
                         workerObj.stats?.all_tasks.push(task);
-                        if (task.end_date.includes(month)) {
+                        if ((task.end_date || "").includes(month)) {
                             monthlyTasks.push(task);
                             workerObj.stats?.monthly_tasks.push(task);
                             taskDurationsMonth.push(difference);

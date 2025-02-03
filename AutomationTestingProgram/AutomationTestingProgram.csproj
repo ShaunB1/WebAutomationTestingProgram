@@ -14,6 +14,24 @@
 		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.7.0" />
 		<PackageReference Include="ClosedXML" Version="0.104.1" />
 		<PackageReference Include="DotNetEnv" Version="3.1.1" />
+		<PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.9.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.1">
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.9.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.1">
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
 		<PackageReference Include="Microsoft.Identity.Web.UI" Version="3.4.0" />
 		<PackageReference Include="Microsoft.Graph" Version="5.65.0" />
 		<PackageReference Include="Microsoft.Playwright" Version="1.49.0" />
@@ -22,7 +40,9 @@
 		<PackageReference Include="Microsoft.TeamFoundationServer.ExtendedClient" Version="19.225.1" />
 		<PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3" />
 		<PackageReference Include="NPOI" Version="2.7.2" />
+		<PackageReference Include="OpenAI" Version="2.1.0" />
 		<PackageReference Include="Oracle.ManagedDataAccess" Version="23.6.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
@@ -32,6 +52,8 @@
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
 		<Folder Include="Modules\TestRunnerOLD\" />
+		<Folder Include="Core\" />
+		<Folder Include="Tests\" />
 		<Folder Include="wwwroot\" />
 	</ItemGroup>
 
@@ -64,10 +86,17 @@
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-uBzdGwA-.css" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-6taKtAMF.css" />
 		<_ContentIncludedByDefault Remove="wwwroot\assets\index-BFjJ9ENj.js" />
+		<_ContentIncludedByDefault Remove="Utils\DBConnector\package-lock.json" />
+		<_ContentIncludedByDefault Remove="Utils\DBConnector\package.json" />
+		<_ContentIncludedByDefault Remove="Utils\DBConnector\tsconfig.json" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3" />
+		<PackageReference Include="OpenAI" Version="2.1.0" />
+		<_ContentIncludedByDefault Remove="Utils\AIConnector\package-lock.json" />
+		<_ContentIncludedByDefault Remove="Utils\AIConnector\package.json" />
+		<_ContentIncludedByDefault Remove="Utils\AIConnector\tsconfig.json" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Remove="Infrastructure\**" />
 		<Compile Remove="Modules\TestRunnerModule\Services\Playwright\Managers\**" />
 		<Compile Remove="Shared\**" />
 		<Compile Remove="TestData\**" />
@@ -76,7 +105,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Remove="Infrastructure\**" />
 		<EmbeddedResource Remove="Modules\TestRunnerModule\Services\Playwright\Managers\**" />
 		<EmbeddedResource Remove="Shared\**" />
 		<EmbeddedResource Remove="TestData\**" />
@@ -85,7 +113,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Remove="Infrastructure\**" />
 		<Content Remove="Modules\TestRunnerModule\Services\Playwright\Managers\**" />
 		<Content Remove="Shared\**" />
 		<Content Remove="TestData\**" />
@@ -94,7 +121,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Remove="Infrastructure\**" />
 		<None Remove="Modules\TestRunnerModule\Services\Playwright\Managers\**" />
 		<None Remove="Shared\**" />
 		<None Remove="TestData\**" />

@@ -1,13 +1,14 @@
-const HomePage = (props: any) => {
+import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-react";
+
+const HomePage = () => {
     return (
         <>
-            {
-                props.isAuthenticated
-                    ?
-                    <p>Home Page for QA Regression Team Extension</p>
-                    :
-                    <p>Welcome to the QA Regression Team Extension. Please sign in to continue.</p>
-            }
+            <AuthenticatedTemplate>
+                <p>Home Page for QA Regression Team Extension</p>
+            </AuthenticatedTemplate>
+            <UnauthenticatedTemplate>
+                <p>Welcome to the QA Regression Team Extension. Please sign in to continue.</p>
+            </UnauthenticatedTemplate>
         </>
     );
 }

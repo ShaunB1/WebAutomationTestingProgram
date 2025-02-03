@@ -3,6 +3,8 @@
  * Licensed under the MIT License.
  */
 
+import { InteractionRequiredAuthError } from "@azure/msal-browser";
+
 /**
  * Configuration object to be passed to MSAL instance on creation.
  * For a full list of MSAL.js configuration parameters, visit:
@@ -73,12 +75,11 @@ export const getToken = async (instance: any, accounts: any) => {
 
     return token.accessToken;
   } catch (error: any) {
-    if (error.name === "InteractionRequiredAuthError") {
-
-      const response = await instance.acquireTokenRedirect();
+    if (error instanceof InteractionRequiredAuthError) {
+      console.log(error);
+      const response = await instance.acquireTokenRedirect(loginRequest);
       return response.accessToken;
     }
-    throw error;
   }
 };
 

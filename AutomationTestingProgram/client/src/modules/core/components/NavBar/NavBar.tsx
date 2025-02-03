@@ -91,6 +91,7 @@ const NavBar = (props: any) => {
                                     vertical: 'top',
                                     horizontal: 'right',
                                 }}
+                                disableScrollLock
                                 open={Boolean(anchorElUser)}
                                 onClose={handleCloseUserMenu}
                             >

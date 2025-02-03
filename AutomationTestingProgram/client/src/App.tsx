@@ -7,12 +7,14 @@ import TaskBoardPage from "@modules/tasks/pages/TaskBoardPage.tsx";
 import CompletedTasksPage from "@modules/tasks/pages/CompletedTasksPage.tsx";
 import FileValidationPage from "@modules/fileValidation/pages/FileValidationPage.tsx";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { MsalAuthenticationTemplate, useMsal } from "@azure/msal-react";
+import { AuthenticatedTemplate, MsalAuthenticationTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
 import { InteractionType } from "@azure/msal-browser";
 import { getToken } from "./auth/authConfig.ts";
 import { useEffect, useState } from "react";
 import EditTestFile from "./Pages/EditTestFile.tsx";
 import ExtensionPage from "@modules/extension/pages/ExtensionPage.tsx";
+import LandingPage from "./modules/home/pages/LandingPage.tsx";
+import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 
 function App() {
     // Kenny implemented this fallback element but this can be removed/updated
@@ -29,27 +31,73 @@ function App() {
     const { instance, accounts } = useMsal();
     const [name, setName] = useState<string | null>(null);
     const [email, setEmail] = useState<string | null>(null);
+    const [connection, setConnection] = useState<HubConnection | null>(null);
+
+    useEffect(() => {
+        const connectToSignalR = async () => {
+            await instance.initialize();
+            const token = await getToken(instance, accounts);
+
+            if (token) {
+                try {
+                    const signalRConnection = new HubConnectionBuilder()
+                        .withUrl("/testHub", {
+                            accessTokenFactory: () => token
+                        })
+                        .withAutomaticReconnect()
+                        .build();
+
+                    await signalRConnection.start();
+
+                    signalRConnection.on("OnConnected", (message: any) => {
+                        console.log(message);
+                    });
+        
+                    signalRConnection.on("OnDisconnected", (message: any) => {
+                        console.log(message);
+                    });
+                    setConnection(signalRConnection);
+
+
+                } catch (err) {
+                    console.error(err)
+                }
+            }
+
+        }
+        connectToSignalR();
+
+        return () => {
+            connection?.stop().then(() => {
+                console.log('SignalR connection stopped');
+            }).catch((err) => {
+                console.error('Error stopping SignalR connection:', err);
+            });
+        }
+    }, [instance, accounts]);
 
     useEffect(() => {
         const getAccountInfo = async () => {
             try {
                 await instance.initialize();
                 const token = await getToken(instance, accounts);
-                const headers = new Headers();
-                headers.append("Authorization", `Bearer ${token}`);
-                const response = await fetch("/api/auth/getAccountInfo", {
-                    method: "GET",
-                    headers: headers,
-                });
-                const result = await response.json();
-                setName(result.name);
-                setEmail(result.email);
+                if (token) {
+                    const headers = new Headers();
+                    headers.append("Authorization", `Bearer ${token}`);
+                    const response = await fetch("/api/auth/getAccountInfo", {
+                        method: "GET",
+                        headers: headers,
+                    });
+                    const result = await response.json();
+                    setName(result.name);
+                    setEmail(result.email);
+                }
             } catch (err) {
                 console.error(err);
             }
         }
         getAccountInfo();
-    }, []);
+    }, [instance, accounts]);
 
     return (
         <>
@@ -58,7 +106,16 @@ function App() {
                     <NavBar name={name} email={email} />
                     <div className="content-container">
                         <Routes>
-                            <Route path="/" element={<HomePage />} />
+                            <Route path="/" element={
+                                <div>
+                                    <AuthenticatedTemplate>
+                                        <HomePage connection={connection} />
+                                    </AuthenticatedTemplate>
+                                    <UnauthenticatedTemplate>
+                                        <LandingPage />
+                                    </UnauthenticatedTemplate>
+                                </div>
+                            } />
                             <Route
                                 path="/environments"
                                 element={

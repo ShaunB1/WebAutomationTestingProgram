@@ -47,7 +47,7 @@ public class TestController : CoreController
     /// <summary>
     /// Receives api requests to process files
     /// </summary>
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("run")] 
     public async Task<IActionResult> RunRequest([FromForm] ProcessRequestModel model)
     {

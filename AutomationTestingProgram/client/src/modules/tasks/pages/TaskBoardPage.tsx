@@ -157,7 +157,12 @@ const TaskBoardPage = () => {
                 all_tasks: dbCompletedTasks,
                 monthly_tasks: monthlyTasks,
             }))
-            setTasks(savedTasks);
+
+            const temp: Task[] = [...savedTasks];
+
+            temp.sort((a, b) => Number(a.priority) - Number(b.priority));
+
+            setTasks(temp);
             setWorkers(savedWorkers);
         }
 
@@ -292,7 +297,7 @@ const TaskBoardPage = () => {
         setTasks(updatedTasks);
         setNewTask("");
         setDescription("");
-        setPriority("");
+        setPriority("3");
         setOpen(false);
 
         await fetch(`https://${import.meta.env.VITE_DB_HOST}/api/tasks`, {
@@ -961,6 +966,7 @@ const TaskBoardPage = () => {
                                 position: "fixed",
                                 right: 20,
                                 background: "#F5F5F5",
+                                overflowY: "hidden",
                             }}
                         >
                             <Box
@@ -996,7 +1002,7 @@ const TaskBoardPage = () => {
                                     <Button variant="text" onClick={handleSortPriority} sx={{ color: "#37B7C3" }}>Priority</Button>
                                 </Box>
                             </Box>
-                            <Box sx={{ height: "100%", width: "100%", padding: 1 }}>
+                            <Box sx={{ height: "95%", width: "100%", padding: 1 }}>
                                 <Droppable droppableId={"taskList"}>
                                     {(provided: any): any => (
                                         <List

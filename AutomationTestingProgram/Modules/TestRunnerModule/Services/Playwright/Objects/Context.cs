@@ -246,11 +246,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
             IBrowserContext context = await browser.NewContextAsync(options);
 
-            /*context.Page += async (_, page) =>
-            { 
-                // SetupPageDownloadHandler(page);
-            };*/
-
             return context;
         }
     }

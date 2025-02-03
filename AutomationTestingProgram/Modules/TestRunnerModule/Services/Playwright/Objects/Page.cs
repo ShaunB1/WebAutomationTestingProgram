@@ -73,6 +73,12 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         private PageSettings _settings { get; }
 
         /// <summary>
+        /// Globally unique index to differentiate between downloaded files
+        /// IF they have the same SuggesstedFileName.
+        /// </summary>
+        private int _downloadIndex;
+
+        /// <summary>
         /// The Logger object associated with this class.
         /// </summary>
         private readonly ICustomLogger _logger;
@@ -94,8 +100,10 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             FolderPath = LogManager.CreatePageFolder(context.FolderPath, ID);
 
             _parent = context;
-            _settings = options.Value;
+            _parent.Instance!.Page += OnPageCreated!;
 
+            _settings = options.Value;
+            _downloadIndex = 0;
             _logger = provider.CreateLogger<Page>(FolderPath);
 
 
@@ -143,7 +151,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 if (_parent.Instance == null)
                     throw new Exception("Context instance is null when trying to initialize Page");
 
-                _pages.Add(await CreatePageInstance(_parent.Instance, url));
+                await CreatePageInstance(_parent.Instance, url);
                 await LogInfo($"Successfully initialized Page Instance with url {url}");
             }
             catch (Exception e)
@@ -295,11 +303,13 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             return page;
         }
 
-        public void SetUpPageDownloadHandler(IPage page)
+        private void OnPageCreated(object sender, IPage page)
         {
+            _pages.Add(page);
+            
             page.Download += async (_, download) =>
             {
-                var downloadPath = Path.Combine(FolderPath, LogManager.DownloadPath, download.SuggestedFilename);
+                var downloadPath = Path.Combine(RetrieveDownloadFolder(), Interlocked.Increment(ref _downloadIndex) + "_" + download.SuggestedFilename);
 
                 await download.SaveAsAsync(downloadPath);
 

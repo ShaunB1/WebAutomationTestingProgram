@@ -2,8 +2,6 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
-using IWshRuntimeLibrary; // Had to reference "Windows Script Host Object Model" in the Project References
-
 
 namespace AutomationTestingProgram.Core;
 
@@ -31,9 +29,6 @@ public static class LogManager
     private static readonly string BrowserPath = "_browsers"; // Browser folder. Each browser gets its own folder.
     private static readonly string ContextPath = "_contexts"; // Context folder. Each context gets its own folder within a browser folder.
     private static readonly string PagePath = "_pages"; // Page folder. Each page gets its own folder within a context folder.
-
-    // Subfolders/files within Context Folder
-    public static readonly string Storage = "empty_storage.json";
 
     // Subfolders within Page Folder
     public static readonly string DownloadPath = "_downloads"; // The path for downloaded files during playwright automation.
@@ -136,46 +131,28 @@ public static class LogManager
             throw new Exception($"Context Folder Path: {contextFolderPath} does not exist!");
         }
 
-        string ContextShortcutPath = Path.Combine(contextFolderPath, "Request.lnk");
-        string RequestShortcutPath = Path.Combine(requestFolderPath, "Context.lnk");
+        string ContextShortcutPath = Path.Combine(contextFolderPath, "Request.url");
+        string RequestShortcutPath = Path.Combine(requestFolderPath, "Context.url");
 
-        // Create a WshShell instance to manage the shortcut
-        WshShell? wshShell = null;
-        IWshShortcut? ContextToRequestShortcut = null;
-        IWshShortcut? RequestToContextShortcut = null;
+        CreateUrlShortcut(ContextShortcutPath, requestFolderPath);
+        CreateUrlShortcut(RequestShortcutPath, contextFolderPath);
+    }
 
-        try
+    /// <summary>
+    /// Creates a .url shortcut file
+    /// </summary>
+    /// <param name="shortcutPath">The path where the shortcut will be created</param>
+    /// <param name="targetPath">The target path the shortcut points to</param>
+    private static void CreateUrlShortcut(string shortcutPath, string targetPath)
+    {
+        using (StreamWriter writer = new StreamWriter(shortcutPath))
         {
-            wshShell = new WshShell();
-
-            // Create first shortcut
-            ContextToRequestShortcut = (IWshShortcut)wshShell.CreateShortcut(ContextShortcutPath);
-            ContextToRequestShortcut.Description = "Context To Request Shortcut";
-            ContextToRequestShortcut.TargetPath = requestFolderPath;
-            ContextToRequestShortcut.Save();
-
-            // Create second shortcut
-            RequestToContextShortcut = (IWshShortcut)wshShell.CreateShortcut(RequestShortcutPath);
-            RequestToContextShortcut.Description = "Request to Context Shortcut";
-            RequestToContextShortcut.TargetPath = contextFolderPath;
-            RequestToContextShortcut.Save();
+            writer.WriteLine("[InternetShortcut]");
+            writer.WriteLine($"URL=file:///{targetPath.Replace("\\", "/")}");
+            writer.WriteLine("IconIndex=0");
+            string icon = targetPath.Replace("\\", "/");
+            writer.WriteLine($"IconFile={icon}");
         }
-        finally // Have to manually dispose of COM objects
-        {
-            if (wshShell != null)
-                Marshal.ReleaseComObject(wshShell);
-
-            if (ContextToRequestShortcut != null)
-            {
-                Marshal.ReleaseComObject(ContextToRequestShortcut);
-            }
-
-            if (RequestToContextShortcut != null)
-            {
-                Marshal.ReleaseComObject(RequestToContextShortcut);
-            }
-        }
-        
     }
 
     /// <summary>
@@ -226,9 +203,6 @@ public static class LogManager
         {
             Directory.CreateDirectory(pagesFolder);
         }
-
-        string storageFilePath = Path.Combine(contextFolderPath, Storage);
-        System.IO.File.WriteAllText(storageFilePath, "{}");
 
         return contextFolderPath;
     }

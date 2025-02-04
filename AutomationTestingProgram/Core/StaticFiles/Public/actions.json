@@ -27,5 +27,7 @@
   "runshellscript": "AutomationTestingProgram.Actions.RunShellScript",
   "takescreenshot": "AutomationTestingProgram.Actions.TakeScreenshot",
   "notimplementedaction": "AutomationTestingProgram.Actions.NotImplementedAction",
-  "obsoleteaction": "AutomationTestingProgram.Actions.ObsoleteAction"
+  "obsoleteaction": "AutomationTestingProgram.Actions.ObsoleteAction",
+  "choosecollection": "AutomationTestingProgram.Actions.ChooseCollection",
+  "clickbutton":  "AutomationTestingProgram.Actions.ClickButton"
 }

@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.InkML;
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 using System.Reflection;
+using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 
 namespace AutomationTestingProgram.Actions;
 

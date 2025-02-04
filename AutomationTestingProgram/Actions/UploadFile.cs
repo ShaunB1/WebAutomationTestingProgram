@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using AutomationTestingProgram.Modules.TestRunnerModule;
+using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.Playwright;
 using Newtonsoft.Json;
 

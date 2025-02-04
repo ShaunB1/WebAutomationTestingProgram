@@ -1,11 +1,9 @@
 ﻿using AutomationTestingProgram.Core;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Graph.DeviceManagement.Reports.RetrieveDeviceAppInstallationStatusReport;
 using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule
+namespace AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects
 {
     public class Page
     {   
@@ -46,9 +44,6 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// and other related data.
         /// </summary>
         public string FolderPath { get; }
-
-
-
 
         /// <summary>
         /// The parent Context instance that this Page object belongs to.

@@ -1,9 +1,10 @@
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule;
+namespace AutomationTestingProgram.Modules.TestRunner.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -40,7 +41,7 @@ public class TestController : CoreController
         await CopyFileToFolder(model.File, request.FolderPath);
         return await HandleRequest(request, async (req) =>
         {
-            return "Validation successfull";
+            return "Validation successful";
         });
     }
 
@@ -56,10 +57,7 @@ public class TestController : CoreController
         string username = HttpContext.User.FindFirst("name")!.Value;
         string email = HttpContext.User.FindFirst("preferred_username")!.Value;
         await HubHelper.AddToGroupAsync(_hubContext, email, request.ID, username);
-        IActionResult result =  await HandleRequest(request, async (req) =>
-                                {
-                                    return "Run Successful";
-                                });
+        IActionResult result =  await HandleRequest(request, async (req) => "Run Successful");
         await HubHelper.RemoveFromGroupAsync(_hubContext, email, request.ID, username);
         return result;
     }

@@ -1,20 +1,14 @@
-﻿using Autofac;
+﻿using System.Text;
+using System.Text.RegularExpressions;
+using Autofac;
 using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Core;
-using DocumentFormat.OpenXml.InkML;
-using Microsoft.ApplicationInsights.Extensibility.Implementation;
+using AutomationTestingProgram.Modules.TestRunnerModule;
+using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Newtonsoft.Json;
-using NPOI.HPSF;
-using System.Linq;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.RegularExpressions;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule
+namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Executor
 {
     /// <summary>
     /// Class for executing Playwright Actions
@@ -69,6 +63,32 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             
             // Other
             { "gotopage", "navigatetourl" },
+            { "closebrowser", "closewindow" },
+            { "loadfile", "uploadfile" },
+            
+            // Not implemented
+            { "brokenlinks", "notimplementedaction" },
+            { "compareemail", "notimplementedaction" },
+            { "getemail", "notimplementedaction" },
+            { "getwebelementtext", "notimplementedaction" },
+            { "launchbrowser", "notimplementedaction" },
+            { "mapemailfolder", "notimplementedaction" },
+            { "skiptoline", "notimplementedaction" },
+            { "sqltocsv", "notimplementedaction" },
+            { "verifyemail", "notimplementedaction" },
+            { "verifyexcelfile", "notimplementedaction" },
+            { "verifysqlquery", "notimplementedaction" },
+            
+            // Obsolete actions
+            { "comparepdf", "obsoleteaction" },
+            { "modifytxtfile", "obsoleteaction" },
+            { "switchtoiframe", "obsoleteaction" },
+            { "enteriframe", "obsoleteaction" },
+            { "exitiframe", "obsoleteaction" },
+            { "logchecker", "obsoleteaction" },
+            { "runtestcase", "obsoleteaction" },
+            { "selectddlmultivalues", "obsoleteaction" },
+            { "clicksaveasie", "obsoleteaction" },
         };
 
         // INSTANCE VARIABLES **********************************************************
@@ -109,8 +129,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// Reader used to retrieve Test Steps from file.
         /// </summary>
         private IReader _reader;
-
-
+        
         public static void InitializeStaticVariables(IComponentContext componentContext)
         {
             string actionsFilePath = AppConfiguration.GetSection<PathSettings>("PATHS").ActionsPath;

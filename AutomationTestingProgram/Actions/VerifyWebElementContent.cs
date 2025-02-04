@@ -1,53 +1,47 @@
-
-using System;
-using System.Threading.Tasks;
 using AutomationTestingProgram.Modules.TestRunnerModule;
+using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Actions
+namespace AutomationTestingProgram.Actions;
+
+public class VerifyWebElementContent : WebAction
 {
-    /// <summary>
-    /// This test step verifies the content of a web element using Playwright.
-    /// </summary>
-    public class VerifyWebElementContent : WebAction
-    {
-        public override async Task ExecuteAsync(Page pageObject,
+    public override async Task ExecuteAsync(Page pageObject,
         string groupID,
         TestStep step,
         Dictionary<string, string> envVars,
         Dictionary<string, string> saveParams)
+    {
+        try
         {
-            string expectedContent = step.Value.ToLower();
+            IPage page = pageObject.Instance;
 
-            try
+            await pageObject.LogInfo("Locating element...");
+
+            var locator = step.Object;
+            var locatorType = step.Comments;
+            var element = await LocateElementAsync(page, locator, locatorType);
+        
+            await pageObject.LogInfo("Element found.");
+
+            var expectedContent = step.Value;
+        
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            var actualContent = await element.TextContentAsync();
+
+            if (expectedContent == actualContent)
             {
-                IPage page = pageObject.Instance!;
-
-                await pageObject.LogInfo("Locating element...");
-
-                // Locate the element using XPath and verify its text content
-                var locator = step.Object;
-                var locatorType = step.Comments;
-                var element = await LocateElementAsync(page, locator, locatorType);
-
-                await pageObject.LogInfo("Element located");
-
-                string actualContent = await element.InnerTextAsync();
-
-                if (actualContent == expectedContent)
-                {
-                    await pageObject.LogInfo($"Successfully verified web element content with XPath: {locator}");
-                    return;
-                }
-                else
-                {
-                    throw new Exception("Failure in verifying web element content");
-                }
+                await pageObject.LogInfo($"Successfully verified web element content with XPath: {locator}");
             }
-            catch (Exception ex)
+            else
             {
-                throw;
+                await pageObject.LogInfo($"Unsuccessfully verified web element content with XPath: {locator}");
             }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Couldn't find element: {ex}");
         }
     }
 }

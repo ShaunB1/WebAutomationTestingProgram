@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Modules.TestRunnerModule;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using AutomationTestingProgram.Core;
 using Microsoft.Extensions.Options;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule;
+namespace AutomationTestingProgram.Modules.TestRunner.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -20,5 +20,12 @@
   "fillalltextboxes": "AutomationTestingProgram.Actions.FillAllTextBoxes",
   "verifytxtfile": "AutomationTestingProgram.Actions.VerifyTxtFile",
   "comment": "AutomationTestingProgram.Actions.Comment",
-  "saveparameter": "AutomationTestingProgram.Actions.SaveParameter"
+  "saveparameter": "AutomationTestingProgram.Actions.SaveParameter",
+  "closetab": "AutomationTestingProgram.Actions.CloseTab",
+  "refreshbrowser": "AutomationTestingProgram.Actions.RefreshBrowser",
+  "runjavascript": "AutomationTestingProgram.Actions.RunJavaScript",
+  "runshellscript": "AutomationTestingProgram.Actions.RunShellScript",
+  "takescreenshot": "AutomationTestingProgram.Actions.TakeScreenshot",
+  "notimplementedaction": "AutomationTestingProgram.Actions.NotImplementedAction",
+  "obsoleteaction": "AutomationTestingProgram.Actions.ObsoleteAction"
 }

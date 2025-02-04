@@ -1,5 +1,6 @@
 ﻿using AutomationTestingProgram.Core;
 using AutomationTestingProgram.Modules.TestRunnerModule;
+using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.Extensions.Options;
 using NPOI.OpenXmlFormats.Spreadsheet;
 using Oracle.ManagedDataAccess.Client;

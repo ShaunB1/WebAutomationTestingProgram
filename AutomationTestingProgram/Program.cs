@@ -22,6 +22,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.FileProviders;
 using AutomationTestingProgram.Actions;
+using AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Executor;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 

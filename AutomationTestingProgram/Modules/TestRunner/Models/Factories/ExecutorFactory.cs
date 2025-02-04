@@ -1,4 +1,5 @@
 ﻿using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Executor;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 

@@ -114,6 +114,7 @@ function App() {
                                 <div>
                                     <AuthenticatedTemplate>
                                         {/*<HomePage connection={connection} />*/}
+                                        <DashBoard />
                                     </AuthenticatedTemplate>
                                     <UnauthenticatedTemplate>
                                         <LandingPage />

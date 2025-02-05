@@ -171,21 +171,22 @@ const NavBar = (props: any) => {
                     </Toolbar>
                 </AuthenticatedTemplate>
                 <UnauthenticatedTemplate>
-                    <Toolbar className="navbar">
-                        <Button
-                            component={Link}
-                            to={"/"}
-                            color="inherit"
-                            className="button"
-                        >
-                            TAP
-                        </Button>
+                    <Toolbar
+                        className="navbar"
+                        sx={{
+                            ml: 2,
+                        }}
+                    >
+                        <ContentPasteSearch sx={{ fontSize: "36px", color: "turquoise" }} />
+                        <button onClick={() => navigate("/")} style={{all: "unset", marginLeft: "16px"}}>
+                            <Typography variant="h6" sx={{color: "black", fontWeight: "bold"}}>TAP</Typography>
+                        </button>
                         <Button
                             onClick={handleLogin}
                             color="inherit"
                             className="button"
                         >
-                            Login
+                            <Typography variant="body1" sx={{ color: "black", fontWeight: "bold" }}>Login</Typography>
                         </Button>
                     </Toolbar>
                 </UnauthenticatedTemplate>

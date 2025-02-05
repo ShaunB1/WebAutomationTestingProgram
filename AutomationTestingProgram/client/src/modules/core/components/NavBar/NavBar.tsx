@@ -2,16 +2,27 @@ import './NavBar.css'
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Button from "@mui/material/Button";
-import { Link } from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import {
     AuthenticatedTemplate,
     UnauthenticatedTemplate,
     useMsal,
 } from "@azure/msal-react";
 import { login, logout } from "@auth/authConfig";
-import { Avatar, Box, Divider, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
+import {
+    Avatar,
+    Box,
+    Divider,
+    IconButton,
+    InputAdornment,
+    Menu,
+    MenuItem,
+    TextField,
+    Tooltip,
+    Typography
+} from '@mui/material';
 import { useState } from 'react';
-
+import {ContentPasteSearch, Search} from "@mui/icons-material";
 
 const NavBar = (props: any) => {
     const { instance, accounts } = useMsal();
@@ -35,43 +46,87 @@ const NavBar = (props: any) => {
         setAnchorElUser(null);
     };
 
+    const navigate = useNavigate();
+
     return (
         <>
-            <AppBar position="fixed">
+            <AppBar
+                position="fixed"
+                sx={{
+                    background: "white",
+                    boxShadow: "none",
+                    height: "70px",
+                }}
+            >
                 <AuthenticatedTemplate>
-                    <Toolbar className="navbar">
-                        <Button
-                            component={Link}
-                            to={"/"}
-                            color="inherit"
-                            className="button"
+                    <Toolbar
+                        className="navbar"
+                    >
+                        <Box
+                            sx={{
+                                width: "100px",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                ml: 2,
+                            }}
                         >
-                            TAP
-                        </Button>
-                        <Button
-                            component={Link}
-                            to={"/environments"}
-                            color="inherit"
-                            className="button"
+                            <ContentPasteSearch sx={{ fontSize: "36px", color: "turquoise" }} />
+                            <button onClick={() => useNavigate("/")} style={{ all: "unset", marginLeft: "16px" }}>
+                                <Typography variant="h6" sx={{ color: "black", fontWeight: "bold" }}>TAP</Typography>
+                            </button>
+
+                        </Box>
+                        <Box
+                            sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
                         >
-                            Environments
-                        </Button>
-                        <Button component={Link} to={"/pivottable"} color="inherit" className="button">
-                            Pivot Table
-                        </Button>
-                        <Button component={Link} to={"/taskboard"} color="inherit" className="button">
-                            Tasks
-                        </Button>
-                        <Button component={Link} to={"/completedtasks"} color="inherit" className="button">
-                            Completed Tasks
-                        </Button>
-                        <Button component={Link} to={"/filevalidation"} color="inherit" className="button">
-                            File Validation
-                        </Button>
-                        <Button component={Link} to={"/extension"} color="inherit" className="button">Extension</Button>
-                        <Button component={Link} to={"/edittestfile"} color="inherit" className="button">
-                            Edit Test File
-                        </Button>
+                            <TextField
+                                variant="outlined"
+                                size="small"
+                                placeholder="Search..."
+                                sx={{
+                                    width: "600px",
+                                    background: "#F5F4F6",
+                                }}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search color="disabled" />
+                                        </InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Box>
+                        {/*<Button*/}
+                        {/*    component={Link}*/}
+                        {/*    to={"/environments"}*/}
+                        {/*    color="inherit"*/}
+                        {/*    className="button"*/}
+                        {/*>*/}
+                        {/*    Environments*/}
+                        {/*</Button>*/}
+                        {/*<Button component={Link} to={"/pivottable"} color="inherit" className="button">*/}
+                        {/*    Pivot Table*/}
+                        {/*</Button>*/}
+                        {/*<Button component={Link} to={"/taskboard"} color="inherit" className="button">*/}
+                        {/*    Tasks*/}
+                        {/*</Button>*/}
+                        {/*<Button component={Link} to={"/completedtasks"} color="inherit" className="button">*/}
+                        {/*    Completed Tasks*/}
+                        {/*</Button>*/}
+                        {/*<Button component={Link} to={"/filevalidation"} color="inherit" className="button">*/}
+                        {/*    File Validation*/}
+                        {/*</Button>*/}
+                        {/*<Button component={Link} to={"/extension"} color="inherit" className="button">Extension</Button>*/}
+                        {/*<Button component={Link} to={"/edittestfile"} color="inherit" className="button">*/}
+                        {/*    Edit Test File*/}
+                        {/*</Button>*/}
                         <Box style={{ marginLeft: "auto" }} sx={{ flexGrow: 0 }}>
                             <Tooltip title="Open settings">
                                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>

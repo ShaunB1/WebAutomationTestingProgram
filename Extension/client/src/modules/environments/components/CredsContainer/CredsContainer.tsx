@@ -22,10 +22,10 @@ function CredsContainer(props: any) {
         const fetchRows = async () => {
             try {
                 setLoading(true);
+                await instance.initialize();
                 const headers = new Headers();
                 const token = await getToken(instance, accounts);
                 headers.append("Authorization", `Bearer ${token}`);
-                headers.append('Content-Type', 'application/json');
                 const response = await fetch(`${HOST}/api/environments/keychainAccounts`, {
                     method: 'GET',
                     headers: headers
@@ -36,14 +36,14 @@ function CredsContainer(props: any) {
                     throw new Error(`${errorData.error}`);
                 }
                 const result = await response.json();
-                setRowData(result);
+                setRowData(result.result);
             } catch (err) {
                 console.error(err);
             }
         };
 
         fetchRows();
-    }, []);
+    }, [instance, accounts]);
 
     useEffect(() => {
         chrome.storage.local.get("credFilter", (result) => {
@@ -72,7 +72,6 @@ function CredsContainer(props: any) {
             const headers = new Headers();
             const token = await getToken(instance, accounts);
             headers.append("Authorization", `Bearer ${token}`);
-            headers.append('Content-Type', 'application/json');
             const response = await fetch(`${HOST}/api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
                 method: 'GET',
                 headers: headers
@@ -86,7 +85,7 @@ function CredsContainer(props: any) {
             }
             const result = await response.json();
             setError(false);
-            props.setCurrentCreds({ username: email, password: result.message });
+            props.setCurrentCreds({ username: email, password: result.result });
         } catch (err) {
             console.error(err);
         }

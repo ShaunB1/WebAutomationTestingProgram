@@ -34,7 +34,7 @@ function App() {
           setEmail(result.email);
       }
       getAccountInfo();
-  }, []);
+  }, [instance, accounts]);
 
   return (
     <>

@@ -19,10 +19,10 @@ function CredsContainer() {
         const fetchRows = async () => {
             try {
                 setLoading(true);
+                await instance.initialize();
                 const token = await getToken(instance, accounts);
                 const headers = new Headers();
                 headers.append("Authorization", `Bearer ${token}`);
-                headers.append('Content-Type', 'application/json')
                 const response = await fetch("/api/environments/keychainAccounts", {
                     method: 'GET',
                     headers: headers
@@ -40,7 +40,7 @@ function CredsContainer() {
         };
 
         fetchRows();
-    }, []);
+    }, [instance, accounts]);
 
     const handleClick = async (email: string, setValue: (value: string) => void, setLoading: (value: boolean) => void, setError: (value: boolean) => void) => {
         try {
@@ -48,7 +48,6 @@ function CredsContainer() {
             const token = await getToken(instance, accounts);
             const headers = new Headers();
             headers.append("Authorization", `Bearer ${token}`);
-            headers.append('Content-Type', 'application/json')
             const response = await fetch(`/api/environments/secretKey?email=${encodeURIComponent(email.trim())}`, {
                 method: 'GET',
                 headers: headers

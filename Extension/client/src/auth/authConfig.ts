@@ -1,3 +1,4 @@
+import { InteractionRequiredAuthError } from "@azure/msal-browser";
 import { VITE_PROD_AZ_CLIENT, VITE_AZ_TENANT } from "../constants";
 
 const clientId = VITE_PROD_AZ_CLIENT;
@@ -91,22 +92,34 @@ const getLogoutUrl = async (instance: any, accounts: any) => {
   });
 }
 
-export const getToken = async (instance: any, accounts: any) => {
-  const tokenRequest = {
-    ...loginRequest,
-    account: accounts[0],
-  };
+let tokenPromise: Promise<string> | null = null;
 
-  try {
-    const token = await instance.acquireTokenSilent(tokenRequest);
-    return token.accessToken;
-  } catch (error: any) {
-    console.log(error);
-    const acquireTokenUrl = await getAcquireTokenUrl(instance);
-    const loginResult = await launchWebAuthFlow(acquireTokenUrl, instance);
-    return (loginResult as { accessToken: string }).accessToken;
+export const getToken = async (instance: any, accounts: any) => {
+  console.log("tokenPromise", tokenPromise)
+  if (!tokenPromise) {
+    tokenPromise = instance.acquireTokenSilent({
+      ...loginRequest,
+      account: accounts[0],
+    }).then((token: any) => {
+      return token.accessToken;
+    }).catch(async (error: any) => {
+      if (error instanceof InteractionRequiredAuthError) {
+        console.log(error);
+        const acquireTokenUrl = await getAcquireTokenUrl(instance);
+        const response = await launchWebAuthFlow(acquireTokenUrl, instance);
+        return (response as { accessToken: string }).accessToken
+      }
+      return null;
+    });
   }
+
+  return (tokenPromise as any).then((token: any) => {
+    tokenPromise = null;
+    return token;
+  });
 }
+
+
 
 export const login = async (instance: any) => {
   const loginUrl = await getLoginUrl(instance);

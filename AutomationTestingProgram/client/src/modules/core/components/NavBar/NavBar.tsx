@@ -72,7 +72,7 @@ const NavBar = (props: any) => {
                             }}
                         >
                             <ContentPasteSearch sx={{ fontSize: "36px", color: "turquoise" }} />
-                            <button onClick={() => useNavigate("/")} style={{ all: "unset", marginLeft: "16px" }}>
+                            <button onClick={() => navigate("/")} style={{ all: "unset", marginLeft: "16px" }}>
                                 <Typography variant="h6" sx={{ color: "black", fontWeight: "bold" }}>TAP</Typography>
                             </button>
 

@@ -33,7 +33,7 @@ const SidePanel: React.FC = () => {
                         <GridViewIcon fontSize="small"/>
                         <Typography>Dashboard</Typography>
                     </button>
-                    <button className="nav-button" onClick={() => navigate("/")}>
+                    <button className="nav-button" onClick={() => navigate("/testruns")}>
                         <PlayCircle fontSize="small"/>
                         <Typography>Test Runs</Typography>
                     </button>

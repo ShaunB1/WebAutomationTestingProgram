@@ -26,6 +26,15 @@ const TestRuns = () => {
         });
     }, []);
 
+    const handleBrowserChange = (e: any, newValue: string | null) => {
+        setBrowser(newValue);
+        if (newValue) {
+            localStorage.setItem('browser', newValue);
+        } else {
+            localStorage.setItem('browser', '');
+        }
+    }
+
     return (
         <>
             <Box

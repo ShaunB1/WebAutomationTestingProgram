@@ -15,6 +15,8 @@ import EditTestFile from "./Pages/EditTestFile.tsx";
 import ExtensionPage from "@modules/extension/pages/ExtensionPage.tsx";
 import LandingPage from "./modules/home/pages/LandingPage.tsx";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
+import SidePanel from "@modules/core/components/SidePanel/SidePanel.tsx";
+import DashBoard from "@modules/dashboard/pages/DashBoard.tsx";
 
 function App() {
     // Kenny implemented this fallback element but this can be removed/updated
@@ -104,12 +106,13 @@ function App() {
             <BrowserRouter>
                 <div className="main-container">
                     <NavBar name={name} email={email} />
+                    <SidePanel />
                     <div className="content-container">
                         <Routes>
                             <Route path="/" element={
                                 <div>
                                     <AuthenticatedTemplate>
-                                        <HomePage connection={connection} />
+                                        {/*<HomePage connection={connection} />*/}
                                     </AuthenticatedTemplate>
                                     <UnauthenticatedTemplate>
                                         <LandingPage />
@@ -122,6 +125,15 @@ function App() {
                                     <MsalAuthenticationTemplate
                                         interactionType={InteractionType.Redirect}>
                                         <EnvsPage />
+                                    </MsalAuthenticationTemplate>
+                                }
+                            />
+                            <Route
+                                path="/dashboard"
+                                element={
+                                    <MsalAuthenticationTemplate
+                                        interactionType={InteractionType.Redirect}>
+                                        <DashBoard />
                                     </MsalAuthenticationTemplate>
                                 }
                             />

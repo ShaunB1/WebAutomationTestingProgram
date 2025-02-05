@@ -103,6 +103,8 @@ const TestRuns = () => {
                                 <Box
                                     sx={{
                                         display: "flex",
+                                        flexWrap: "wrap",
+                                        justifyContent: "center"
                                     }}
                                 >
                                     <Autocomplete
@@ -126,6 +128,9 @@ const TestRuns = () => {
                                         }}
                                         renderInput={(params) => <TextField {...params} label="Browser" />}
                                         options={browserOptions}
+                                    />
+                                    <TextField
+                                        label="Enter Delay (seconds)"
                                     />
                                 </Box>
                                 <Box>

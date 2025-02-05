@@ -66,21 +66,30 @@ export const login = async (instance: any) => {
   }
 };
 
+let tokenPromise: Promise<string> | null = null;
+
 export const getToken = async (instance: any, accounts: any) => {
-  try {
-    const token = await instance.acquireTokenSilent({
+  console.log("tokenPromise", tokenPromise)
+  if (!tokenPromise) {
+    tokenPromise = instance.acquireTokenSilent({
       ...loginRequest,
       account: accounts[0],
-    });
-
-    return token.accessToken;
-  } catch (error: any) {
-    if (error instanceof InteractionRequiredAuthError) {
-      console.log(error);
-      const response = await instance.acquireTokenRedirect(loginRequest);
-      return response.accessToken;
-    }
+    }).then((token: any) => {
+      return token.accessToken;
+    }).catch(async (error: any) => {
+      if (error instanceof InteractionRequiredAuthError) {
+        console.log(error);
+        const response = await instance.acquireTokenRedirect(loginRequest);
+        return response.accessToken;
+      }
+      return null;
+    })
   }
+ 
+  return (tokenPromise as any).then((token: any) => {
+    tokenPromise = null;
+    return token;
+  });
 };
 
 export const logout = async (instance: any, accounts: any) => {

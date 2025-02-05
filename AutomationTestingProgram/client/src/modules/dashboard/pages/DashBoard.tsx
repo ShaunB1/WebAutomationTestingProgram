@@ -8,14 +8,13 @@ const DashBoard: React.FC = () => {
                     width: "100%",
                     height: "100%",
                     display: "flex",
-                    gap: 6,
+                    gap: 3,
                 }}
             >
                 <Box
                     sx={{
-                        height: "85vh",
+                        height: "87vh",
                         width: "100%",
-                        // outline: "2px solid red",
                         overflow: "hidden",
                         display: "flex",
                         flexDirection: "column",
@@ -25,7 +24,7 @@ const DashBoard: React.FC = () => {
                     <Box
                         sx={{
                             width: "100%",
-                            height: "40vh",
+                            height: "38vh",
                             background: "white",
                             borderRadius: 4,
                         }}
@@ -54,7 +53,7 @@ const DashBoard: React.FC = () => {
                     <Box
                         sx={{
                             width: "100%",
-                            height: "40vh",
+                            height: "47vh",
                             background: "white",
                             borderRadius: 4,
                         }}
@@ -83,7 +82,7 @@ const DashBoard: React.FC = () => {
                 </Box>
                 <Box
                     sx={{
-                        height: "85vh",
+                        height: "87vh",
                         width: "40%",
                         overflow: "hidden",
                         display: "flex",

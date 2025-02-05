@@ -17,6 +17,7 @@ import LandingPage from "./modules/home/pages/LandingPage.tsx";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import SidePanel from "@modules/core/components/SidePanel/SidePanel.tsx";
 import DashBoard from "@modules/dashboard/pages/DashBoard.tsx";
+import TestRuns from "@modules/testruns/pages/TestRuns.tsx";
 
 function App() {
     // Kenny implemented this fallback element but this can be removed/updated
@@ -134,6 +135,15 @@ function App() {
                                     <MsalAuthenticationTemplate
                                         interactionType={InteractionType.Redirect}>
                                         <DashBoard />
+                                    </MsalAuthenticationTemplate>
+                                }
+                            />
+                            <Route
+                                path="/testruns"
+                                element={
+                                    <MsalAuthenticationTemplate
+                                        interactionType={InteractionType.Redirect}>
+                                        <TestRuns />
                                     </MsalAuthenticationTemplate>
                                 }
                             />

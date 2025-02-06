@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, memo, useMemo } from "react";
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from "ag-grid-community";
-import { Button, CircularProgress, TextField } from "@mui/material";
+import {Box, Button, CircularProgress, TextField, Typography} from "@mui/material";
 import { getToken } from "@auth/authConfig";
 import { useMsal } from "@azure/msal-react";
 
@@ -12,7 +12,7 @@ interface ErrorResponse {
 function CredsContainer() {
     const [rowData, setRowData] = useState([]);
     const [loading, setLoading] = useState(true);
-    const gridRef: any = useRef();
+    const gridRef: any = useRef(null);
     const { instance, accounts } = useMsal();
 
     useEffect(() => {
@@ -112,10 +112,96 @@ function CredsContainer() {
 
     return (
         <>
-            <TextField id="outlined-basic" label="Search for account" variant="outlined" onChange={handleFilterChange} />
-            <div className="ag-theme-quartz" style={{ width: 650, height: 500, marginTop: 10 }}  >
-                <AgGridReact loading={loading} rowData={rowData} columnDefs={columnDefs} rowHeight={50} ref={gridRef} enableCellTextSelection={true} ></AgGridReact>
-            </div>
+            <Box
+               sx={{
+                   width: "100%",
+                   height: "100%",
+               }}
+            >
+                <Box
+                    sx={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                    }}
+                >
+                    <TextField size="small" id="outlined-basic" label="Search..." variant="outlined" onChange={handleFilterChange}/>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            width: "100%",
+                            justifyContent: "space-between",
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                width: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                            }}
+                        >
+                            <TextField size="small" label="Reset Email..." sx={{ width: "100%" }}></TextField>
+                            <input
+                                accept=".txt"
+                                id="file-upload"
+                                type="file"
+                                style={{display: 'none'}}
+                                // onChange={handleFileChange}
+                                // ref={fileInputRef}
+                            />
+                        </Box>
+                        <Box
+                            sx={{
+                                width: "40%",
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: 1,
+                            }}
+                        >
+                            <Button size="small" variant="contained" component="span" color="primary">
+                                Reset
+                            </Button>
+                            <Button size="small" variant="contained" component="span" color="primary">
+                                Upload File
+                            </Button>
+                            {/*<label*/}
+                            {/*    htmlFor="file-upload"*/}
+                            {/*    style={{*/}
+                            {/*        display: "flex",*/}
+                            {/*        height: "100%",*/}
+                            {/*        width: "100%",*/}
+                            {/*    }}*/}
+                            {/*>*/}
+                            {/*    <Button variant="contained" component="span" color="primary">*/}
+                            {/*        Upload File*/}
+                            {/*    </Button>*/}
+                            {/*    <Button variant="contained" component="span" color="primary">*/}
+                            {/*        Reset*/}
+                            {/*    </Button>*/}
+                            {/*</label>*/}
+                        </Box>
+                    </div>
+                </Box>
+                <div
+                    className="ag-theme-quartz"
+                    style={{
+                        width: "100%",
+                        height: "87%",
+                    }}
+                >
+                    <AgGridReact
+                        loading={loading}
+                        rowData={rowData}
+                        columnDefs={columnDefs}
+                        rowHeight={50}
+                        ref={gridRef}
+                        enableCellTextSelection={true}
+                        onGridReady={() => gridRef.current.api.sizeColumnsToFit()}
+                    />
+                </div>
+            </Box>
         </>
     );
 }

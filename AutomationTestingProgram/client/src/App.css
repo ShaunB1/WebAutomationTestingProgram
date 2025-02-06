@@ -2,10 +2,13 @@ body {
     padding: 0;
     margin: 0;
     font-family: Arial, sans-serif;
+    background-color: #F5F5F5;
 }
 
 .content-container {
-    padding-left: 30px;
-    padding-right: 30px;
-    margin-top: 75px;
+    margin-left: 285px;
+    padding-left: 25px;
+    padding-top: 30px;
+    padding-right: 25px;
+    margin-top: 65px;
 }

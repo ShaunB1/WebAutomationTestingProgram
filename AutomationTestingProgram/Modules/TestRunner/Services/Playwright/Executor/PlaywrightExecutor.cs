@@ -55,8 +55,9 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
             { "enteraadcredentials", "login" },
 
             // SQL actions
-            { "runprsqlscriptrevert", "runsqlscript" },
-            { "runprsqlscriptdelete", "runsqlscript" },
+            { "runprsqlscriptrevert", "runprsqlscriptrevert" },
+            { "runprsqlscriptdelete", "runprsqlscriptdelete" },
+            { "runsqlscript", "runsqlscript" },
 
             // Upload actions
             { "uploaddatafile", "uploadfile" },

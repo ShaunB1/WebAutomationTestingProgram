@@ -52,7 +52,6 @@
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
 		<Folder Include="Modules\TestRunnerOLD\" />
-		<Folder Include="Core\" />
 		<Folder Include="Tests\" />
 		<Folder Include="wwwroot\" />
 	</ItemGroup>

@@ -257,7 +257,6 @@ void RegisterServices(ContainerBuilder builder)
     builder.RegisterType<Login>().InstancePerDependency();
     builder.RegisterType<RunPrSQLScriptDelete>().InstancePerDependency();
     builder.RegisterType<RunPrSQLScriptRevert>().InstancePerDependency();
-    builder.RegisterType<Login>().InstancePerDependency();
 
 }
 

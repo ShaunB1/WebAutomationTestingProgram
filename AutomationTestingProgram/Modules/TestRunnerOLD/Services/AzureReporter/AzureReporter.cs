@@ -1,10 +1,12 @@
-/*using Microsoft.TeamFoundation.TestManagement.WebApi;
+using AutomationTestingProgram.Core;
+using Microsoft.Extensions.Options;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 
-namespace AutomationTestingProgram.Actions;
+namespace AutomationTestingProgram.Modules.TestRunnerModule.AzureReporter;
 
 public class AzureReporter
 {
@@ -16,17 +18,18 @@ public class AzureReporter
     protected readonly TestPlanHttpClient _planClient;
     protected readonly TestManagementHttpClient _managementClient;
 
-    public AzureReporter(string uri=@"https://dev.azure.com/csc-ddsb/", string pat="q4cmr4iwi6mrv6ji2w6lvnjdii4462j565bohzkccqxf73i7yd7a", string projectName="AutomationAndAccessibility")
+    public AzureReporter(IOptions<AzureDevOpsSettings> options)
     {
-        _uri = uri;
-        _pat = pat;
-        _projectName = projectName;
+        AzureDevOpsSettings settings = options.Value;
+        _uri = settings.URI;
+        _pat = settings.PAT;
+        _projectName = settings.ProjectName;
         
         var credentials = new VssBasicCredential(string.Empty, _pat);
         _connection = new VssConnection(new Uri(_uri), credentials);
         
         _witClient = _connection.GetClient<WorkItemTrackingHttpClient>();
         _planClient = _connection.GetClient<TestPlanHttpClient>();
-        _managementClient = _connection.GetClient<TestManagementHttpClient>();        
+        _managementClient = _connection.GetClient<TestManagementHttpClient>();
     }
-}*/
+}

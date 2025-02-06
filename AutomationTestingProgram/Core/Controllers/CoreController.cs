@@ -73,6 +73,7 @@ public class CoreController : ControllerBase
      * ID: curl -X POST -H "Content-Type: application/json" -d "{\"FilterType\": \"ID\", \"FilterValue\": \"dfe82f6d-c5e2-4a44-acfd-a726dda2ae5f\"}" https://localhost:7117/api/core/retrieve
      * NONE: curl -X POST -H "Content-Type: application/json" -d "{\"FilterType\": \"None\", \"FilterValue\": \"asdasd\"}" https://localhost:7117/api/core/retrieve
      * 
+     * - GETLOGFILES
      * 
      * Test commands:
      * for /l %i in (1,1,10) do start /b curl -X POST -H "Content-Type: application/json" http://localhost:5223/api/core/retrieve
@@ -91,6 +92,52 @@ public class CoreController : ControllerBase
         {
             return req.RetrievedRequests;
         });
+    }
+
+    /// <summary>
+    /// Receives api requests to retrieve page logs of a ProcessRequest
+    /// </summary>
+    [Authorize]
+    [HttpGet("retrieveLogFile")]
+    public IActionResult GetRequestLogs([FromQuery] RetrieveLogFileModel model)
+    {
+        try
+        {
+            (string, bool) val = LogManager.RetrieveLog(model.ID);
+            string logPath = val.Item1;
+            if (System.IO.File.Exists(logPath))
+            {
+                // Registers OnCompleted to relete temp log file after it was sent
+                if (val.Item2)
+                {
+                    HttpContext.Response.OnCompleted(() =>
+                    {
+                        try
+                        {
+                            if (System.IO.File.Exists(logPath))
+                            {
+                                System.IO.File.Delete(logPath);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to delete temporary file: {ex.Message}");
+                        }
+                        return Task.CompletedTask;
+                    });
+                }
+
+                return PhysicalFile(logPath, "application/octet-stream", "log.txt");
+            }
+            else
+            {
+                return StatusCode(StatusCodes.Status404NotFound);
+            }
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new { Error = e.Message });
+        }
     }
 
     /// <summary>

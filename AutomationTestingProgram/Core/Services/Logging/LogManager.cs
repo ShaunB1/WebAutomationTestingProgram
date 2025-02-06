@@ -110,7 +110,7 @@ public static class LogManager
         }
 
         return requestFolderPath;
-    }
+    }    
 
     /// <summary>
     /// Create a shortcut at the request folder path that points to the context folder path, and vice versa.
@@ -315,6 +315,126 @@ public static class LogManager
         }
     }
 
+
+    /// <summary>
+    /// Will perform the following operations:
+    /// - Check if Context Link exists. If so, go to page log.
+    /// - Lock log file
+    /// - Flush all logs to file
+    /// - Creates a copy of the log file using IO (with unique name)
+    /// - Unlocks log file
+    /// - Returns copy.
+    /// 
+    /// - NOTE: Must delete copy using OnCompleted Event
+    /// </summary>
+    /// <param name="path"></param>
+    public static (string, bool) RetrieveLog(string requestID)
+    {
+        // First get the request Folder
+        string path = RetrieveRequestFolder(requestID);
+        
+        // First, check if a context.url exists
+        string ContextShortCut = Path.Combine(path, "Context.url");
+
+        if (File.Exists(ContextShortCut))
+        { // If exists, go to page folder
+
+            string ContextPath = string.Empty;
+            
+            try
+            {
+                var lines = File.ReadAllLines(ContextShortCut);
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("URL="))
+                    {
+                        ContextPath = line.Substring(4);
+                        if (ContextPath.StartsWith("file:///"))
+                        {
+                            Uri uri = new Uri(ContextPath);
+                            ContextPath = uri.LocalPath;
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            if (string.IsNullOrEmpty(ContextPath))
+            {
+                throw new Exception("Context.url found, but url could not be extracted");
+            }
+
+            string PagesFolder = Path.Combine(ContextPath, PagePath);
+
+            string[] directories = Directory.GetDirectories(PagesFolder);
+            path = directories[0];
+        }
+
+        // If in dictionary, then still active log
+        if (LogBuffer.TryGetValue(path, out (SemaphoreSlim bufferSemaphore, SemaphoreSlim fileSemaphore, StringBuilder logMessage)  logObject))
+        {
+            SemaphoreSlim stringSemaphore = logObject.bufferSemaphore;
+            stringSemaphore.Wait();
+
+            StringBuilder logMessage = logObject.logMessage;
+
+            string fileMessage = logMessage.ToString();
+
+            logMessage.Clear();
+            stringSemaphore.Release();
+
+            SemaphoreSlim fileSemaphore = logObject.fileSemaphore;
+            fileSemaphore.Wait();
+            if (!string.IsNullOrEmpty(fileMessage))
+            {
+                WriteLog(path, fileMessage, null);
+            }
+
+            string source = Path.Combine(path, "log.txt");
+            string destination = Path.Combine(path, $"{Guid.NewGuid()}.txt");
+
+            File.Copy(source, destination);
+            fileSemaphore.Release();
+
+            return (destination, true);
+
+        }
+        else // Not active, just return log
+        {
+            return (Path.Combine(path, "log.txt"), false);
+        }
+
+
+
+    }
+
+    /// <summary>
+    /// Attempts to retrieve the request folder of a request with the given ID.
+    /// If not found, throws error.
+    /// </summary>
+    /// <param name="requestID"></param>
+    /// <returns></returns>
+    private static string RetrieveRequestFolder(string requestID)
+    {
+        string requestFolderName = $"Request_{requestID}_";
+        string requestFolderPath = Path.Combine(RunFolderPath, RequestPath);
+
+        string[] directories = Directory.GetDirectories(requestFolderPath);
+
+        string? match = directories.FirstOrDefault(directory =>
+                                Path.GetFileName(directory).StartsWith(requestFolderName));
+
+        if (match == null)
+        {
+            throw new Exception("Request directory not found!");
+        }
+
+        return match;
+    }
+
     /// <summary>
     /// Logs to a log.txt file within a given folderpath.
     /// </summary>
@@ -366,16 +486,19 @@ public static class LogManager
     /// <param name="message">The message to write</param>
     /// <param name="semaphore">Semaphore to release once writing is complete</param>
     /// <returns></returns>
-    private static void WriteLog(string path, string message, SemaphoreSlim semaphore)
+    private static void WriteLog(string path, string message, SemaphoreSlim? semaphore)
     { 
         try
         {
             string filePath = Path.Combine(path, "log.txt"); // All folders have a log.txt created and appended to from here
-            System.IO.File.AppendAllText(filePath, message);
+            File.AppendAllText(filePath, message);
         }
         finally
         {
-            semaphore.Release();
+            if (semaphore != null)
+            {
+                semaphore.Release();
+            }
         }            
     }
 }

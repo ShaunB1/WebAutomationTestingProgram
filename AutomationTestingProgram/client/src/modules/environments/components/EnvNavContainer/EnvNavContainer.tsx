@@ -62,10 +62,16 @@ function EnvNavContainer() {
 
     return (
         <>
-            <TextField id="outlined-basic" label="Search for environment" variant="outlined" onChange={handleFilterChange} />
-
-            <div className="ag-theme-quartz" style={{ width: 650, height: 500, marginTop: 10 }} >
-                <AgGridReact ref={gridRef} rowHeight={50} rowData={rowData} columnDefs={columnDefs} enableCellTextSelection={true} ></AgGridReact>
+            <TextField fullWidth size="small" id="outlined-basic" label="Search..." variant="outlined" onChange={handleFilterChange} />
+            <div className="ag-theme-quartz" style={{ width: "100%", height: "87%"}} >
+                <AgGridReact
+                    ref={gridRef}
+                    rowHeight={50}
+                    rowData={rowData}
+                    columnDefs={columnDefs}
+                    enableCellTextSelection={true}
+                    onGridReady={() => gridRef.current.api.sizeColumnsToFit()}
+                />
             </div>
         </>
     );

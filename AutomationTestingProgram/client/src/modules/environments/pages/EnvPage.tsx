@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import EnvNavContainer from "../components/EnvNavContainer/EnvNavContainer";
 import CredsContainer from "../components/CredsContainer/CredsContainer";
-import { Button, CircularProgress, TextField, Typography } from "@mui/material";
+import {Box, Button, CircularProgress, TextField, Typography} from "@mui/material";
 import { useMsal } from "@azure/msal-react";
 import { getToken } from "@auth/authConfig";
 
@@ -107,32 +107,36 @@ function EnvPage() {
 
     return (
         <>
-            <div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-                    <h2>Reset Password for Email:</h2>
-                    <TextField label="Email" onChange={handleChange} value={resetEmail}></TextField>
-                    <input
-                        accept=".txt"
-                        id="file-upload"
-                        type="file"
-                        style={{ display: 'none' }}
-                        onChange={handleFileChange}
-                        ref={fileInputRef}
-                    />
-                    <label htmlFor="file-upload">
-                        <Button variant="contained" component="span" color="primary">
-                            Upload File
-                        </Button>
-                        {fileName && <Typography variant="body2" onClick={(event) => {
-                            setFileName(null);
-                            setFileLines([]);
-                        }}>Selected File: {fileName}</Typography>}
-                    </label>
-                    {loading ?
-                        <CircularProgress size={24} /> :
-                        <Button color="secondary" variant="contained" onClick={handleClick}>Reset</Button>
-                    }
-                </div>
+            <div
+                style={{
+                    height: "87vh"
+                }}
+            >
+                {/*<div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>*/}
+                {/*    <h2>Reset Password for Email:</h2>*/}
+                {/*    <TextField label="Email" onChange={handleChange} value={resetEmail}></TextField>*/}
+                {/*    <input*/}
+                {/*        accept=".txt"*/}
+                {/*        id="file-upload"*/}
+                {/*        type="file"*/}
+                {/*        style={{ display: 'none' }}*/}
+                {/*        onChange={handleFileChange}*/}
+                {/*        ref={fileInputRef}*/}
+                {/*    />*/}
+                {/*    <label htmlFor="file-upload">*/}
+                {/*        <Button variant="contained" component="span" color="primary">*/}
+                {/*            Upload File*/}
+                {/*        </Button>*/}
+                {/*        {fileName && <Typography variant="body2" onClick={(event) => {*/}
+                {/*            setFileName(null);*/}
+                {/*            setFileLines([]);*/}
+                {/*        }}>Selected File: {fileName}</Typography>}*/}
+                {/*    </label>*/}
+                {/*    {loading ?*/}
+                {/*        <CircularProgress size={24} /> :*/}
+                {/*        <Button color="secondary" variant="contained" onClick={handleClick}>Reset</Button>*/}
+                {/*    }*/}
+                {/*</div>*/}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {fileResults?.length > 0 ? (
                         <ul>
@@ -145,17 +149,79 @@ function EnvPage() {
                     ) :
                         error ? <span style={{ color: "red" }}>{error}</span> : result && <span>{result}</span>}
                 </div>
-                <div style={{ display: "flex", height: "100%" }}>
-                    <div style={{ marginRight: "100px" }}>
-                        <h1>Environments</h1>
-                        <EnvNavContainer />
-                    </div>
-                    <div style={{ height: "100%" }}>
-                        <h1>Search User Credentials</h1>
-                        <CredsContainer />
-                    </div>
+                <div
+                    style={{
+                        display: "flex",
+                        height: "100%",
+                        width: "100%",
+                        gap: "1rem",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: "70%",
+                            height: "96%",
+                            background: "white",
+                            p: 2,
+                            borderRadius: 2,
+                        }}
+                    >
+                        <div
+                            style={{
+                                height: "100%",
+                                width: "100%",
+                                overflow: "hidden"
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    background: "#313D4F",
+                                    borderRadius: "10px 10px 0 0",
+                                }}
+                            >
+                                <Typography variant="h4" color="white" sx={{ p: 1 }} >Environments</Typography>
+                            </Box>
+                            <EnvNavContainer/>
+                        </div>
+                    </Box>
+                    <Box
+                        sx={{
+                            width: "100%",
+                            height: "96%",
+                            background: "white",
+                            p: 2,
+                            borderRadius: 2,
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: "100%",
+                                overflow: "hidden",
+                                height: "100%",
+                            }}
+                        >
+                            {/*<h1>KeyChain Accounts</h1>*/}
+                            <Box
+                                sx={{
+                                    background: "#313D4F",
+                                    width: "100%",
+                                    borderRadius: "10px 10px 0 0"
+                                }}
+                            >
+                                <Typography color="white" variant="h4" sx={{ p: 1 }} >KeyChain Accounts</Typography>
+                            </Box>
+                            <Box
+                                sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                }}
+                            >
+                                <CredsContainer/>
+                            </Box>
+                        </div>
+                    </Box>
                 </div>
-            </div >
+            </div>
         </>
     );
 }

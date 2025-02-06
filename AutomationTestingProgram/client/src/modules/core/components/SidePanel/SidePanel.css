@@ -1,6 +1,6 @@
 .nav-button {
     all: unset;
-    width: 200px;
+    width: 100%;
     height: 40px;
     display: flex;
     padding: 0 8px;
@@ -9,6 +9,9 @@
     border-radius: 10px;
     color: #5F6165;
     transition: background-color 0.2s ease-in-out;
+    position: relative;
+    text-wrap: nowrap;
+    overflow: hidden;
 }
 
 .nav-button:hover {

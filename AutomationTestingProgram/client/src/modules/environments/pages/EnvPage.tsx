@@ -177,6 +177,7 @@ function EnvPage() {
                                 sx={{
                                     background: "#313D4F",
                                     borderRadius: "10px 10px 0 0",
+                                    mb: 2,
                                 }}
                             >
                                 <Typography variant="h4" color="white" sx={{ p: 1 }} >Environments</Typography>
@@ -205,7 +206,8 @@ function EnvPage() {
                                 sx={{
                                     background: "#313D4F",
                                     width: "100%",
-                                    borderRadius: "10px 10px 0 0"
+                                    borderRadius: "10px 10px 0 0",
+                                    mb: 2,
                                 }}
                             >
                                 <Typography color="white" variant="h4" sx={{ p: 1 }} >KeyChain Accounts</Typography>

@@ -223,6 +223,12 @@ function CredsContainer() {
         }
     };
 
+    useEffect(() => {
+        if (gridRef.current) {
+            gridRef.current.api?.sizeColumnsToFit();
+        }
+    }, []);
+
     return (
         <>
             <Box
@@ -240,7 +246,16 @@ function CredsContainer() {
                         mb: 2,
                     }}
                 >
-                    <TextField size="small" id="outlined-basic" label="Search..." variant="outlined" onChange={handleFilterChange}/>
+                    <TextField
+                        size="small"
+                        id="outlined-basic"
+                        label="Search..."
+                        variant="outlined"
+                        onChange={handleFilterChange}
+                        sx={{
+                            width: "300px",
+                        }}
+                    />
                     <div
                         style={{
                             display: "flex",
@@ -263,7 +278,7 @@ function CredsContainer() {
                                 }}
                             >
                                 { spinner ?
-                                    <CircularProgress size="24px" sx={{ ml: 2 }} /> : success ?
+                                    <CircularProgress size="24px" sx={{ }} /> : success ?
                                     <CheckCircleRounded sx={{ color: "green" }} /> : failure ?
                                     <CancelRounded sx={{ color: "red" }} /> : null
                                 }

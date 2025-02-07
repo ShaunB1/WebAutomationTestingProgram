@@ -176,7 +176,7 @@ function EnvPage() {
                             <Box
                                 sx={{
                                     background: "#313D4F",
-                                    borderRadius: "10px 10px 0 0",
+                                    borderRadius: 2,
                                     mb: 2,
                                 }}
                             >
@@ -206,7 +206,7 @@ function EnvPage() {
                                 sx={{
                                     background: "#313D4F",
                                     width: "100%",
-                                    borderRadius: "10px 10px 0 0",
+                                    borderRadius: 2,
                                     mb: 2,
                                 }}
                             >

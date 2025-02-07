@@ -30,8 +30,7 @@ public class CustomLogger : ICustomLogger
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         var logMessage = new StringBuilder();
-        logMessage.AppendFormat("[{0:HH:mm:ss.fff}] ", DateTime.Now);
-                                                                
+        logMessage.AppendFormat("[{0:HH:mm:ss.fff}] ", DateTime.Now);                                  
         string logLevelText = logLevel.ToString().ToUpper();
         string coloredLogLevelText = logLevelText;
 

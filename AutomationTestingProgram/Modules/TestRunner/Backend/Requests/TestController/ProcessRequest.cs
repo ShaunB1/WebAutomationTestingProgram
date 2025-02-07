@@ -40,6 +40,9 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         public double Delay { get; }
 
         [JsonIgnore]
+        private readonly AsyncPauseControl _pauseControl;
+
+        [JsonIgnore]
         private PlaywrightObject playwright;
 
         [JsonIgnore]
@@ -66,6 +69,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
             this.playwright = playwright;
             this._hubContext = hubContext;
+
+            _pauseControl = new AsyncPauseControl(Logger, CancelToken);
         }
 
         /// <summary>
@@ -104,5 +109,29 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 $" BrowserVersion: {BrowserVersion}, Environment: {Environment}) completed successfully");
 
         }
+
+        /// <summary>
+        /// Pause the request. 
+        /// Will wait until unpaused, cancelled, or 10 minute timeout.
+        /// </summary>
+        public void Pause()
+        {
+            _pauseControl.Pause(); // Set the event to non-signaled state (pause)
+        }
+
+        /// <summary>
+        /// Unpause the request.
+        /// Will continue running the request.
+        /// </summary>
+        public void Unpause()
+        {
+            _pauseControl.UnPause(); // Set the event to signaled state (unpause)
+        }
+
+        public async Task IsPauseRequested(Func<string, Task> Log)
+        {
+            await _pauseControl.WaitAsync(Log);
+        }
+
     }
 }

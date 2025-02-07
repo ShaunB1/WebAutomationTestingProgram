@@ -21,7 +21,7 @@ public class ShutDownService
 
         string logLevelText = "CRITICAL";
         string text = "SHUTDOWN INITIATED. STOPPING ALL THREADS.";
-        string logMessage = string.Format("{0:HH:mm:ss.fff} [{1}] {2}\n", DateTime.Now, logLevelText, text);
+        string logMessage = string.Format("[{0:HH:mm:ss.fff}] [{1}] {2}\n", DateTime.Now, logLevelText, text);
 
         LogManager.FlushAll(logMessage); // Sends shutdown message to all active logs.
 

@@ -10,8 +10,9 @@ namespace AutomationTestingProgram.Core;
 public class CoreController : ControllerBase
 {
     protected readonly ICustomLoggerProvider _provider;
+    protected readonly RequestHandler _requestHandler;
+
     private readonly ICustomLogger _logger;
-    private readonly RequestHandler _requestHandler;
 
     public CoreController(ICustomLoggerProvider provider, RequestHandler handler)
     {

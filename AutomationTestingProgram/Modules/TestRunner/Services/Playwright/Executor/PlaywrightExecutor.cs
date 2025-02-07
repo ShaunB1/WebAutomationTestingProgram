@@ -247,6 +247,9 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                 while (!_reader.isComplete)
                 {
                     _request.IsCancellationRequested();
+                    await _request.IsPauseRequested(page.LogInfo);
+
+
                     await Task.Delay(TimeSpan.FromSeconds(delay));
 
                     var data = _reader.GetNextTestStep();
@@ -401,7 +404,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                           .AppendLine("========================================================")
                           .AppendLine("                REQUEST CANCELLED                       ")
                           .AppendLine("========================================================")
-                          .AppendLine($"TEST EXECUTION CANCELLED                               ")
+                          .AppendLine($"TEST EXECUTION CANCELLED => {e.Message, -40}           ")
                           .AppendLine("--------------------------------------------------------")
                           .AppendLine($"ID:               {_request.ID,-40}")
                           .AppendLine($"BROWSER TYPE:     {_request.BrowserType,-40}")
@@ -491,6 +494,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
         public async Task ExecuteTestStep(Page page, TestStep step)
         {
             _request.IsCancellationRequested();
+            await _request.IsPauseRequested(page.LogInfo);
 
             // Sanitizing
 
@@ -561,6 +565,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                 try
                 {
                     _request.IsCancellationRequested();
+                    await _request.IsPauseRequested(page.LogInfo);
 
                     if (actions.TryGetValue(ActionOnObject, out var action))
                     {

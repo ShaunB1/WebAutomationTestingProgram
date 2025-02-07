@@ -161,9 +161,9 @@ namespace AutomationTestingProgram.Core
 
                 await Execute();
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException e)
             {
-                this.SetStatus(State.Cancelled, "Cancelled");
+                this.SetStatus(State.Cancelled, e.Message);
             }
             catch (Exception e)
             {

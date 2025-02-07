@@ -61,4 +61,58 @@ public class TestController : CoreController
         await HubHelper.RemoveFromGroupAsync(_hubContext, email, request.ID, username);
         return result;
     }
+
+    /// <summary>
+    /// Receives api requests to pause ProcessRequest
+    /// </summary>
+    [Authorize]
+    [HttpPost("pause")]
+    public IActionResult PauseRequest([FromQuery] PauseRequestModel model)
+    {
+        try
+        {
+            IClientRequest request = _requestHandler.RetrieveRequest(model.ID);
+
+            if (request is ProcessRequest processRequest)
+            {
+                processRequest.Pause();
+                return Ok(new { Result = $"Request {model.ID} paused successfully" });
+            }
+            else
+            {
+                throw new Exception($"Request (ID: {model.ID}) cannot be paused (invalid type).");
+            }
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new { Error = e.Message });
+        }
+    }
+
+    /// <summary>
+    /// Receives api requests to unpause ProcessRequest
+    /// </summary>
+    [Authorize]
+    [HttpPost("unpause")]
+    public IActionResult UnPauseRequest([FromQuery] UnPauseRequestModel model)
+    {
+        try
+        {
+            IClientRequest request = _requestHandler.RetrieveRequest(model.ID);
+
+            if (request is ProcessRequest processRequest)
+            {
+                processRequest.Unpause();
+                return Ok(new { Result = $"Request {model.ID} unpaused successfully" });
+            }
+            else
+            {
+                throw new Exception($"Request (ID: {model.ID}) cannot be unpaused (invalid type).");
+            }
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new { Error = e.Message });
+        }
+    }
 }

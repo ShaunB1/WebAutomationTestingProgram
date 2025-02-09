@@ -8,7 +8,7 @@ public interface IWorkersRepository
 {
     Task<List<WorkerModel>> GetAllWorkersAsync();
     Task<WorkerModel> AddWorkerAsync(WorkerModel worker);
-    Task<WorkerModel> DeleteWorkerAsync(string name);
+    Task<WorkerModel> DeleteWorkerAsync(WorkerDeleteRequest request);
 }
 
 public class WorkersRepository : IWorkersRepository
@@ -33,9 +33,9 @@ public class WorkersRepository : IWorkersRepository
         return worker;
     }
 
-    public async Task<WorkerModel> DeleteWorkerAsync(string name)
+    public async Task<WorkerModel> DeleteWorkerAsync(WorkerDeleteRequest request)
     {
-        var worker = await _context.Workers.FirstOrDefaultAsync(x => x.Name == name);
+        var worker = await _context.Workers.FirstOrDefaultAsync(x => x.Name == request.Name);
 
         if (worker == null)
         {

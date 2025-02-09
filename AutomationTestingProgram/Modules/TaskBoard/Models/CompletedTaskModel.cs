@@ -9,6 +9,9 @@ public class CompletedTaskModel
     [Key]
     [Column("id")]
     public int Id { get; set; }
+    [Column("task")]
+    [JsonPropertyName("task")]
+    public string Task { get; set; }
     [Column("start_date")]
     [JsonPropertyName("start_date")]
     public string StartDate { get; set; }

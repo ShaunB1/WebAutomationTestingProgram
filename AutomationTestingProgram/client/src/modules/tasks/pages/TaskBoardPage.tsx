@@ -352,7 +352,7 @@ const TaskBoardPage = () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    name: worker.name,
+                    worker: worker.name,
                     task: task.name,
                     description: task.description,
                     start_date: task.startDate,

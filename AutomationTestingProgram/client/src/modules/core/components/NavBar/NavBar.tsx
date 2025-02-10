@@ -59,22 +59,36 @@ const NavBar = (props: any) => {
                 }}
             >
                 <AuthenticatedTemplate>
-                    <Toolbar
-                        className="navbar"
+                    <Box
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            pl: 2,
+                        }}
                     >
                         <Box
                             sx={{
-                                width: "100px",
+                                width: "400px",
                                 height: "100%",
                                 display: "flex",
                                 alignItems: "center",
-                                ml: 2,
                             }}
                         >
-                            <ContentPasteSearch sx={{ fontSize: "36px", color: "turquoise" }} />
-                            <button onClick={() => navigate("/")} style={{ all: "unset", marginLeft: "16px" }}>
-                                <Typography variant="h6" sx={{ color: "black", fontWeight: "bold" }}>TAP</Typography>
-                            </button>
+                            <Button
+                                onClick={() => navigate("/")}
+                                sx={{
+                                    all: "unset",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1.5,
+                                }}
+                            >
+                                <ContentPasteSearch sx={{ fontSize: "36px", color: "teal" }} />
+                                <Typography variant="h6" sx={{ color: "teal", fontWeight: "bold" }}>AutomationTestingProgram</Typography>
+                            </Button>
 
                         </Box>
                         <Box
@@ -129,8 +143,8 @@ const NavBar = (props: any) => {
                         {/*</Button>*/}
                         <Box style={{ marginLeft: "auto" }} sx={{ flexGrow: 0 }}>
                             <Tooltip title="Open settings">
-                                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                                    <Avatar></Avatar>
+                                <IconButton onClick={handleOpenUserMenu} sx={{ mr: 5 }}>
+                                    <Avatar />
                                 </IconButton>
                             </Tooltip>
                             <Menu
@@ -168,27 +182,42 @@ const NavBar = (props: any) => {
                                 </MenuItem>
                             </Menu>
                         </Box>
-                    </Toolbar>
+                    </Box>
                 </AuthenticatedTemplate>
                 <UnauthenticatedTemplate>
-                    <Toolbar
-                        className="navbar"
+                    <Box
                         sx={{
-                            ml: 2,
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            pl: 2,
+                            justifyContent: "space-between",
                         }}
                     >
-                        <ContentPasteSearch sx={{ fontSize: "36px", color: "turquoise" }} />
-                        <button onClick={() => navigate("/")} style={{all: "unset", marginLeft: "16px"}}>
-                            <Typography variant="h6" sx={{color: "black", fontWeight: "bold"}}>TAP</Typography>
-                        </button>
+                        <Button
+                            onClick={() => navigate("/")}
+                            sx={{
+                                all: "unset",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.5,
+                            }}
+                        >
+                            <ContentPasteSearch sx={{ fontSize: "36px", color: "teal" }} />
+                            <Typography variant="h6" sx={{color: "teal", fontWeight: "bold"}}>AutomationTestingProgram</Typography>
+                        </Button>
                         <Button
                             onClick={handleLogin}
                             color="inherit"
-                            className="button"
+                            sx={{
+                                mr: 5,
+                            }}
                         >
-                            <Typography variant="body1" sx={{ color: "black", fontWeight: "bold" }}>Login</Typography>
+                            <Typography variant="body1" sx={{ width: "100px", color: "gray", fontWeight: "bold", p: 1, }}>Login</Typography>
                         </Button>
-                    </Toolbar>
+                    </Box>
                 </UnauthenticatedTemplate>
             </AppBar>
         </>

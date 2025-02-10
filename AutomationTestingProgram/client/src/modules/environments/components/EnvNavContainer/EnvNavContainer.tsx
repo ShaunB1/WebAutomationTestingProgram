@@ -62,7 +62,17 @@ function EnvNavContainer() {
 
     return (
         <>
-            <TextField fullWidth size="small" id="outlined-basic" label="Search..." variant="outlined" onChange={handleFilterChange} />
+            <TextField
+                fullWidth
+                size="small"
+                id="outlined-basic"
+                label="Search..."
+                variant="outlined"
+                onChange={handleFilterChange}
+                sx={{
+                    mb: 2,
+                }}
+            />
             <div className="ag-theme-quartz" style={{ width: "100%", height: "87%"}} >
                 <AgGridReact
                     ref={gridRef}

@@ -18,6 +18,7 @@ import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import SidePanel from "@modules/core/components/SidePanel/SidePanel.tsx";
 import DashBoard from "@modules/dashboard/pages/DashBoard.tsx";
 import TestRuns from "@modules/testruns/pages/TestRuns.tsx";
+import {Box} from "@mui/material";
 
 function App() {
     // Kenny implemented this fallback element but this can be removed/updated
@@ -35,6 +36,7 @@ function App() {
     const [name, setName] = useState<string | null>(null);
     const [email, setEmail] = useState<string | null>(null);
     const [connection, setConnection] = useState<HubConnection | null>(null);
+    const [collapsed, setCollapsed] = useState(false);
 
     useEffect(() => {
         const connectToSignalR = async () => {
@@ -107,8 +109,19 @@ function App() {
             <BrowserRouter>
                 <div className="main-container">
                     <NavBar name={name} email={email} />
-                    <SidePanel />
-                    <div className="content-container">
+                    <SidePanel collapsed={collapsed} setCollapsed={setCollapsed} />
+                    <Box
+                        sx={{
+                            width: collapsed ? "94.2%" : "84.7%",
+                            height: "88vh",
+                            marginLeft: collapsed ? "3%" : "12.5%",
+                            transition: "margin-left 0.3s ease-in-out, width 0.3s ease-in-out",
+                            paddingLeft: "25px",
+                            paddingTop: "30px",
+                            paddingRight: "25px",
+                            marginTop: "4%",
+                        }}
+                    >
                         <Routes>
                             <Route path="/" element={
                                 <div>
@@ -204,7 +217,7 @@ function App() {
                             />
                             <Route path="*" element={fallBackElement} />
                         </Routes>
-                    </div>
+                    </Box>
                 </div>
             </BrowserRouter>
         </>

@@ -60,7 +60,7 @@ const SidePanel: React.FC<SidePanelProps> = ({ collapsed, setCollapsed }) => {
                                 {collapsed ? null : <Typography>Dashboard</Typography>}
                             </button>
                         </Tooltip>
-                        <Tooltip title="Test Runs">
+                        <Tooltip title="Test Runs" placement="right">
                             <button className="nav-button" onClick={() => navigate("/testruns")}>
                                 <PlayCircle fontSize="small"/>
                                 {collapsed ? null : <Typography>Test Runs</Typography>}

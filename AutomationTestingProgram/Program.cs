@@ -280,9 +280,9 @@ void ConfigureApplicationLifetime(WebApplication app)
 
 void ConfigureMiddleware(WebApplication app)
 {
-    // Handles error responses
-    app.UseCors("AllowAll");
+    app.UseCors("AllowSpecificOrigin");
     
+    // Handles error responses
     app.Use(async (context, next) =>
     {
         await next();

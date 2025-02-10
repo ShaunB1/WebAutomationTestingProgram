@@ -1,4 +1,4 @@
-import {Box, Button, IconButton, Typography} from "@mui/material";
+import {Box, Button, IconButton, Tooltip, Typography} from "@mui/material";
 import GridViewIcon from '@mui/icons-material/GridView';
 import "./SidePanel.css"
 import {useNavigate} from "react-router-dom";
@@ -54,38 +54,54 @@ const SidePanel: React.FC<SidePanelProps> = ({ collapsed, setCollapsed }) => {
                             gap: 2,
                         }}
                     >
-                        <button className="nav-button" onClick={() => navigate("/dashboard")}>
-                            <GridViewIcon fontSize="small"/>
-                            { collapsed ? null : <Typography>Dashboard</Typography> }
-                        </button>
-                        <button className="nav-button" onClick={() => navigate("/testruns")}>
-                            <PlayCircle fontSize="small"/>
-                            { collapsed ? null : <Typography>Test Runs</Typography> }
-                        </button>
-                        <button className="nav-button" onClick={() => navigate("/filevalidation")}>
-                            <FindInPage fontSize="small"/>
-                            { collapsed ? null : <Typography>File Validation</Typography> }
-                        </button>
-                        <button className="nav-button" onClick={() => navigate("/edittestfile")}>
-                            <Edit fontSize="small"/>
-                            { collapsed ? null : <Typography>Edit Test File</Typography> }
-                        </button>
-                        <button className="nav-button" onClick={() => navigate("/environments")}>
-                            <Dns fontSize="small"/>
-                            { collapsed ? null : <Typography>Environments</Typography> }
-                        </button>
-                        <button className="nav-button" onClick={() => navigate("/taskboard")}>
-                            <Checklist fontSize="small"/>
-                            { collapsed ? null : <Typography>Tasks</Typography> }
-                        </button>
-                        <button className="nav-button" onClick={() => navigate("/completedtasks")}>
-                            <CheckCircle fontSize="small"/>
-                            { collapsed ? null : <Typography>Completed Tasks</Typography> }
-                        </button>
-                        <button className="nav-button" onClick={() => navigate("/extension")}>
-                            <FolderZip fontSize="small"/>
-                            { collapsed ? null : <Typography>Extension</Typography> }
-                        </button>
+                        <Tooltip title="Dashboard" placement="right">
+                            <button className="nav-button" onClick={() => navigate("/dashboard")}>
+                                <GridViewIcon fontSize="small"/>
+                                {collapsed ? null : <Typography>Dashboard</Typography>}
+                            </button>
+                        </Tooltip>
+                        <Tooltip title="Test Runs" placement="right">
+                            <button className="nav-button" onClick={() => navigate("/testruns")}>
+                                <PlayCircle fontSize="small"/>
+                                {collapsed ? null : <Typography>Test Runs</Typography>}
+                            </button>
+                        </Tooltip>
+                        <Tooltip title="File Validation" placement="right">
+                            <button className="nav-button" onClick={() => navigate("/filevalidation")}>
+                                <FindInPage fontSize="small"/>
+                                {collapsed ? null : <Typography>File Validation</Typography>}
+                            </button>
+                        </Tooltip>
+                        <Tooltip title="Edit Test File" placement="right">
+                            <button className="nav-button" onClick={() => navigate("/edittestfile")}>
+                                <Edit fontSize="small"/>
+                                {collapsed ? null : <Typography>Edit Test File</Typography>}
+                            </button>
+                        </Tooltip>
+                        <Tooltip title="Environments" placement="right">
+                            <button className="nav-button" onClick={() => navigate("/environments")}>
+                                <Dns fontSize="small"/>
+                                {collapsed ? null : <Typography>Environments</Typography>}
+                            </button>
+                        </Tooltip>
+                        <Tooltip title="Tasks" placement="right">
+                            <button className="nav-button" onClick={() => navigate("/taskboard")}>
+                                <Checklist fontSize="small"/>
+                                {collapsed ? null : <Typography>Tasks</Typography>}
+                            </button>
+                        </Tooltip>
+                        <Tooltip title="Completed Tasks" placement="right">
+                            <button className="nav-button" onClick={() => navigate("/completedtasks")}>
+                                <CheckCircle fontSize="small"/>
+                                {collapsed ? null : <Typography>Completed Tasks</Typography>}
+                            </button>
+                        </Tooltip>
+                        <Tooltip title="Extension" placement="right">
+                            <button className="nav-button" onClick={() => navigate("/extension")}>
+                                <FolderZip fontSize="small"/>
+                                {collapsed ? null : <Typography>Extension</Typography>}
+                            </button>
+                        </Tooltip>
                     </Box>
                     <Box
                         sx={{

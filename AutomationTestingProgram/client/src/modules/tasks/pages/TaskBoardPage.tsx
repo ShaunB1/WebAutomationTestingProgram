@@ -48,7 +48,11 @@ interface WorkerStats {
     avg_completion_time_all: number;
 }
 
-const TaskBoardPage = () => {
+interface TaskBoardPageProps {
+    collapsed: boolean;
+}
+
+const TaskBoardPage: React.FC<TaskBoardPageProps> = ({ collapsed }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [newTask, setNewTask] = useState<string>("");
     const [workerName, setWorkerName] = useState<string>("");
@@ -563,9 +567,15 @@ const TaskBoardPage = () => {
                     gap: 2,
                 }}>
                     <TextField
+                        size="small"
                         label="Enter a worker..."
                         value={workerName}
                         onChange={(e) => setWorkerName(e.target.value)}
+                        InputProps={{
+                            sx: {
+                                backgroundColor: "white",
+                            }
+                        }}
                     />
                     <Button variant="contained" onClick={handleAddWorker}>Add Worker</Button>
                 </Box>
@@ -663,7 +673,9 @@ const TaskBoardPage = () => {
                 <DragDropContext onDragEnd={handleDragEnd}>
                     <Box
                         sx={{
-                            width: "80%",
+                            width: collapsed ? "73.5%" : "70.9%",
+                            maxWidth: "70vw",
+                            transition: "width 0.3s ease-in-out",
                             height: "1600px",
                         }}
                     >
@@ -796,7 +808,7 @@ const TaskBoardPage = () => {
                                 <Box key={index}  sx={{
                                     height: "400px",
                                     borderRadius: 2,
-                                    width: "49.4%",
+                                    width: "49%",
                                     background: "#F5F5F5",
                                 }}>
                                     <Box
@@ -946,23 +958,14 @@ const TaskBoardPage = () => {
                             ))}
                         </Box>
                     </Box>
-                    <Box
-                        sx={{
-                            width: "25%",
-                            height: "80vh",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                        }}
-                    >
+                    <Box>
                         <Box
                             sx={{
                                 width: "24%",
                                 borderRadius: 2,
                                 display: "flex",
                                 flexWrap: "wrap",
-                                height: "83vh",
+                                height: "80vh",
                                 position: "fixed",
                                 right: 20,
                                 background: "#F5F5F5",
@@ -1002,7 +1005,7 @@ const TaskBoardPage = () => {
                                     <Button variant="text" onClick={handleSortPriority} sx={{ color: "#37B7C3" }}>Priority</Button>
                                 </Box>
                             </Box>
-                            <Box sx={{ height: "95%", width: "100%", padding: 1 }}>
+                            <Box sx={{ height: "95%", width: "100%", padding: 0.5 }}>
                                 <Droppable droppableId={"taskList"}>
                                     {(provided: any): any => (
                                         <List

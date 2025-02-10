@@ -803,8 +803,9 @@ const TaskBoardPage: React.FC<TaskBoardPageProps> = ({ collapsed }) => {
                                 <Box key={index}  sx={{
                                     height: "400px",
                                     borderRadius: 2,
-                                    width: "49.4%",
+                                    width: "49%",
                                     background: "#F5F5F5",
+                                    outline: "2px solid blue",
                                 }}>
                                     <Box
                                         sx={{

@@ -6,6 +6,10 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="Autofac" Version="8.2.0" />
 		<PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />

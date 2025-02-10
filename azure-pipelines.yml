@@ -24,8 +24,6 @@ variables:
   project: 'AutomationTestingProgram/AutomationTestingProgram.csproj'
   projectTests: 'AutomationTestingProgram.UnitTests/AutomationTestingProgram.UnitTests.csproj'
   frontendPath: 'AutomationTestingProgram/client'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
 
 steps:
 - task: UseDotNet@2
@@ -40,10 +38,16 @@ steps:
     versionSource: 'spec'
     versionSpec: '22.x'
 
-- task: Npm@1
-  displayName: 'npm install'
+- task: Cache@2
+  displayName: Cache npm dependencies
   inputs:
-    command: 'install'
+    key: 'npm | "$(Agent.OS)" | **/package-lock.json'
+    path: $(NPM_CONFIG_CACHE)
+
+- task: Npm@1
+  displayName: 'npm ci --prefer-offline --no-audit --progress=false'
+  inputs:
+    command: 'ci'
     workingDir: '$(frontendPath)'
 
 - task: Npm@1
@@ -52,6 +56,12 @@ steps:
     command: 'custom'
     workingDir: '$(frontendPath)'
     customCommand: 'run build'
+
+- task: Cache@2
+  displayName: Cache NuGet packages
+  inputs:
+    key: 'nuget | "$(Agent.OS)" | **/project.assets.json'
+    path: $(NUGET_PACKAGES)
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet restore'
@@ -63,7 +73,7 @@ steps:
   inputs:
     command: 'publish'
     projects: '$(project)'
-    arguments: '--configuration $(buildConfiguration) --output "$(build.artifactStagingDirectory)" /p:SkipInvalidConfigurations=true /p:DeployIisAppPath="Default Web Site"'
+    arguments: '--configuration Release --no-restore --output "$(build.artifactStagingDirectory)" /p:DeployIisAppPath="Default Web Site"'
 
 # - task: DotNetCoreCLI@2
 #   displayName: 'dotnet test'
@@ -72,6 +82,7 @@ steps:
 #     projects: '$(projectTests)'
 
 - task: PublishBuildArtifacts@1
+  displayName: 'Publish Web App Artifact'
   inputs:
     pathToPublish: $(Build.ArtifactStagingDirectory)
     artifactName: WebApp

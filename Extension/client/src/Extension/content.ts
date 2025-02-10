@@ -2,6 +2,7 @@ let verifyMode = "availability";
 let previouslySelectedElement: any = null;
 let previousOutlineStyle: any = null;
 let startState: boolean = false;
+let toolsStartState: boolean = false;
 let prevMouseOverOutline: any = null;
 
 interface TableValues {
@@ -13,6 +14,7 @@ interface TableValues {
 }
 
 const START_KEY = "startState";
+const TOOLS_KEY = "toolsState";
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (changes[START_KEY] && namespace === "local") {
@@ -26,6 +28,15 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
             document.removeEventListener("contextmenu", contextMenuEventListener);
         }
     }
+    else if (changes[TOOLS_KEY] && namespace === "local") {
+        toolsStartState = changes[TOOLS_KEY].newValue;
+
+        if (toolsStartState) {
+            document.addEventListener("click", toolsClickEventListener);
+        } else {
+            document.removeEventListener("click", toolsClickEventListener);
+        }
+    }
 })
 
 chrome.storage.local.get(START_KEY, (result) => {
@@ -34,6 +45,12 @@ chrome.storage.local.get(START_KEY, (result) => {
         if (startState) {
             document.addEventListener("click", clickEventListener);
             document.addEventListener("contextmenu", contextMenuEventListener);
+        }
+    }
+    else if (result[TOOLS_KEY]) {
+        toolsStartState = result[TOOLS_KEY];
+        if (toolsStartState) {
+            document.addEventListener("click", toolsClickEventListener);
         }
     }
 });
@@ -50,10 +67,17 @@ function getElementDetails(e: Event) {
 
 document.addEventListener("click", getElementDetails);
 
+function toolsClickEventListener(e: Event) {
+    const element = e.target as HTMLElement;
+    const elDict = getAllAttributes(element);
+
+    chrome.runtime.sendMessage({ action: "toolsFoundElement", locator: elDict });
+}
+
 function clickEventListener(e: Event) {
     const element = e.target as HTMLElement;
     const tag = element.tagName.toLowerCase();
-    const elDict = getAllAttributes(e.target as HTMLElement);
+    const elDict = getAllAttributes(element);
 
     const values: TableValues = {
         testdescription: "",
@@ -215,27 +239,134 @@ chrome.runtime.onMessage.addListener((message) => {
         } else {
             verifyMode = "availability";
         }
-    } else if (message.action === "FILL_TEXT_BOXES") {
-        const inputElements = document.querySelectorAll("input");
-        const textareaElements = document.querySelectorAll("textarea");
+    } else if (message.action === "CHECK_BOXES") {
+        const checkboxes = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:not([disabled]):not([readonly])'));
 
-        inputElements.forEach((input: HTMLInputElement) => {
+        checkboxes.forEach((checkbox: HTMLInputElement) => {
+            checkbox.checked = true;
+        });
+
+    } else if (message.action === "FILL_TEXT_BOXES" || message.action === "FILL_PAGE") {
+        let inputElements: any[] = [];
+        let textareaElements: any[] = [];
+
+        if (message.selectionType === "all") {
+            inputElements = Array.from(document.querySelectorAll("input:not([disabled]):not([readonly])") as NodeListOf<HTMLInputElement>);
+            textareaElements = Array.from(document.querySelectorAll("textarea:not([disabled]):not([readonly])") as NodeListOf<HTMLTextAreaElement>);
+        } else if (message.selectionType === "selected") {
+            const elements: string[] = message.locators;
+
+            elements.forEach((elDict: string) => {
+                const element: any = findClosestElement(elDict);
+                if (!element.disabled && !element.readOnly) {
+                    if (element.tagName.toLowerCase() === "input" && element.type.toLowerCase() === "text") {
+                        inputElements.push(element);
+                    } else if (element.tagName.toLowerCase() === "textarea") {
+                        textareaElements.push(element);
+                    } else {
+                        console.warn("Element is not an input or textarea: ", element.tagName.toLowerCase());
+                    }
+                }
+            });
+        }
+
+        const inputTexts: string[] = [...message.fillerTexts];
+        const areaTexts: string[] = [...message.fillerTexts];
+
+        inputElements?.forEach((input: HTMLInputElement, index: number) => {
             if (input.type.toLowerCase() === "text" && !input.disabled && !input.readOnly) {
-                input.value = message.fillerText;
+                if (message.fillType === "single") {
+                    input.value = inputTexts[0];
 
-                const inputEvent = new Event("input", { bubbles: true });
-                input.dispatchEvent(inputEvent);
+                    const inputEvent = new Event("input", { bubbles: true });
+                    input.dispatchEvent(inputEvent);
+                } else if (message.fillType === "random") {
+                    if (inputTexts.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * inputTexts.length);
+                        input.value = inputTexts[randomIndex];
+
+                        const inputEvent = new Event("input", { bubbles: true });
+                        input.dispatchEvent(inputEvent);
+                    }
+                } else if (message.fillType === "unique") {
+                    if (inputTexts.length > 0) {
+                        let lastValue: string = inputTexts.shift() ?? "";
+
+                        if (/\(.*\)/.test(lastValue)) {
+                           lastValue = lastValue.replace(/\(.*\)/, `(${index})`);
+                        } else {
+                            lastValue += `(${index})`;
+                        }
+
+                        inputTexts.push(lastValue);
+
+                        input.value = lastValue;
+
+                        const inputEvent = new Event("input", { bubbles: true });
+                        input.dispatchEvent(inputEvent);
+                    }
+                }
             }
         });
 
-        textareaElements.forEach((textarea: HTMLTextAreaElement) => {
+        textareaElements?.forEach((textarea: HTMLTextAreaElement, index: number) => {
             if (!textarea.disabled && !textarea.readOnly) {
-                textarea.value = message.fillerText;
+                if (message.fillType === "single") {
+                    textarea.value = areaTexts[0];
 
-                const textareaEvent = new Event("input", { bubbles: true });
-                textarea.dispatchEvent(textareaEvent);
+                    const textareaEvent = new Event("input", { bubbles: true });
+                    textarea.dispatchEvent(textareaEvent);
+                } else if (message.fillType === "random") {
+                    if (areaTexts.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * areaTexts.length);
+                        textarea.value = areaTexts[randomIndex];
+
+                        const inputEvent = new Event("input", { bubbles: true });
+                        textarea.dispatchEvent(inputEvent);
+                    }
+                } else if (message.fillType === "unique") {
+                    if (areaTexts.length > 0) {
+                        let lastValue: string = areaTexts.shift() ?? "";
+
+                        if (/\[.*\]/.test(lastValue)) {
+                            lastValue = lastValue.replace(/\[.*\]/, `[${index}]`);
+                        } else {
+                            lastValue += `[${index}]`;
+                        }
+
+                        areaTexts.push(lastValue);
+
+                        textarea.value = lastValue;
+
+                        const inputEvent = new Event("input", { bubbles: true });
+                        textarea.dispatchEvent(inputEvent);
+                    }
+                }
             }
         });
+
+        if (message.action === "FILL_PAGE") {
+            const emailElements = document.querySelectorAll<HTMLInputElement>('input[id*="email" i]');
+            const phoneElements = document.querySelectorAll<HTMLInputElement>('input[id*="phone" i], input[id*="fax" i]');
+
+            emailElements.forEach((input: HTMLInputElement) => {
+                if (!input.disabled && !input.readOnly) {
+                    input.value = `${message.fillerTexts}@test.com`;
+
+                    const inputEvent = new Event("input", { bubbles: true });
+                    input.dispatchEvent(inputEvent);
+                }
+            });
+
+            phoneElements.forEach((input: HTMLInputElement) => {
+                if (!input.disabled && !input.readOnly) {
+                    input.value = "1231231231";
+
+                    const inputEvent = new Event("input", { bubbles: true });
+                    input.dispatchEvent(inputEvent);
+                }
+            });
+        }
     } else if (message.action === "ROW_SELECTED") {
         if (previouslySelectedElement instanceof HTMLElement || message.selectedRow.COMMENTS === "") {
             previouslySelectedElement.style.outline = previousOutlineStyle || "";
@@ -350,7 +481,7 @@ function getAllIFrames(root: any) {
     return iframes;
 }
 
-function findClosestElement(elDict: string) {
+function findClosestElement(elDict: string): any {
     const elDictObj = JSON.parse(elDict);
     const { iframe, tag, text, attributes } = elDictObj;
     const elements = document.getElementsByTagName(tag);

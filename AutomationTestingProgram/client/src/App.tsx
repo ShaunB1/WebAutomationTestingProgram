@@ -36,7 +36,7 @@ function App() {
     const [name, setName] = useState<string | null>(null);
     const [email, setEmail] = useState<string | null>(null);
     const [connection, setConnection] = useState<HubConnection | null>(null);
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(true);
 
     useEffect(() => {
         const connectToSignalR = async () => {

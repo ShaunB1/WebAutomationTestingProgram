@@ -210,6 +210,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
             // Request starts processing
             StringBuilder logMessage = new StringBuilder()
+                          .AppendLine("                                                        ")
                           .AppendLine("========================================================")
                           .AppendLine("                REQUEST INFORMATION                     ")
                           .AppendLine("========================================================")
@@ -331,7 +332,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                             logMessage.Clear()
                                 .AppendLine("                                                        ")
                                 .AppendLine("========================================================")
-                                .AppendLine("          TEST EXECUTION LOG - TEST CASE FAILED         ")
+                                .AppendLine("          TEST EXECUTION LOG - TEST CASE FAILURE        ")
                                 .AppendLine("========================================================")
                                 .AppendLine($"TEST CASE:     {testCase.Name,-40}")
                                 .AppendLine($"NUM OF STEPS:  {testCase.TestStepNum,-40}")
@@ -401,6 +402,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
 
                 logMessage.Clear()
+                          .AppendLine("                                                        ")
                           .AppendLine("========================================================")
                           .AppendLine("                REQUEST CANCELLED                       ")
                           .AppendLine("========================================================")
@@ -421,6 +423,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
             catch (Exception e) // Test Run Failed
             {
                 logMessage.Clear()
+                          .AppendLine("                                                        ")
                           .AppendLine("========================================================")
                           .AppendLine("                REQUEST FAILED                          ")
                           .AppendLine("========================================================")
@@ -468,6 +471,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
             await page.LogInfo(logMessage.ToString());
 
             logMessage.Clear()
+                          .AppendLine("                                                        ")
                           .AppendLine("========================================================")
                           .AppendLine("                 REQUEST COMPLETE                       ")
                           .AppendLine("========================================================")
@@ -522,6 +526,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
             if (step.Control.Equals("#"))
             {
                 logMessage.Clear()
+                        .AppendLine("                                                        ")
                         .AppendLine("========================================================")
                         .AppendLine("         TEST EXECUTION LOG - TEST STEP SKIPPED        ")
                         .AppendLine("========================================================")
@@ -540,6 +545,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
             step.StartedDate = DateTime.Now;
             logMessage.Clear()
+                            .AppendLine("                                                        ")
                             .AppendLine("========================================================")
                             .AppendLine("          TEST EXECUTION LOG - TEST STEP START          ")
                             .AppendLine("========================================================")
@@ -582,6 +588,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                     step.Result = Result.Successful;
 
                     logMessage.Clear()
+                            .AppendLine("                                                        ")
                             .AppendLine("========================================================")
                             .AppendLine("         TEST EXECUTION LOG - TEST STEP COMPLETE        ")
                             .AppendLine("========================================================")
@@ -605,6 +612,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                     step.FailureCounter++;
 
                     logMessage.Clear()
+                            .AppendLine("                                                        ")
                             .AppendLine("--------------------------------------------------------")
                             .AppendLine("                       FAILURE                          ")
                             .AppendLine("--------------------------------------------------------")

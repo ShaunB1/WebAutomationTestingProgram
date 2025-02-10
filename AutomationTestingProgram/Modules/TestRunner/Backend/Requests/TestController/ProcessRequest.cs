@@ -1,6 +1,7 @@
 ﻿
 using AutomationTestingProgram.Core;
 using Microsoft.AspNetCore.SignalR;
+using NPOI.POIFS.Properties;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 
@@ -56,8 +57,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// <param name="File">The file to be processed in the request.</param>
         /// <param name="Type">The type of the browser (e.g., "Chrome", "Firefox") that will handle the request.</param>
         /// <param name="Version">The version of the browser (e.g., "91", "93") that will be used to process the request.</param>
-        public ProcessRequest(ICustomLoggerProvider provider, IHubContext<TestHub> hubContext, PlaywrightObject playwright, ClaimsPrincipal User, ProcessRequestModel model)
-            : base(User, isLoggingEnabled:true, model.TestRunID)
+        public ProcessRequest(ICustomLoggerProvider provider, IHubContext<TestHub> hubContext, PlaywrightObject playwright, ClaimsPrincipal User, string guid, ProcessRequestModel model)
+            : base(User, isLoggingEnabled:true, guid)
         {            
             this.Logger = provider.CreateLogger<ProcessRequest>(FolderPath);
             
@@ -108,6 +109,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             this.SetStatus(State.Completed, $"Process Request (ID: {ID}, BrowserType: {BrowserType}," +
                 $" BrowserVersion: {BrowserVersion}, Environment: {Environment}) completed successfully");
 
+            await _hubContext.Clients.Group(ID).SendAsync("RunFinished", ID, $"Test Run: {ID} has completed successfully");
         }
 
         /// <summary>
@@ -117,6 +119,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         public void Pause()
         {
             _pauseControl.Pause(); // Set the event to non-signaled state (pause)
+
         }
 
         /// <summary>

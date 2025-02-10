@@ -2,6 +2,7 @@
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 
 namespace AutomationTestingProgram.Modules.TestRunner.Controllers;
@@ -13,9 +14,10 @@ public class EnvironmentsController : CoreController
     private readonly PasswordResetService _passwordResetService;
     private readonly AzureKeyVaultService _azureKeyVaultService;
     private readonly string _keyChainFileName;
+    private readonly IHubContext<TestHub> _hubContext;
 
-    public EnvironmentsController(ICustomLoggerProvider provider, RequestHandler handler, IOptions<PathSettings> options, PasswordResetService passwordResetService, AzureKeyVaultService azureKeyVaultService)
-        :base(provider, handler)
+    public EnvironmentsController(ICustomLoggerProvider provider, RequestHandler handler, IOptions<PathSettings> options, PasswordResetService passwordResetService, AzureKeyVaultService azureKeyVaultService, IHubContext<TestHub> hubContext)
+        :base(provider, handler, hubContext)
     {
         _passwordResetService = passwordResetService;
         _azureKeyVaultService = azureKeyVaultService;

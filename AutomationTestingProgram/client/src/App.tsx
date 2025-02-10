@@ -1,6 +1,5 @@
 import "./App.css";
 import NavBar from "@modules/core/components/NavBar/NavBar.tsx";
-import HomePage from "@modules/home/pages/HomePage.tsx";
 import EnvsPage from "@modules/environments/pages/EnvPage.tsx";
 import PivotTablePage from "@modules/pivotTable/pages/PivotTablePage.tsx";
 import TaskBoardPage from "@modules/tasks/pages/TaskBoardPage.tsx";
@@ -21,17 +20,7 @@ import TestRuns from "@modules/testruns/pages/TestRuns.tsx";
 import {Box} from "@mui/material";
 
 function App() {
-    // Kenny implemented this fallback element but this can be removed/updated
-    // because the /signin-oidc route doesn't seem to work right now
-    /*
-    Fallback element first determines if requested URL is signin-oidc, and if not then
-    catches all requests and reroutes it back to home page.
-
-    /signin-oidc is the default redirect for Azure AAD to post the login token for
-    the authenticated user.
-    */
-    const fallBackElement =
-        window.location.pathname !== "/signin-oidc" ? <Navigate to={"/"} /> : <></>;
+    const fallBackElement = window.location.pathname !== "/signin-oidc" ? <Navigate to={"/"} /> : <></>;
     const { instance, accounts } = useMsal();
     const [name, setName] = useState<string | null>(null);
     const [email, setEmail] = useState<string | null>(null);
@@ -57,7 +46,7 @@ function App() {
                     signalRConnection.on("OnConnected", (message: any) => {
                         console.log(message);
                     });
-        
+
                     signalRConnection.on("OnDisconnected", (message: any) => {
                         console.log(message);
                     });
@@ -94,8 +83,12 @@ function App() {
                         headers: headers,
                     });
                     const result = await response.json();
-                    setName(result.name);
-                    setEmail(result.email);
+                    if (response.ok) {
+                        setName(result.name);
+                        setEmail(result.email);
+                    } else {
+                        throw new Error(result.error);
+                    }
                 }
             } catch (err) {
                 console.error(err);
@@ -126,7 +119,6 @@ function App() {
                             <Route path="/" element={
                                 <div>
                                     <AuthenticatedTemplate>
-                                        {/*<HomePage connection={connection} />*/}
                                         <DashBoard />
                                     </AuthenticatedTemplate>
                                     <UnauthenticatedTemplate>
@@ -148,7 +140,7 @@ function App() {
                                 element={
                                     <MsalAuthenticationTemplate
                                         interactionType={InteractionType.Redirect}>
-                                        <DashBoard />
+                                        <DashBoard connection={connection} />
                                     </MsalAuthenticationTemplate>
                                 }
                             />
@@ -157,7 +149,7 @@ function App() {
                                 element={
                                     <MsalAuthenticationTemplate
                                         interactionType={InteractionType.Redirect}>
-                                        <TestRuns />
+                                        <TestRuns connection={connection} />
                                     </MsalAuthenticationTemplate>
                                 }
                             />

@@ -1,27 +1,8 @@
-export interface Constants {
-    caseName: string,
-    release: string,
-    collection: string,
-    stepType: string,
-}
-
-export interface ActionDetails {
-    [key: string]: any;
-    caseName: string,
-    desc: string,
-    stepNum: number,
-    action: string,
-    object: string,
-    value: string,
-    comments: string,
-    release: string,
-    attempts: string,
-    timeout: string,
-    control: string,
-    collection: string,
-    stepType: string,
-    goto: string,
-    uniqueLocator: boolean,
+export interface EnvRowData {
+    environment: string,
+    ops_bps: string,
+    aad: string,
+    db_name: string,
 }
 
 export interface RowData {
@@ -41,9 +22,11 @@ export interface RowData {
     goto: string;
 }
 
-export interface EnvRowData {
-    environment: string,
-    ops_bps: string,
-    aad: string,
-    db_name: string,
+export interface TestRun {
+    id: string;
+    logs: string[];
+}
+
+export interface ActiveRun {
+    id: string;
 }

@@ -33,6 +33,7 @@
     "react-quill": "^2.0.0",
     "react-router-dom": "^6.28.0",
     "react-table": "^7.8.0",
+    "react-window": "^1.8.11",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -43,6 +44,7 @@
     "@types/react-data-grid": "^4.0.12",
     "@types/react-dom": "^18.3.0",
     "@types/react-table": "^7.7.20",
+    "@types/react-window": "^1.8.8",
     "@types/xlsx": "^0.0.36",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitejs/plugin-react-swc": "^3.7.1",

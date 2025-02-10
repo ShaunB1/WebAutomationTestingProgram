@@ -1,8 +1,10 @@
 using AutomationTestingProgram.Core;
 using AutomationTestingProgram.Modules.TestRunnerModule;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using NPOI.POIFS.Properties;
 
 namespace AutomationTestingProgram.Modules.TestRunner.Controllers;
 
@@ -14,7 +16,7 @@ public class TestController : CoreController
     private readonly PlaywrightObject _playwright;
 
     public TestController(ICustomLoggerProvider provider, RequestHandler handler, PlaywrightObject playwright, IHubContext<TestHub> hubContext):
-        base(provider, handler) 
+        base(provider, handler, hubContext) 
     { 
         _playwright = playwright;
         _hubContext = hubContext;
@@ -52,14 +54,15 @@ public class TestController : CoreController
     [HttpPost("run")] 
     public async Task<IActionResult> RunRequest([FromForm] ProcessRequestModel model)
     {
-        ProcessRequest request = new ProcessRequest(_provider, _hubContext, _playwright, HttpContext.User, model);
+        string guid = Guid.NewGuid().ToString();
+        ProcessRequest request = new ProcessRequest(_provider, _hubContext, _playwright, HttpContext.User, guid, model);
         await CopyFileToFolder(model.File, request.FolderPath);
-        string username = HttpContext.User.FindFirst("name")!.Value;
         string email = HttpContext.User.FindFirst("preferred_username")!.Value;
-        await HubHelper.AddToGroupAsync(_hubContext, email, request.ID, username);
-        IActionResult result =  await HandleRequest(request, async (req) => "Run Successful");
-        await HubHelper.RemoveFromGroupAsync(_hubContext, email, request.ID, username);
-        return result;
+        await _hubContext.Clients.All.SendAsync("NewRun", guid, $"User: {email} has created Test Run: {guid}");
+
+        // Run test asynchronously. Don't await, so user can get the GUID for SignalR connection
+        HandleRequest(request, (req) => Task.FromResult("Run Successful"));
+        return Ok(new { Result=guid });
     }
 
     /// <summary>
@@ -67,8 +70,9 @@ public class TestController : CoreController
     /// </summary>
     [Authorize]
     [HttpPost("pause")]
-    public IActionResult PauseRequest([FromQuery] PauseRequestModel model)
+    public async Task<IActionResult> PauseRequest([FromQuery] PauseRequestModel model)
     {
+        string email = HttpContext.User.FindFirst("preferred_username")!.Value;
         try
         {
             IClientRequest request = _requestHandler.RetrieveRequest(model.ID);
@@ -76,6 +80,7 @@ public class TestController : CoreController
             if (request is ProcessRequest processRequest)
             {
                 processRequest.Pause();
+                await _hubContext.Clients.Group(model.ID).SendAsync("RunPaused", model.ID, $"User: {email} has paused Test Run: {model.ID}");
                 return Ok(new { Result = $"Request {model.ID} paused successfully" });
             }
             else
@@ -94,8 +99,9 @@ public class TestController : CoreController
     /// </summary>
     [Authorize]
     [HttpPost("unpause")]
-    public IActionResult UnPauseRequest([FromQuery] UnPauseRequestModel model)
+    public async Task<IActionResult> UnPauseRequest([FromQuery] UnPauseRequestModel model)
     {
+        string email = HttpContext.User.FindFirst("preferred_username")!.Value;
         try
         {
             IClientRequest request = _requestHandler.RetrieveRequest(model.ID);
@@ -103,6 +109,7 @@ public class TestController : CoreController
             if (request is ProcessRequest processRequest)
             {
                 processRequest.Unpause();
+                await _hubContext.Clients.Group(model.ID).SendAsync("RunUnpaused", model.ID, $"User: {email} has unpaused Test Run: {model.ID}");
                 return Ok(new { Result = $"Request {model.ID} unpaused successfully" });
             }
             else

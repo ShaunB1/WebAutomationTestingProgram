@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.SignalR;
 
 namespace AutomationTestingProgram.Core;
 
@@ -11,14 +12,15 @@ public class CoreController : ControllerBase
 {
     protected readonly ICustomLoggerProvider _provider;
     protected readonly RequestHandler _requestHandler;
-
     private readonly ICustomLogger _logger;
+    private readonly IHubContext<TestHub> _hubContext;
 
-    public CoreController(ICustomLoggerProvider provider, RequestHandler handler)
+    public CoreController(ICustomLoggerProvider provider, RequestHandler handler, IHubContext<TestHub> hubContext)
     {
         _provider = provider;
         _logger = _provider.CreateLogger<CoreController>();
         _requestHandler = handler;
+        _hubContext = hubContext;
     }
 
     protected async Task<IActionResult> HandleRequest<TRequest, TReturn>(TRequest request, Func<TRequest, Task<TReturn>> getProperty) where TRequest : IClientRequest
@@ -149,6 +151,8 @@ public class CoreController : ControllerBase
     public async Task<IActionResult> StopRequest([FromBody] CancellationRequestModel model)
     {
         CancellationRequest request = new CancellationRequest(_provider, _requestHandler, HttpContext.User, model);
+        string email = HttpContext.User.FindFirst("preferred_username")!.Value;
+        await _hubContext.Clients.Groups(model.ID).SendAsync("RunStopped", model.ID, $"User: {email} has stopped Test Run: {model.ID}");
         return await HandleRequest(request, async (req) =>
         {
             return $"Request {req.CancelRequestID} cancelled successfully";

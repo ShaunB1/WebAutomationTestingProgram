@@ -1,8 +1,43 @@
-import {Box, IconButton, List, ListItem, Paper, Typography} from "@mui/material";
-import React from "react";
-import {ArrowDownward, Delete, PauseCircle, PlayCircle, StopCircle} from "@mui/icons-material";
+import { Box, IconButton, ListItem, Paper, Typography } from "@mui/material";
+import { ArrowDownward, Delete, PauseCircle, PlayCircle, StopCircle } from "@mui/icons-material";
+import { useEffect, useRef, useState } from "react";
+import { FixedSizeList as List } from 'react-window';
 
-const LogDisplay = () => {
+const LogDisplay = (props: any) => {
+    const logRef = useRef<any>(null);
+    const [autoScroll, setAutoScroll] = useState(false);
+
+    useEffect(() => {
+        if (logRef.current && autoScroll) {
+            logRef.current.scrollToItem(props.testRunLog.logs.length - 1, "end");
+        }
+    }, [props.testRunLog.logs, autoScroll]);
+
+    const handleAutoScroll = (e: any) => {
+        setAutoScroll(prevAutoScroll => !prevAutoScroll);
+    }
+
+    const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+        const log = props.testRunLog.logs[index];
+        return (
+            <div style={{ ...style }}>
+                <Typography
+                    component="pre"
+                    sx={{
+                        whiteSpace: "nowrap",
+                        fontFamily: "Courier, monospace",
+                        fontSize: "1rem",
+                        margin: "0 20px",
+                        color: log.includes("TEST CASE COMPLETE") || log.includes("TEST STEP COMPLETE") ? "green" :
+                            log.includes("TEST CASE FAILURE") || log.includes("TEST STEP FAILURE") ? "red" : 
+                            log.includes("TEST CASE START") || log.includes("TEST STEP START") ? "yellow" : "white",
+                    }}
+                >
+                    {log}
+                </Typography>
+            </div>
+        );
+    };
     return (
         <>
             <Box
@@ -11,7 +46,6 @@ const LogDisplay = () => {
                     display: "flex",
                     justifyContent: "center",
                     pt: 2,
-                    overflowY: "auto",
                 }}
             >
                 <Box
@@ -24,14 +58,12 @@ const LogDisplay = () => {
                 >
                     <Paper
                         elevation={3}
-                        // ref={logContainerRef}
                         sx={{
                             width: '100%',
                             height: 600,
                             bgcolor: 'black',
                             color: 'white',
                             borderRadius: 2,
-                            overflowY: 'auto',
                         }}
                     >
                         <Box
@@ -39,9 +71,9 @@ const LogDisplay = () => {
                                 bgcolor: "#313d4f",
                                 p: 1,
                                 textAlign: 'center',
-                                position: 'sticky',
                                 top: 0,
-                                zIndex: 1
+                                zIndex: 1,
+                                borderRadius: 2,
                             }}
                         >
                             <Box
@@ -49,27 +81,49 @@ const LogDisplay = () => {
                                     width: "100%",
                                     height: "100%",
                                     display: "flex",
-                                    justifyContent: "center",
+                                    justifyContent: "flex-start",
                                     alignItems: "center",
                                     position: "relative",
+                                    marginLeft: "1rem"
                                 }}
                             >
-                                <Typography variant={"h6"} color={"white"}>
-                                    {/*Test Run {index + 1}*/}
-                                    Test Run
+                                <Typography variant={"h6"} color={"white"}
+                                    sx={{
+                                        maxWidth: 'calc(100% - 12rem)',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                    }}>
+                                    {props.testRunLog.id}
                                 </Typography>
                                 <Box
                                     sx={{
                                         position: "absolute",
-                                        right: "10em",
+                                        right: "13em",
+                                    }}
+                                >
+                                    <IconButton
+                                        sx={{
+                                            color: autoScroll ? "green" : "white",
+                                        }}
+                                        onClick={handleAutoScroll}
+                                    >
+                                        <ArrowDownward />
+                                    </IconButton>
+                                </Box>
+                                <Box
+                                    sx={{
+                                        position: "absolute",
+                                        right: "10rem",
                                     }}
                                 >
                                     <IconButton
                                         sx={{
                                             color: "white",
                                         }}
+                                        onClick={e => props.handleUnpauseRun(e, props.testRunLog.id)}
                                     >
-                                        <ArrowDownward />
+                                        <PlayCircle />
                                     </IconButton>
                                 </Box>
                                 <Box
@@ -82,8 +136,9 @@ const LogDisplay = () => {
                                         sx={{
                                             color: "white",
                                         }}
+                                        onClick={e => props.handlePauseRun(e, props.testRunLog.id)}
                                     >
-                                        <PlayCircle />
+                                        <PauseCircle />
                                     </IconButton>
                                 </Box>
                                 <Box
@@ -96,8 +151,9 @@ const LogDisplay = () => {
                                         sx={{
                                             color: "white",
                                         }}
+                                        onClick={e => props.handleStopRun(e, props.testRunLog.id)}
                                     >
-                                        <PauseCircle />
+                                        <StopCircle />
                                     </IconButton>
                                 </Box>
                                 <Box
@@ -110,28 +166,23 @@ const LogDisplay = () => {
                                         sx={{
                                             color: "red",
                                         }}
+                                        onClick={e => props.handleCloseRun(e, props.testRunLog.id)}
                                     >
                                         <Delete />
                                     </IconButton>
                                 </Box>
                             </Box>
                         </Box>
-                        <List>
-                            {/*{testRun.logs.map((log, logIndex) => (*/}
-                            {/*    <ListItem key={logIndex}>*/}
-                            {/*        <Typography*/}
-                            {/*            component="pre"*/}
-                            {/*            sx={{*/}
-                            {/*                whiteSpace: "pre-wrap",*/}
-                            {/*                fontFamily: "Courier, monospace",*/}
-                            {/*                fontSize: "1rem",*/}
-                            {/*                color: log.includes("STATUS: True") ? "green" : log.includes("STATUS: False") ? "red" : "white",*/}
-                            {/*            }}*/}
-                            {/*        >*/}
-                            {/*            {log}*/}
-                            {/*        </Typography>*/}
-                            {/*    </ListItem>*/}
-                            {/*))}*/}
+                        {/* Virtualized List using react-window to reduce lag */}
+                        <List
+                            height={580}
+                            itemCount={props.testRunLog.logs.length}
+                            itemSize={24}
+                            width={"100%"}
+                            ref={logRef}
+
+                        >
+                            {Row}
                         </List>
                     </Paper>
                 </Box>

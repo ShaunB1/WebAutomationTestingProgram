@@ -175,7 +175,7 @@ function App() {
                                 element={
                                     <MsalAuthenticationTemplate
                                         interactionType={InteractionType.Redirect}>
-                                        <TaskBoardPage />
+                                        <TaskBoardPage collapsed={collapsed} />
                                     </MsalAuthenticationTemplate>
                                 }
                             />

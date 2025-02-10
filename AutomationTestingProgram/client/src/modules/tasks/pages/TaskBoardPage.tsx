@@ -48,7 +48,11 @@ interface WorkerStats {
     avg_completion_time_all: number;
 }
 
-const TaskBoardPage = () => {
+interface TaskBoardPageProps {
+    collapsed: boolean;
+}
+
+const TaskBoardPage: React.FC<TaskBoardPageProps> = ({ collapsed }) => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [newTask, setNewTask] = useState<string>("");
     const [workerName, setWorkerName] = useState<string>("");
@@ -663,8 +667,11 @@ const TaskBoardPage = () => {
                 <DragDropContext onDragEnd={handleDragEnd}>
                     <Box
                         sx={{
-                            width: "80%",
+                            width: collapsed ? "73.5%" : "70.9%",
+                            maxWidth: "70vw",
+                            transition: "width 0.3s ease-in-out",
                             height: "1600px",
+                            outline: "2px solid red"
                         }}
                     >
                         <Box
@@ -958,7 +965,7 @@ const TaskBoardPage = () => {
                     >
                         <Box
                             sx={{
-                                width: "24%",
+                                width: "25%",
                                 borderRadius: 2,
                                 display: "flex",
                                 flexWrap: "wrap",

@@ -958,23 +958,14 @@ const TaskBoardPage: React.FC<TaskBoardPageProps> = ({ collapsed }) => {
                             ))}
                         </Box>
                     </Box>
-                    <Box
-                        sx={{
-                            width: "25%",
-                            height: "80vh",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                        }}
-                    >
+                    <Box>
                         <Box
                             sx={{
-                                width: "25%",
+                                width: "24%",
                                 borderRadius: 2,
                                 display: "flex",
                                 flexWrap: "wrap",
-                                height: "83vh",
+                                height: "80vh",
                                 position: "fixed",
                                 right: 20,
                                 background: "#F5F5F5",
@@ -1014,7 +1005,7 @@ const TaskBoardPage: React.FC<TaskBoardPageProps> = ({ collapsed }) => {
                                     <Button variant="text" onClick={handleSortPriority} sx={{ color: "#37B7C3" }}>Priority</Button>
                                 </Box>
                             </Box>
-                            <Box sx={{ height: "95%", width: "100%", padding: 1 }}>
+                            <Box sx={{ height: "95%", width: "100%", padding: 0.5 }}>
                                 <Droppable droppableId={"taskList"}>
                                     {(provided: any): any => (
                                         <List

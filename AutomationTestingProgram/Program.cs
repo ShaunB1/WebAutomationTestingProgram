@@ -68,6 +68,16 @@ void ConfigureServices(WebApplicationBuilder builder)
     });
     builder.Services.AddEndpointsApiExplorer();
 
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowSpecificOrigin", policy =>
+        {
+            policy.AllowAnyOrigin()
+                .AllowAnyMethod() 
+                .AllowAnyHeader();
+        });
+    });
+    
     string tenantId = builder.Configuration["AzureAd:TenantId"];
     string clientId = builder.Configuration["AzureAd:ClientId"];
     builder.Services.AddSwaggerGen(c =>
@@ -270,6 +280,8 @@ void ConfigureApplicationLifetime(WebApplication app)
 
 void ConfigureMiddleware(WebApplication app)
 {
+    app.UseCors("AllowSpecificOrigin");
+    
     // Handles error responses
     app.Use(async (context, next) =>
     {

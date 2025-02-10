@@ -39,9 +39,9 @@ public class WorkersController : ControllerBase
     }
 
     [Microsoft.AspNetCore.Mvc.HttpDelete]
-    public async Task<IActionResult> DeleteWorker([Microsoft.AspNetCore.Mvc.FromBody] string name)
+    public async Task<IActionResult> DeleteWorker([Microsoft.AspNetCore.Mvc.FromBody] WorkerDeleteRequest request)
     {
-        var deletedWorker = await _service.DeleteWorkerAsync(name);
+        var deletedWorker = await _service.DeleteWorkerAsync(request);
 
         if (deletedWorker == null)
         {

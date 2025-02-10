@@ -44,7 +44,7 @@ public class TasksRepository : ITasksRepository
             return null;
         }
         
-        task.DroppableId = destinationDroppableId;
+        task.DetinationDroppableId = destinationDroppableId;
         task.StartDate = startDate;
 
         await _context.SaveChangesAsync();

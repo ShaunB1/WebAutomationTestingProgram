@@ -16,7 +16,7 @@ public class TaskModel
     public string DraggableId { get; set; }
     [Column("droppable_id")]
     [JsonPropertyName("droppable_id")]
-    public string DroppableId { get; set; }
+    public string DetinationDroppableId { get; set; }
     [Column("start_date")]
     [JsonPropertyName("start_date")]
     public string StartDate { get; set; }

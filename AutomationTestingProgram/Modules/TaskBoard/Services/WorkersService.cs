@@ -7,7 +7,7 @@ public interface IWorkersService
 {
     Task<List<WorkerModel>> GetAllWorkersAsync();
     Task<WorkerModel> AddWorkerAsync(WorkerModel worker);
-    Task<WorkerModel> DeleteWorkerAsync(string name);
+    Task<WorkerModel> DeleteWorkerAsync(WorkerDeleteRequest request);
 }
 
 public class WorkersService : IWorkersService
@@ -29,8 +29,8 @@ public class WorkersService : IWorkersService
         return await _repository.AddWorkerAsync(worker);
     }
 
-    public async Task<WorkerModel> DeleteWorkerAsync(string name)
+    public async Task<WorkerModel> DeleteWorkerAsync(WorkerDeleteRequest request)
     {
-        return await _repository.DeleteWorkerAsync(name);
+        return await _repository.DeleteWorkerAsync(request);
     }
 }

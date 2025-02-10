@@ -567,9 +567,15 @@ const TaskBoardPage: React.FC<TaskBoardPageProps> = ({ collapsed }) => {
                     gap: 2,
                 }}>
                     <TextField
+                        size="small"
                         label="Enter a worker..."
                         value={workerName}
                         onChange={(e) => setWorkerName(e.target.value)}
+                        InputProps={{
+                            sx: {
+                                backgroundColor: "white",
+                            }
+                        }}
                     />
                     <Button variant="contained" onClick={handleAddWorker}>Add Worker</Button>
                 </Box>
@@ -671,7 +677,6 @@ const TaskBoardPage: React.FC<TaskBoardPageProps> = ({ collapsed }) => {
                             maxWidth: "70vw",
                             transition: "width 0.3s ease-in-out",
                             height: "1600px",
-                            outline: "2px solid red"
                         }}
                     >
                         <Box
@@ -805,7 +810,6 @@ const TaskBoardPage: React.FC<TaskBoardPageProps> = ({ collapsed }) => {
                                     borderRadius: 2,
                                     width: "49%",
                                     background: "#F5F5F5",
-                                    outline: "2px solid blue",
                                 }}>
                                     <Box
                                         sx={{

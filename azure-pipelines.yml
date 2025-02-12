@@ -39,7 +39,7 @@ steps:
     versionSpec: '22.x'
 
 - task: Npm@1
-  displayName: 'npm ci --prefer-offline --no-audit'
+  displayName: 'npm ci --no-audit'
   inputs:
     command: 'ci'
     workingDir: '$(frontendPath)'

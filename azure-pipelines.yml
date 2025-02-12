@@ -41,7 +41,8 @@ steps:
 - task: Npm@1
   displayName: 'npm ci'
   inputs:
-    command: 'ci'
+    command: 'custom'
+    customCommand: 'ci --prefer-offline --no-audit'
     workingDir: '$(frontendPath)'
 
 - task: Npm@1

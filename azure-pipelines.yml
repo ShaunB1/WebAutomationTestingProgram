@@ -39,9 +39,9 @@ steps:
     versionSpec: '22.x'
 
 - task: Npm@1
-  displayName: 'npm ci --no-audit'
+  displayName: 'npm ci --prefer-offline --no-audit'
   inputs:
-    command: 'ci'
+    command: 'ci --prefer-offline --no-audit'
     workingDir: '$(frontendPath)'
 
 - task: Npm@1

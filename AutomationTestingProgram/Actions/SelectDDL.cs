@@ -10,7 +10,7 @@ public class SelectDDL : WebAction
 {
     public override async Task ExecuteAsync(Page pageObject,
         string groupID,
-        TestStep step,
+        TestStepObject step,
         Dictionary<string, string> envVars,
         Dictionary<string, string> saveParams)
     {

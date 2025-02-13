@@ -19,10 +19,8 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using System.Runtime;
 using Microsoft.OpenApi.Models;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.FileProviders;
-using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Executor;
+using AutomationTestingProgram.Modules.TestRunnerModule.Services.DevOpsReporting;
 
 var builder = WebApplication.CreateBuilder(args); // builder used to configure services and middleware
 
@@ -125,11 +123,18 @@ void ConfigureServices(WebApplicationBuilder builder)
     builder.Services.AddHttpClient<AiService>();
 
     // HttpClient -- NOTE: Must inject IHttpClientFactory to use
-    builder.Services.AddHttpClient("HttpClient", client =>
+    builder.Services.AddHttpClient("JsonClient", client =>
     {
         client.Timeout = TimeSpan.FromMinutes(5); // 5 minute timeout
         client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
         client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.Add("User-Agent", "WebAutomationTestingFramework/1.0");
+    });
+    builder.Services.AddHttpClient("JsonPatchClient", client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(5); // 5 minute timeout
+        client.DefaultRequestHeaders.Add("sec-fetch-site", "same-origin");
+        client.DefaultRequestHeaders.Add("Accept", "application/json-patch+json");
         client.DefaultRequestHeaders.Add("User-Agent", "WebAutomationTestingFramework/1.0");
     });
 
@@ -267,6 +272,18 @@ void RegisterServices(ContainerBuilder builder)
     builder.RegisterType<Login>().InstancePerDependency();
     builder.RegisterType<RunPrSQLScriptDelete>().InstancePerDependency();
     builder.RegisterType<RunPrSQLScriptRevert>().InstancePerDependency();
+
+    // DEVOPS
+    builder.RegisterType<AzureReporter>().SingleInstance();
+
+    builder.RegisterType<HandleTestCase>().SingleInstance();
+    builder.RegisterType<HandleTestPlan>().SingleInstance();
+    builder.RegisterType<HandleTestPoint>().SingleInstance();
+    builder.RegisterType<HandleTestResult>().SingleInstance();
+    builder.RegisterType<HandleTestRun>().SingleInstance();
+    builder.RegisterType<HandleTestSuite>().SingleInstance();
+
+    builder.RegisterType<HandleReporting>().SingleInstance();
 
 }
 

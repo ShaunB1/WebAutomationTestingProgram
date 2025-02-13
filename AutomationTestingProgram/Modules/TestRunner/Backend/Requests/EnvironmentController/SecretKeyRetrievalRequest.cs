@@ -75,7 +75,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
 
                 await IOManager.TryAquireSlotAsync();
-                SecretKey = await azureKeyVaultService.GetKvSecret(Log, Email);
+                SecretKey = await azureKeyVaultService.GetKvSecret(LogInfoAsync, Email);
 
                 SetStatus(State.Completed, $"SecretKeyRetrieval Request (ID: {ID}, Email: {Email}) completed successfully");
             }

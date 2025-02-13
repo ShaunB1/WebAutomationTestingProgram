@@ -24,7 +24,7 @@ public class AzureKeyVaultService
         _cliendID = settings.KeyVaultClientId;
         _tenantID = settings.KeyVaultTenantId;
         _clientSecret = settings.KeyVaultClientSecret;
-        _httpClient = httpClientFactory.CreateClient("HttpClient");
+        _httpClient = httpClientFactory.CreateClient("JsonClient");
     }
 
     /// <summary>
@@ -32,11 +32,11 @@ public class AzureKeyVaultService
     /// </summary>
     /// <param name="secretName">The name of the secret to retrieve</param>
     /// <returns>A string secret or an error</returns>
-    public async Task<string> GetKvSecret(Func<LogLevel, string, Task> Log, string secretName)
+    public async Task<string> GetKvSecret(Func<string, Task> Log, string secretName)
     {
         try
         {
-            await Log(LogLevel.Information, $"Retrieving KeyVault secret for {secretName}.");
+            await Log($"Retrieving KeyVault secret for {secretName}.");
 
             var clientOptions = new SecretClientOptions
             {
@@ -47,7 +47,7 @@ public class AzureKeyVaultService
 
             KeyVaultSecret secret = await client.GetSecretAsync(secretName.Replace("@", "--").Replace(".", "-").Replace("_", "---").ToLower());
 
-            await Log(LogLevel.Information, $"KeyVault secret retrieved successfully");
+            await Log($"KeyVault secret retrieved successfully");
             return secret.Value;
         }
         catch (Exception ex)
@@ -61,11 +61,11 @@ public class AzureKeyVaultService
     /// </summary>
     /// <param name="secretName">The name of the secret to update</param>
     /// <returns></returns>
-    public async Task UpdateKvSecret(Func<LogLevel, string, Task> Log, string secretName)
+    public async Task UpdateKvSecret(Func<string, Task> Log, string secretName)
     {
         try
         {
-            await Log(LogLevel.Information, $"Updating KeyVault secret for {secretName}.");
+            await Log($"Updating KeyVault secret for {secretName}.");
 
             var clientOptions = new SecretClientOptions
             {
@@ -76,7 +76,7 @@ public class AzureKeyVaultService
 
             KeyVaultSecret secret = await client.SetSecretAsync(secretName.Replace("@", "--").Replace(".", "-").Replace("_", "---").ToLower(),
                                                      $"OPS{DateTime.Now.ToString("ddMMMyyyy", CultureInfo.InvariantCulture)}!");
-            await Log(LogLevel.Information, "Successfully updated secret key");
+            await Log("Successfully updated secret key");
         }
         catch (Exception ex)
         {
@@ -85,11 +85,11 @@ public class AzureKeyVaultService
     }
 
     // Before updating a password on OPS BPS, use this function to check that the account is enabled first and also verify connection with Key Vault
-    public async Task CheckAzureKVAccount(Func<LogLevel, string, Task> Log, string secretName)
+    public async Task CheckAzureKVAccount(Func<string, Task> Log, string secretName)
     {
         try
         {
-            await Log(LogLevel.Information, $"Verifying account: {secretName} and KeyVault connection");
+            await Log($"Verifying account: {secretName} and KeyVault connection");
 
             var clientOptions = new SecretClientOptions
             {
@@ -115,7 +115,7 @@ public class AzureKeyVaultService
 
             if (secret.Properties.Enabled == true)
             {
-                await Log(LogLevel.Information, $"Successfully verified that {secretName} is enabled in Azure Key Vault. Proceeding with password reset");
+                await Log($"Successfully verified that {secretName} is enabled in Azure Key Vault. Proceeding with password reset");
             }
             else if (secret.Properties.Enabled == false)
             {

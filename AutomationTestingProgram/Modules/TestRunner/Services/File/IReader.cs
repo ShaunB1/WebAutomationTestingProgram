@@ -10,12 +10,12 @@
         /// <summary>
         /// The run associated with this excel reader.
         /// </summary>
-        public TestRun TestRun { get; }
+        public TestRunObject TestRun { get; }
 
         /// <summary>
         /// Retrieves the current active test case
         /// as well as index of current step.
         /// </summary>
-        (TestCase TestCase, int TestStepIndex) GetNextTestStep();
+        (TestCaseObject TestCase, int TestStepIndex) GetNextTestStep();
     }
 }

@@ -1,11 +1,27 @@
 ﻿namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
-    public class TestRun
+    public class TestRunObject
     {
         /// <summary>
         /// The name of the Test Run
         /// </summary>
         public string Name { get; }
+
+        /// <summary>
+        /// The id of the test run.
+        /// </summary>
+        public int ID { get; set; }
+
+        /// <summary>
+        /// The id of the test plan the run is part of.
+        /// </summary>
+        public int PlanID { get; set; }
+
+        /// <summary>
+        /// The id of the test suite the run is part of.
+        /// </summary>
+        public int SuiteID { get; set; }
+
 
         /// <summary>
         /// The total # of Test Cases in the whole run.
@@ -15,13 +31,13 @@
         /// <summary>
         /// List of all TestCases within this TestRun
         /// </summary>
-        public IList<TestCase> TestCases { get; }
+        public IList<TestCaseObject> TestCases { get; }
 
 
         /// <summary>
         /// The result of the TestRun
         /// </summary>
-        public Result Result { get; set; }
+        public Result Result { get; set; } = Result.NotExecuted;
 
         /// <summary>
         /// The Start Date of the TestRun.
@@ -40,11 +56,11 @@
 
 
 
-        public TestRun(string name)
+        public TestRunObject(string name)
         {
             Name = name;
             FailureCounter = 0;
-            TestCases = new List<TestCase>();
+            TestCases = new List<TestCaseObject>();
         }
     }
 
@@ -53,7 +69,7 @@
         /// <summary>
         /// Step uncomplete - still processing/yet to process. Neither failed nor successful.
         /// </summary>
-        Uncomplete,
+        NotExecuted,
 
         /// <summary>
         /// Step failed
@@ -63,6 +79,6 @@
         /// <summary>
         /// Step successful
         /// </summary>
-        Successful
+        Passed
     }
 }

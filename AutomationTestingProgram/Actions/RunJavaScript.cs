@@ -5,7 +5,7 @@ namespace AutomationTestingProgram.Actions;
 
 public class RunJavaScript : WebAction
 {
-    public override async Task ExecuteAsync(Page page, string groupID, TestStep step, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task ExecuteAsync(Page page, string groupID, TestStepObject step, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
     {
         var jsCmd = step.Value;
         

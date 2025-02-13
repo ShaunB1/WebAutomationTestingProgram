@@ -19,7 +19,7 @@ public class ExcelReader : IReader
     /// <summary>
     /// The run associated with this excel reader.
     /// </summary>
-    public TestRun TestRun { get; }
+    public TestRunObject TestRun { get; }
 
     /// <summary>
     /// The index of the current TestCase in the TestCases list
@@ -64,7 +64,7 @@ public class ExcelReader : IReader
             throw new Exception("File Reader initialized failed. File path invalid");
         }
 
-        TestRun = new TestRun(Path.GetFileNameWithoutExtension(_filePath));
+        TestRun = new TestRunObject(Path.GetFileNameWithoutExtension(_filePath));
 
         using (var fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
         {
@@ -78,8 +78,8 @@ public class ExcelReader : IReader
                 throw new Exception("File is empty");
             }
 
-            IList<TestCase> testCases = TestRun.TestCases;
-            TestCase? currentTestCase = null;
+            IList<TestCaseObject> testCases = TestRun.TestCases;
+            TestCaseObject? currentTestCase = null;
             int stepNum = 1;
 
             for (int rowIndex = 1; rowIndex <= lastRow; rowIndex++)
@@ -89,14 +89,17 @@ public class ExcelReader : IReader
                     continue;
 
                 string testCaseName = GetCellString(row.GetCell(0));
+                if (string.IsNullOrEmpty(testCaseName) && currentTestCase != null)
+                    testCaseName = currentTestCase.Name;
+
                 if (currentTestCase == null || currentTestCase.Name != testCaseName)
                 {
-                    currentTestCase = new TestCase(testCaseName);
+                    currentTestCase = new TestCaseObject(testCaseName);
                     testCases.Add(currentTestCase);
                     stepNum = 1;
                 }
 
-                currentTestCase.TestSteps.Add(new TestStep(
+                currentTestCase.TestSteps.Add(new TestStepObject(
                     currentTestCase.Name,            // testCaseName
                     GetCellString(row.GetCell(1)),   // testDescription
                     stepNum++,                       // stepNum
@@ -116,7 +119,7 @@ public class ExcelReader : IReader
         }
     }
 
-    public (TestCase TestCase, int TestStepIndex) GetNextTestStep()
+    public (TestCaseObject TestCase, int TestStepIndex) GetNextTestStep()
     {
         if (isComplete)
             throw new Exception("No more steps to read");

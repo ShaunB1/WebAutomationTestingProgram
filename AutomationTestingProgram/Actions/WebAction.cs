@@ -23,7 +23,7 @@ public abstract class WebAction
 {
     public abstract Task ExecuteAsync(Page page,
         string groupID,
-        TestStep step,
+        TestStepObject step,
         Dictionary<string, string> envVars,
         Dictionary<string, string> saveParams);
 

@@ -3,12 +3,28 @@
     /// <summary>
     /// Represents a TestCase for automated tests.
     /// </summary>
-    public class TestCase
+    public class TestCaseObject
     {   
         /// <summary>
         /// The name of the TestCase that is part of the run.
         /// </summary>
         public string Name { get; }
+
+        /// <summary>
+        /// The id of the test case.
+        /// </summary>
+        public int ID { get; set; }
+
+        /// <summary>
+        /// The id of the associated test point
+        /// </summary>
+        public int PointID { get; set; }
+
+        /// <summary>
+        /// The id of the associated test result
+        /// </summary>
+        public int ResultID { get; set; }
+
 
         /// <summary>
         /// The total # of steps in the whole TestCase.
@@ -18,13 +34,13 @@
         /// <summary>
         /// List of all TestSteps within this TestCase
         /// </summary>
-        public IList<TestStep> TestSteps { get; }
+        public IList<TestStepObject> TestSteps { get; }
 
 
         /// <summary>
         /// The result of the TestCase
         /// </summary>
-        public Result Result { get; set; }
+        public Result Result { get; set; } = Result.NotExecuted;
 
         /// <summary>
         /// The Start Date of the TestCase
@@ -42,11 +58,11 @@
         public int FailureCounter { get; set; }
 
 
-        public TestCase(string name)
+        public TestCaseObject(string name)
         {
             Name = name;
             FailureCounter = 0;
-            TestSteps = new List<TestStep>();
+            TestSteps = new List<TestStepObject>();
         }
     }
 }

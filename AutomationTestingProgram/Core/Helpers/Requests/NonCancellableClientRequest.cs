@@ -169,6 +169,12 @@ namespace AutomationTestingProgram.Core
                 Logger.LogCritical(message);
         }
 
+        public async Task LogInfoAsync(string message)
+        {
+            LogInfo(message);
+            await Task.CompletedTask;
+        }
+
         public Task Log(LogLevel level, string message)
         {
             switch (level)

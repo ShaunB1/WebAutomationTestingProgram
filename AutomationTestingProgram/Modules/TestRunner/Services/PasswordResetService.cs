@@ -27,15 +27,15 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             _graphEmail = settings.GraphEmail;
 
             _lockManager = new LockManager<string>(settings.Limit);
-            _httpClient = httpClientFactory.CreateClient("HttpClient");
+            _httpClient = httpClientFactory.CreateClient("JsonClient");
             _azureKeyVaultService = azureKeyVaultService;
         }
 
-        public async Task ResetPassword(Func<LogLevel, string, Task> Log, string email)
+        public async Task ResetPassword(Func<string, Task> Log, string email)
         {
             try
             {
-                await Log(LogLevel.Information, "Waiting to start Password Reset");
+                await Log("Waiting to start Password Reset");
                 await _lockManager.AquireLockAsync(email);
 
                 await _azureKeyVaultService.CheckAzureKVAccount(Log, email);
@@ -44,7 +44,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 await RequestOTP(Log, email);
 
                 // Wait 20 seconds for reset email to be sent
-                await Log(LogLevel.Information, $"Waiting for 20 seconds for reset email");
+                await Log($"Waiting for 20 seconds for reset email");
                 await Task.Delay(20000);
 
                 string OTP = await GetOTPFromEmail(Log, email, emailTime);
@@ -61,7 +61,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                             "Suggestion: Sync passwords manually if necessary.\n" + e.Message);
                 }
 
-                await Log(LogLevel.Information, "Password successfully reset in OPS BPS and updated in Azure Key Vault.");
+                await Log("Password successfully reset in OPS BPS and updated in Azure Key Vault.");
             }
             finally
             {
@@ -70,9 +70,9 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         }
 
         // Make a password reset request on OPS BPS
-        private async Task RequestOTP(Func<LogLevel, string, Task> Log, string email)
+        private async Task RequestOTP(Func<string, Task> Log, string email)
         {
-            await Log(LogLevel.Information, $"Requesting OTP from OPS BPS");
+            await Log($"Requesting OTP from OPS BPS");
             string forgotPasswordURL = "https://stage.login.security.gov.on.ca/ciam/bps/public/forgotpassword/";
 
             var jsonBody = $"{{\"email\":\"{email}\"}}";
@@ -87,7 +87,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
                 if (response.IsSuccessStatusCode && responseObject != null && responseObject.result == 0)
                 {
-                    await Log(LogLevel.Information, $"OTP request successful");
+                    await Log($"OTP request successful");
                 }
                 else
                 {
@@ -101,7 +101,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         }
 
         // Retrieve one-time password from uft@ontario.ca
-        private async Task<string> GetOTPFromEmail(Func<LogLevel, string, Task> Log, string email, string emailTime)
+        private async Task<string> GetOTPFromEmail(Func<string, Task> Log, string email, string emailTime)
         {
             string emailText = string.Empty;
             string graphPassword = await _azureKeyVaultService.GetKvSecret(Log, _graphEmail);
@@ -109,7 +109,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             // Find the email containing the OTP
             try
             {
-                await Log(LogLevel.Information, "Retrieving PIN from reset email");
+                await Log("Retrieving PIN from reset email");
 
                 UsernamePasswordCredential credential = new UsernamePasswordCredential(_graphEmail, graphPassword, _graphTenantID, _graphClientID);
                 GraphServiceClient graphClient = new GraphServiceClient(credential, new[] { "https://graph.microsoft.com/.default" });
@@ -162,7 +162,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 }
                 else
                 {
-                    await Log(LogLevel.Information, "PIN successfully retrieved.");
+                    await Log("PIN successfully retrieved.");
                     return pin;
                 }
             }
@@ -172,9 +172,9 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             }
         }
 
-        private async Task RequestPasswordReset(Func<LogLevel, string, Task> Log, string email, string OTP)
+        private async Task RequestPasswordReset(Func<string, Task> Log, string email, string OTP)
         {
-            await Log(LogLevel.Information, $"Requesting password reset from OPS BPS");
+            await Log($"Requesting password reset from OPS BPS");
             string resetPasswordURL = "https://stage.login.security.gov.on.ca/ciam/bps/public/passwordreset/";
 
             string newPassword = $"OPS{DateTime.Now.ToString("ddMMMyyyy", CultureInfo.InvariantCulture)}!";
@@ -190,7 +190,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
 
                 if (response.IsSuccessStatusCode && responseObject != null && responseObject.result == 0)
                 {
-                    await Log(LogLevel.Information, $"Password reset request successful");
+                    await Log($"Password reset request successful");
                 }
                 else
                 {

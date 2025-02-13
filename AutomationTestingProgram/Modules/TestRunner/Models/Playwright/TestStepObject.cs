@@ -3,7 +3,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule;
 /// <summary>
 /// Represents a TestStep for automated tests.
 /// </summary>
-public class TestStep(
+public class TestStepObject(
 string testCaseName,
 string testDescription,
 int stepNum,
@@ -137,7 +137,7 @@ string goToStep)
     /// <summary>
     /// The result of the TestStep
     /// </summary>
-    public Result Result { get; set; }
+    public Result Result { get; set; } = Result.NotExecuted;
 
     /// <summary>
     /// The Start Date of the TestStep

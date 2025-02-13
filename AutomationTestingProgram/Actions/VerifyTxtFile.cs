@@ -12,7 +12,7 @@ public class VerifyTxtFile : WebAction
     private const string Seperator = "];[";
     public override async Task ExecuteAsync(Page pageObject,
         string groupID,
-        TestStep step,
+        TestStepObject step,
         Dictionary<string, string> envVars,
         Dictionary<string, string> saveParams)
     {
@@ -46,7 +46,7 @@ public class VerifyTxtFile : WebAction
         }
     }
 
-    private bool VerifyAgainstTextFile(TestStep step)
+    private bool VerifyAgainstTextFile(TestStepObject step)
     {
         try {
             string actual = step.Object;

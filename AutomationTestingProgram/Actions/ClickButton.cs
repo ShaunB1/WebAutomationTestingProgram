@@ -11,7 +11,7 @@ public class ClickButton : WebAction
 {
     public override async Task<bool> ExecuteAsync(Page pageObject,
         string groupID,
-        TestStep step,
+        TestStepObject step,
         Dictionary<string, string> envVars,
         Dictionary<string, string> saveParams)
     {

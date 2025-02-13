@@ -68,7 +68,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 this.SetStatus(State.Processing, $"Processing PasswordReset Request (ID: {ID}, Email: {Email})");
 
                 await IOManager.TryAquireSlotAsync();
-                await passwordResetService.ResetPassword(Log, Email);
+                await passwordResetService.ResetPassword(LogInfoAsync, Email);
 
                 SetStatus(State.Completed, $"PasswordReset Request (ID: {ID}, Email: {Email}) completed successfully");
             }

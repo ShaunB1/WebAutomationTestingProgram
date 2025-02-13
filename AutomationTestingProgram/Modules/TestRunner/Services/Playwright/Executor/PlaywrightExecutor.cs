@@ -4,6 +4,7 @@ using Autofac;
 using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Core;
 using AutomationTestingProgram.Modules.TestRunnerModule;
+using AutomationTestingProgram.Modules.TestRunnerModule.Services.DevOpsReporting;
 using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
@@ -130,6 +131,8 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
         /// Reader used to retrieve Test Steps from file.
         /// </summary>
         private IReader _reader;
+
+        private HandleReporting devOpsReporter;
         
         public static void InitializeStaticVariables(IComponentContext componentContext)
         {
@@ -181,8 +184,10 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
         /// The playwrighr Executor instance for running tests
         /// </summary>
         /// <param name="context">The associated Context object.</param>
-        public PlaywrightExecutor(Context context, IReaderFactory readerFactory, IHubContext<TestHub> hubContext)
+        public PlaywrightExecutor(HandleReporting reporter, Context context, IReaderFactory readerFactory, IHubContext<TestHub> hubContext)
         {
+            devOpsReporter = reporter;
+            
             _context = context;
 
             _request = context.Request;
@@ -205,7 +210,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
         {
             double.TryParse(_envVars["delay"], out double delay);
 
-            TestRun testRun = _reader.TestRun;
+            TestRunObject testRun = _reader.TestRun;
             testRun.StartedDate = DateTime.Now;
 
             // Request starts processing
@@ -223,8 +228,10 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 ;
             await page.LogInfo(logMessage.ToString());
 
-            TestCase? testCase = null;
-            TestStep step;
+            await devOpsReporter.SetUpDevOps(page.LogInfo, testRun, _request.Environment, _request.FileName);
+
+            TestCaseObject? testCase = null;
+            TestStepObject step;
 
             try
             {   // Test Run starts
@@ -282,14 +289,14 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                     try
                     {
-                        await ExecuteTestStep(page, step);
+                        await ExecuteTestStep(page, testRun, testCase, step);
 
                         // If Step Completes
 
                         // If last test step in test case
                         if (data.TestStepIndex + 1 >= testCase.TestSteps.Count)
                         {
-                            testCase.Result = Result.Successful;
+                            testCase.Result = Result.Passed;
                             testCase.CompletedDate = DateTime.Now;
                             
                             logMessage.Clear()
@@ -309,6 +316,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                             await page.LogInfo(logMessage.ToString());
 
+                            await devOpsReporter.ReportCaseResult(testRun, testCase);
                         }
                     }
                     catch (OperationCanceledException)
@@ -344,6 +352,8 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                                 .AppendLine("                                                        ");
 
                             await page.LogError(logMessage.ToString());
+
+                            await devOpsReporter.ReportCaseResult(testRun, testCase);
                         }
 
                         // Either 5 failed cases, or over 33% failed cases -> TEST RUN FAILS
@@ -379,7 +389,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
             {
 
                 testRun.CompletedDate = DateTime.Now;
-                testRun.Result = Result.Uncomplete;
+                testRun.Result = Result.NotExecuted;
 
                 logMessage.Clear()
                  .AppendLine("                                                        ")
@@ -398,6 +408,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                 await page.LogError(logMessage.ToString());
 
+                await devOpsReporter.CompleteReport(testRun);
 
 
                 logMessage.Clear()
@@ -420,6 +431,8 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
             }
             catch (Exception e) // Test Run Failed
             {
+                await devOpsReporter.CompleteReport(testRun);
+                
                 logMessage.Clear()
                           .AppendLine("========================================================")
                           .AppendLine("                REQUEST FAILED                          ")
@@ -448,7 +461,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
             // Test Run Complete
             testRun.CompletedDate = DateTime.Now;
-            testRun.Result = Result.Successful;
+            testRun.Result = Result.Passed;
 
             logMessage.Clear()
              .AppendLine("                                                        ")
@@ -466,6 +479,8 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
              .AppendLine("                                                        ");
 
             await page.LogInfo(logMessage.ToString());
+
+            await devOpsReporter.CompleteReport(testRun);
 
             logMessage.Clear()
                           .AppendLine("========================================================")
@@ -491,7 +506,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
         /// </summary>
         /// <param name="step"></param>
         /// <returns></returns>
-        public async Task ExecuteTestStep(Page page, TestStep step)
+        public async Task ExecuteTestStep(Page page, TestRunObject testRun, TestCaseObject testCase, TestStepObject step)
         {
             _request.IsCancellationRequested();
             await _request.IsPauseRequested(page.LogInfo);
@@ -521,6 +536,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
             if (step.Control.Equals("#"))
             {
+                
                 logMessage.Clear()
                         .AppendLine("========================================================")
                         .AppendLine("         TEST EXECUTION LOG - TEST STEP SKIPPED        ")
@@ -535,6 +551,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                 await page.LogInfo(logMessage.ToString());
 
+                await devOpsReporter.ReportStepResult(testRun, testCase, step);
                 return;
             }
 
@@ -579,7 +596,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                     // STEP Passes
                     step.CompletedDate = DateTime.Now;
-                    step.Result = Result.Successful;
+                    step.Result = Result.Passed;
 
                     logMessage.Clear()
                             .AppendLine("========================================================")
@@ -594,6 +611,9 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
 
                     await page.LogInfo(logMessage.ToString());
+
+                    await devOpsReporter.ReportStepResult(testRun, testCase, step);
+
                     break;
                 }
                 catch (OperationCanceledException)
@@ -637,6 +657,8 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                             .AppendLine("========================================================");
 
                         await page.LogError(logMessage.ToString());
+
+                        await devOpsReporter.ReportStepResult(testRun, testCase, step);
 
                         throw;
                     }

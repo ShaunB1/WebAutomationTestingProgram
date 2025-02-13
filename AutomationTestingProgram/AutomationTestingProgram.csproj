@@ -51,7 +51,6 @@
 	<ItemGroup>
 		<Folder Include="client\src\Components\Table\" />
 		<Folder Include="client\src\Pages\" />
-		<Folder Include="Modules\TestRunnerOLD\" />
 		<Folder Include="Tests\" />
 		<Folder Include="wwwroot\" />
 	</ItemGroup>

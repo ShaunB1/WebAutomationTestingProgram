@@ -22,12 +22,12 @@ public class Login : WebAction
     
     public override async Task ExecuteAsync(Page pageObject,
         string groupID,
-        TestStep step,
+        TestStepObject step,
         Dictionary<string, string> envVars,
         Dictionary<string, string> saveParams)
     {
 
-        Func<LogLevel, string, Task> Log = pageObject.Log;
+        Func<string, Task> Log = pageObject.LogInfo;
 
 
         string username = step.Object;

@@ -210,9 +210,6 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
         {
             double.TryParse(_envVars["delay"], out double delay);
 
-            TestRunObject testRun = _reader.TestRun;
-            testRun.StartedDate = DateTime.Now;
-
             // Request starts processing
             StringBuilder logMessage = new StringBuilder()
                           .AppendLine("========================================================")
@@ -225,10 +222,13 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                           .AppendLine($"ENVIRONMENT:      {_request.Environment,-40}")
                           .AppendLine($"DELAY:            {_request.Delay,-40}")
                           .AppendLine("========================================================");
-;
-            await page.LogInfo(logMessage.ToString());
 
+            await page.LogInfo(logMessage.ToString());
+            
+            TestRunObject testRun = _reader.TestRun;
             await devOpsReporter.SetUpDevOps(page.LogInfo, testRun, _request.Environment, _request.FileName);
+
+            testRun.StartedDate = DateTime.Now;
 
             TestCaseObject? testCase = null;
             TestStepObject step;
@@ -323,7 +323,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                     {   // If Request Cancelled within Step
                         throw;
                     }
-                    catch (Exception) // If Step Fails (Error logged in Test Step Logs)
+                    catch (Exception e) // If Step Fails (Error logged in Test Step Logs)
                     {   
 
                         testCase.FailureCounter++;
@@ -353,7 +353,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                             await page.LogError(logMessage.ToString());
 
-                            await devOpsReporter.ReportCaseResult(testRun, testCase);
+                            await devOpsReporter.ReportCaseResult(testRun, testCase, e);
                         }
 
                         // Either 5 failed cases, or over 33% failed cases -> TEST RUN FAILS
@@ -658,7 +658,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                         await page.LogError(logMessage.ToString());
 
-                        await devOpsReporter.ReportStepResult(testRun, testCase, step);
+                        await devOpsReporter.ReportStepResult(testRun, testCase, step, e);
 
                         throw;
                     }

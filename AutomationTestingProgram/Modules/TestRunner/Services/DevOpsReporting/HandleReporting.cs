@@ -100,12 +100,12 @@ public class HandleReporting
 
     public async Task ReportStepResult(TestRunObject testRun, TestCaseObject testCase, TestStepObject testStep, Exception? e = null)
     {
-        await _testResultHandler.UpdateTestStepResultAsync(testRun.ID, testCase.ResultID, testStep, e);
+        await _testResultHandler.UpdateTestStepResultAsync(testRun.ID, testCase, testStep, e);
     }
 
-    public async Task ReportCaseResult(TestRunObject testRun, TestCaseObject testCase)
+    public async Task ReportCaseResult(TestRunObject testRun, TestCaseObject testCase, Exception? e = null)
     {
-        await _testResultHandler.UpdateTestCaseResultAsync(testRun.ID, testCase.ResultID, testCase);
+        await _testResultHandler.UpdateTestCaseResultAsync(testRun.ID, testCase, e);
     }
 
     public async Task CompleteReport(TestRunObject testRun)

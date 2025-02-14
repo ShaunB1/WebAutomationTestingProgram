@@ -16,7 +16,7 @@ public class Helpers
             sb.Append($@"
             <step id='{stepId}' type='ActionStep' stepIdentifier='{stepId}'>
                <parameterizedString isformatted='true'>{step.TestDescription}</parameterizedString>
-               <parameterizedString isformatted='true'>ACTION: {step.ActionOnObject}, OBJECT: {step.Object}, VALUE: {step.Value}</parameterizedString>
+               <parameterizedString isformatted='true'>ACTION: {step.ActionOnObject}, OBJECT: {step.Object}, COMMENTS: {step.Comments}, VALUE: {step.Value}</parameterizedString>
             </step>
             ");
             stepId++;

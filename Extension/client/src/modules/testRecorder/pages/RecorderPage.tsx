@@ -96,6 +96,7 @@ const RecorderPage: React.FC = () => {
         { field: "GOTOSTEP", editable: true, filter: true },
         { field: "CYCLEGROUP", editable: true, filter: true },
     ])
+    const [tabIndex, setTabIndex] = useState(0);
 
     const testCaseRef = useRef(testCase);
     const recordingRef = useRef<AgGridReact>(null);
@@ -269,6 +270,13 @@ const RecorderPage: React.FC = () => {
             alert("Please select a test case.");
         }
     }
+
+    useEffect(() => {
+        const port = chrome.runtime.connect({ name: "sidepanel" })
+        return () => {
+            port.disconnect();
+        };
+    }, []);
 
     const handleExport = () => {
         try {
@@ -721,6 +729,7 @@ const RecorderPage: React.FC = () => {
                                 onChange={handleTestCaseChange}
                                 displayEmpty
                                 variant="outlined"
+                                size="small"
                                 sx={{
                                     flexShrink: 0,
                                     minWidth: "150px",
@@ -738,6 +747,7 @@ const RecorderPage: React.FC = () => {
                             </Select>
 
                             <TextField
+                                size="small"
                                 label="Test Case Name"
                                 variant="outlined"
                                 value={inputValue}
@@ -862,6 +872,7 @@ const RecorderPage: React.FC = () => {
                         onChange={handleSelectActionChange}
                         displayEmpty
                         sx={{ width: "50%" }}
+                        size="small"
                     >
                         <MenuItem value="" disabled>Select Action</MenuItem>
                         {actions.map(action => (
@@ -883,8 +894,8 @@ const RecorderPage: React.FC = () => {
                         ? <TextField label="Value" variant="outlined" onChange={handleValueChange}/>
                         : null
                     }
-                    <TextField label="Description" variant="outlined" onChange={handleDescChange}/>
-                    <TextField label="Comment" variant="outlined" onChange={handleCommentChange}/>
+                    <TextField size="small" label="Description" variant="outlined" onChange={handleDescChange}/>
+                    <TextField size="small" label="Comment" variant="outlined" onChange={handleCommentChange}/>
                 </Box>
             </Box>
         </>

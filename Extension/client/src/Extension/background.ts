@@ -10,6 +10,27 @@ chrome.runtime.onMessage.addListener((message) => {
     }
 });
 
+chrome.runtime.onConnect.addListener(function (port) {
+    chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+            if (tab.id) {
+                chrome.tabs.sendMessage(tab.id, { action: "SIDEPANEL_OPEN" });
+            }
+        })
+    });
+    if (port.name === "sidepanel") {
+        port.onDisconnect.addListener(async () => {
+            chrome.tabs.query({}, (tabs) => {
+                tabs.forEach(tab => {
+                    if (tab.id) {
+                        chrome.tabs.sendMessage(tab.id, { action: "SIDEPANEL_CLOSED" });
+                    }
+                })
+            });
+        })
+    }
+})
+
 chrome.commands.onCommand.addListener((command) => {
     if (command === "toggle-side-panel") {
         if (!isSidePanelOpen) {

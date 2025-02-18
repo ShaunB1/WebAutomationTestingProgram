@@ -2,6 +2,7 @@ let verifyMode = "availability";
 let previouslySelectedElement: any = null;
 let previousOutlineStyle: any = null;
 let startState: boolean = false;
+let closed: boolean = false;
 let toolsStartState: boolean = false;
 let prevMouseOverOutline: any = null;
 
@@ -88,10 +89,12 @@ function clickEventListener(e: Event) {
     }
 
     if ((tag === "input" && (element as HTMLInputElement).type === "text") || tag === "textarea") {
-        element.removeEventListener("blur", blurEventListener);
+        element.removeEventListener("blur", handleBlur);
         element.removeEventListener("keydown", triggerBlur);
+        element.removeEventListener("focus", handleFocus);
 
-        element.addEventListener("blur", blurEventListener);
+        element.addEventListener("focus", handleFocus);
+        element.addEventListener("blur", handleBlur);
         element.addEventListener("keydown", triggerBlur);
     } else if (tag === "select") {
         values.testdescription = "Select option ";
@@ -133,6 +136,10 @@ function clickEventListener(e: Event) {
     }
 }
 
+function handleFocus(event: any) {
+    event.target.dataset.initialValue = event.target.value;
+}
+
 function changeEventListener(e: Event) {
     const element = e.target as HTMLSelectElement;
     const target = e.target as HTMLSelectElement;
@@ -158,20 +165,22 @@ function triggerBlur(e: KeyboardEvent) {
     }
 }
 
-function blurEventListener(e: Event) {
-    const element = e.target as HTMLElement;
-    const tag = element.tagName.toLowerCase();
-    const textContent = (element as HTMLInputElement).value;
-    const elDict = getAllAttributes(e.target as HTMLElement, true);
-    const values: TableValues = {
-        testdescription: `Populate ${tag}`,
-        actiononobject: "PopulateWebElement",
-        object: elDict,
-        value: textContent,
-        comments: "eldict",
-    }
+function handleBlur(event: any) {
+    if (event.target?.dataset.initialValue && event.target?.value !== event.target.dataset.initialValue) {
+        const element = event.target as HTMLElement;
+        const tag = element.tagName.toLowerCase();
+        const textContent = (element as HTMLInputElement).value;
+        const elDict = getAllAttributes(event.target as HTMLElement, true);
+        const values: TableValues = {
+            testdescription: `Populate ${tag}`,
+            actiononobject: "PopulateWebElement",
+            object: elDict,
+            value: textContent,
+            comments: "eldict",
+        }
 
-    chrome.runtime.sendMessage({ action: "actiononobject", locator: elDict, stepValues: values });
+        chrome.runtime.sendMessage({ action: "actiononobject", locator: elDict, stepValues: values });
+    }
 }
 
 function contextMenuEventListener(e: Event) {
@@ -219,9 +228,11 @@ function contextMenuEventListener(e: Event) {
 
 document.addEventListener("mouseover", (e: any) => {
     const element = e.target as HTMLElement;
-    if (startState) {
+    if (!closed && startState) {
         prevMouseOverOutline = element.style.outline;
         element.style.outline = "2px solid red";
+    } else {
+        element.style.outline = prevMouseOverOutline || "";
     }
 })
 
@@ -239,7 +250,12 @@ chrome.runtime.onMessage.addListener((message) => {
         } else {
             verifyMode = "availability";
         }
-    } else if (message.action === "CHECK_BOXES") {
+    } else if (message.action === "SIDEPANEL_CLOSED") {
+        closed = true;
+    } else if (message.action === "SIDEPANEL_OPEN") {
+        closed = false;
+    }
+    else if (message.action === "CHECK_BOXES") {
         const checkboxes = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:not([disabled]):not([readonly])'));
 
         checkboxes.forEach((checkbox: HTMLInputElement) => {
@@ -375,8 +391,6 @@ chrome.runtime.onMessage.addListener((message) => {
         if (message.selectedRow.COMMENTS === "eldict") {
             const elDictString = message.selectedRow.OBJECT;
             const closestElement: any = findClosestElement(elDictString);
-            console.log("CLOSEST ELEMENT: ");
-            console.log(closestElement);
 
             if (closestElement instanceof HTMLElement) {
                 previousOutlineStyle = closestElement.style.outline;
@@ -545,7 +559,6 @@ function findClosestElement(elDict: string): any {
             }
         });
 
-        console.log(highestScore, maxScore, highestScore / maxScore);
         return maxScore !== 0 && highestScore / maxScore >= 0.66 ? bestMatch : null;
     } catch (e) {
         console.error(e);

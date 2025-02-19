@@ -42,6 +42,9 @@ public static class LogManager
     private static readonly ConcurrentDictionary<string, (SemaphoreSlim bufferSemaphore, SemaphoreSlim fileSemaphore, StringBuilder logMessage)> LogBuffer = new ConcurrentDictionary<string, (SemaphoreSlim, SemaphoreSlim, StringBuilder)>();
     private static readonly int MaxCharSize = 1000; // Used to limit # of I/O operations. Flush is used to ensure its written when something ends/closes.
 
+    // Log file name
+    public static readonly string LogFileName = "log.txt";
+
     static LogManager()
     {
         Initialize();
@@ -393,7 +396,7 @@ public static class LogManager
                 WriteLog(path, fileMessage, null);
             }
 
-            string source = Path.Combine(path, "log.txt");
+            string source = Path.Combine(path, LogFileName);
             string destination = Path.Combine(path, $"{Guid.NewGuid()}.txt");
 
             File.Copy(source, destination);
@@ -404,7 +407,7 @@ public static class LogManager
         }
         else // Not active, just return log
         {
-            return (Path.Combine(path, "log.txt"), false);
+            return (Path.Combine(path, LogFileName), false);
         }
 
 
@@ -490,7 +493,7 @@ public static class LogManager
     { 
         try
         {
-            string filePath = Path.Combine(path, "log.txt"); // All folders have a log.txt created and appended to from here
+            string filePath = Path.Combine(path, LogFileName); // All folders have a log.txt created and appended to from here
             File.AppendAllText(filePath, message);
         }
         finally

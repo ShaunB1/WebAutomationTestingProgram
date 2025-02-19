@@ -35,7 +35,39 @@ public class HandleReporting
         _testResultHandler = resultHandler;
     }
 
-    public async Task SetUpDevOps(Func<string, Task> Log, TestRunObject testRunObject, string environment, string testPlanName)
+    /* TODO:
+     * 
+     * 
+     * 1. Add blocked. When a run fails or cancels, all the next test cases
+     *    should be marked as blocked
+     * 2. IMPORTANT: Reuse TestPlan, no deletion. Deleting a test plan deletes a test run,
+     *    we can't do this. Instead, we have to do either one of the following:
+     *    - Re-use test plans and test cases like Selenium Framework'
+     *    - Have one test plan for results. Attempt to move everything under that test plan.
+     * 3. Release pipeline. When starting azure devops, also create a release?? Optional
+     * 
+     * 1. Find Archive (or create it if not found) -> Save its id for quick searching
+     * 2. Create test suite per file name, with same test suites in it as before.
+     * 3. Add concurrent mechanism. Cannot use same test suite concurrently. Use a set.
+     *    throw error
+     * 4. If new test suite, create test cases as normal
+     * 5. If test suite already exists, traverse through same test suites as above, then
+     *    Find the test cases.
+     * 6. Compare test cases to current test cases. Test cases should have same name, step, etc.
+     *    Hardest step, lots of possiblites: 
+     *    Ex: - steps in devops case different from current. 
+     *        - case names are differnet, do I delete the test case??
+     *        
+     *        
+     *        
+     *        
+     *        
+     *    
+     * 
+     * 
+     */
+
+    public async Task SetUpDevOps(Func<string, Task> Log, TestRunObject testRunObject, ProcessRequest request)
     {
         await Log("Setting up DevOps reporting...");
 
@@ -43,7 +75,7 @@ public class HandleReporting
         try
         {
             await Log("Locating Test Plan...");
-            testPlan = await _testPlanHandler.GetTestPlanByNameAsync(testPlanName);
+            testPlan = await _testPlanHandler.GetTestPlanByNameAsync(request.FileName);
         }
         catch (NoMatchFoundException)
         {
@@ -66,7 +98,7 @@ public class HandleReporting
         }
 
         await Log("Creating Test Plan...");
-        testPlan = await _testPlanHandler.InitializeTestPlanAsync(testPlanName);
+        testPlan = await _testPlanHandler.InitializeTestPlanAsync(request.FileName);
         testRunObject.PlanID = testPlan.id;
 
         await Log("Setting up Test Suites...");
@@ -90,7 +122,7 @@ public class HandleReporting
         await Log("Setting up Test Run...");
 
         // create test run
-        testRunObject.ID = await _testRunHandler.CreateTestRunAsync(testPlan.id, testSuite.id, environment, testPlanName);
+        testRunObject.ID = await _testRunHandler.CreateTestRunAsync(testRunObject, request);
 
         await Log("Linking test results to test case...");
         await _testResultHandler.GetTestResultFromTestCaseIdAsync(testRunObject.TestCases, testRunObject.ID);
@@ -106,6 +138,11 @@ public class HandleReporting
     public async Task ReportCaseResult(TestRunObject testRun, TestCaseObject testCase, Exception? e = null)
     {
         await _testResultHandler.UpdateTestCaseResultAsync(testRun.ID, testCase, e);
+    }
+
+    public async Task AddAttachment(TestRunObject testRun, string comment, string folderPath, string fileName)
+    {
+        await _testRunHandler.AddAttachment(testRun, comment, folderPath, fileName);
     }
 
     public async Task CompleteReport(TestRunObject testRun)

@@ -1,3 +1,4 @@
+using Microsoft.Azure.Pipelines.WebApi;
 using System.Text;
 using System.Text.Json;
 
@@ -12,14 +13,9 @@ public class HandleTestRun
         _azureReporter = azureReporter;
     }
 
-    public async Task LinkTestCasestoRun(List<TestCaseObject> testCases)
+    public async Task<int> CreateTestRunAsync(TestRunObject testRun, ProcessRequest request)
     {
-
-    }
-
-    public async Task<int> CreateTestRunAsync(int testPlanId, int testSuiteId, string environment, string fileName)
-    {
-        var requestUri = $"{_azureReporter.uri}/{_azureReporter.projectName}/_apis/test/Plans/{testPlanId}/Suites/{testSuiteId}/points?api-version=7.0";
+        var requestUri = $"{_azureReporter.uri}/{_azureReporter.projectName}/_apis/test/Plans/{testRun.PlanID}/Suites/{testRun.SuiteID}/points?api-version=7.0";
 
         var response = await _azureReporter.jsonClient.GetAsync(requestUri);
 
@@ -36,12 +32,13 @@ public class HandleTestRun
 
         var runCreateModel = new
         {
-            name = $"{fileName} [{environment}] at {DateTime.UtcNow}",
-            plan = new { Id = testPlanId.ToString() },
+            name = $"{request.FileName} [{request.Environment}] at {DateTime.Now}",
+            plan = new { id = testRun.PlanID.ToString() },
             pointIds = points.Select(tp => tp.id).ToArray(),
             state = "InProgress",
             isAutomated = true,
-            startedDate = DateTime.UtcNow.ToString()
+            startedDate = testRun.StartedDate,
+            comment = testRun.GenerateRunInformation(request),
         };
 
         requestUri = $"{_azureReporter.uri}/{_azureReporter.projectName}/_apis/test/runs?api-version=7.0";
@@ -68,10 +65,8 @@ public class HandleTestRun
         {
             startedDate = testRun.StartedDate,
             completedDate = testRun.CompletedDate,
-            outcome = testRun.Result.ToString(),
             state = "Completed",
-            failures = testRun.FailureCounter,
-            duration = Convert.ToInt32((testRun.CompletedDate - testRun.StartedDate).TotalMilliseconds)
+            errorMessage = $"Test Run {testRun.Result}" + (testRun.FailureCounter > 0 ? $"\nTest Case Failures: {testRun.FailureCounter}": null),
         };
 
         var jsonContent = new StringContent(JsonSerializer.Serialize(runResult), Encoding.UTF8, "application/json");
@@ -81,6 +76,42 @@ public class HandleTestRun
         {
             throw new Exception($"Failed to update test run state: {response.ReasonPhrase}");
         }
+    }
+
+    public async Task AddAttachment(TestRunObject testRun, string comment, string folderPath, string fileName)
+    {
+        var resultUri = $"{_azureReporter.uri}/{_azureReporter.projectName}/_apis/test/Runs/{testRun.ID}/attachments?api-version=7.0";
+
+        string filePath = Path.Combine(folderPath, fileName);
+
+        if (File.Exists(filePath))
+        {
+            byte[]? bytes = await File.ReadAllBytesAsync(filePath);
+            string? file64 = Convert.ToBase64String(bytes);
+
+            var attachment = new
+            {
+                attachmentType = "GeneralAttachment",
+                fileName = $"{comment}{Path.GetExtension(filePath)}",
+                comment = comment,
+                stream = file64
+            };
+
+            var jsonContent = new StringContent(JsonSerializer.Serialize(attachment), Encoding.UTF8, "application/json");
+            var response = await _azureReporter.jsonClient.PostAsync(resultUri, jsonContent);
+
+            bytes = null;
+            file64 = null;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Failed to update test run attachment: {response.ReasonPhrase}");
+            }
+        }
+        else
+        {
+            throw new Exception("Attachment not found!");
+        }        
     }
 }
 

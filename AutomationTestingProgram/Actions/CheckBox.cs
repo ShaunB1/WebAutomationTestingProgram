@@ -1,6 +1,4 @@
 using AutomationTestingProgram.Modules.TestRunnerModule;
-using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
-using DocumentFormat.OpenXml.Packaging;
 using Microsoft.Playwright;
 
 namespace AutomationTestingProgram.Actions;

@@ -22,9 +22,9 @@ public class CustomLogger : ICustomLogger
         return logLevel >= LogLevel.Information;
     }
 
-    public void Flush()
+    public void Flush(bool removeEntry = true, string message = "")
     {
-        LogManager.Flush(_logFilePath);
+        LogManager.Flush(_logFilePath, removeEntry, message);
     }
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)

@@ -234,10 +234,10 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Flush all logs
         /// </summary>
-        private void Flush()
+        public void Flush(bool removeEntry = true, string message = "")
         {
             if (Logger != null)
-                Logger.Flush();
+                Logger.Flush(removeEntry, message);
         }
     }
 }

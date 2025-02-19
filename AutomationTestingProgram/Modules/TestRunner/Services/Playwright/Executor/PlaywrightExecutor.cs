@@ -5,7 +5,6 @@ using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Core;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using AutomationTestingProgram.Modules.TestRunnerModule.Services.DevOpsReporting;
-using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
@@ -226,9 +225,10 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
             await page.LogInfo(logMessage.ToString());
             
             TestRunObject testRun = _reader.TestRun;
-            await devOpsReporter.SetUpDevOps(page.LogInfo, testRun, _request.Environment, _request.FileName);
-
             testRun.StartedDate = DateTime.Now;
+
+            await devOpsReporter.SetUpDevOps(page.LogInfo, testRun, _request);
+            await devOpsReporter.AddAttachment(testRun, "Execution file", _request.FolderPath, _request.FileName);
 
             TestCaseObject? testCase = null;
             TestStepObject step;
@@ -296,7 +296,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                         // If last test step in test case
                         if (data.TestStepIndex + 1 >= testCase.TestSteps.Count)
                         {
-                            testCase.Result = Result.Passed;
+                            testCase.Result = Result.Completed;
                             testCase.CompletedDate = DateTime.Now;
                             
                             logMessage.Clear()
@@ -387,9 +387,15 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
             }
             catch (OperationCanceledException e) // Request Cancelled (cancelled Test Run)
             {
+                if (testCase != null)
+                {
+                    testCase.Result = Result.Cancelled;
+                    testCase.CompletedDate = DateTime.Now;
+                    await devOpsReporter.ReportCaseResult(testRun, testCase);
+                }                
 
                 testRun.CompletedDate = DateTime.Now;
-                testRun.Result = Result.NotExecuted;
+                testRun.Result = Result.Cancelled;
 
                 logMessage.Clear()
                  .AppendLine("                                                        ")
@@ -407,9 +413,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                  .AppendLine("                                                        ");
 
                 await page.LogError(logMessage.ToString());
-
-                await devOpsReporter.CompleteReport(testRun);
-
+                
 
                 logMessage.Clear()
                           .AppendLine("========================================================")
@@ -427,12 +431,16 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                 await page.LogError(logMessage.ToString());
 
+                _request.Flush(false, "Sending files to Azure Devops...");
+                await page.Flush(false, "Sending files to Azure DevOps...");
+                await devOpsReporter.AddAttachment(testRun, "Request Log File", _request.FolderPath, LogManager.LogFileName);
+                await devOpsReporter.AddAttachment(testRun, "Page Log File", page.FolderPath, LogManager.LogFileName);
+                await devOpsReporter.CompleteReport(testRun);
+
                 throw;
             }
             catch (Exception e) // Test Run Failed
-            {
-                await devOpsReporter.CompleteReport(testRun);
-                
+            {                
                 logMessage.Clear()
                           .AppendLine("========================================================")
                           .AppendLine("                REQUEST FAILED                          ")
@@ -456,12 +464,18 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                 await page.LogError(logMessage.ToString());
 
+                _request.Flush(false, "Sending files to Azure Devops...");
+                await page.Flush(false, "Sending files to Azure DevOps...");
+                await devOpsReporter.AddAttachment(testRun, "Request Log File", _request.FolderPath, LogManager.LogFileName);
+                await devOpsReporter.AddAttachment(testRun, "Page Log File", page.FolderPath, LogManager.LogFileName);
+                await devOpsReporter.CompleteReport(testRun);
+
                 throw;
             }
 
             // Test Run Complete
             testRun.CompletedDate = DateTime.Now;
-            testRun.Result = Result.Passed;
+            testRun.Result = Result.Completed;
 
             logMessage.Clear()
              .AppendLine("                                                        ")
@@ -478,9 +492,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
              .AppendLine("========================================================")
              .AppendLine("                                                        ");
 
-            await page.LogInfo(logMessage.ToString());
-
-            await devOpsReporter.CompleteReport(testRun);
+            await page.LogInfo(logMessage.ToString());            
 
             logMessage.Clear()
                           .AppendLine("========================================================")
@@ -497,6 +509,12 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                           .AppendLine("========================================================");
 
             await page.LogInfo(logMessage.ToString());
+
+            _request.Flush(false, "Sending files to Azure Devops...");
+            await page.Flush(false, "Sending files to Azure DevOps...");
+            await devOpsReporter.AddAttachment(testRun, "Request Log File", _request.FolderPath, LogManager.LogFileName);
+            await devOpsReporter.AddAttachment(testRun, "Page Log File", page.FolderPath, LogManager.LogFileName);
+            await devOpsReporter.CompleteReport(testRun);
 
         }
 
@@ -536,7 +554,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
             if (step.Control.Equals("#"))
             {
-                
+                step.Result = Result.Skipped;
                 logMessage.Clear()
                         .AppendLine("========================================================")
                         .AppendLine("         TEST EXECUTION LOG - TEST STEP SKIPPED        ")
@@ -596,7 +614,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                     // STEP Passes
                     step.CompletedDate = DateTime.Now;
-                    step.Result = Result.Passed;
+                    step.Result = Result.Completed;
 
                     logMessage.Clear()
                             .AppendLine("========================================================")

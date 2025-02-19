@@ -1,4 +1,7 @@
-﻿namespace AutomationTestingProgram.Modules.TestRunnerModule
+﻿using AutomationTestingProgram.Core;
+using Microsoft.Extensions.Options;
+
+namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
     public interface IReaderFactory
     {
@@ -7,6 +10,14 @@
     
     public class ReaderFactory : IReaderFactory
     {
+
+        private readonly CSVEnvironmentGetter _environmentGetter;
+
+        public ReaderFactory(CSVEnvironmentGetter csvGetter)
+        {
+            _environmentGetter = csvGetter;
+        }
+
         /// <summary>
         /// Creates a new File Reader to read chuncks from a file.
         /// </summary>
@@ -14,7 +25,7 @@
         /// <returns></returns>
         public IReader CreateReader(string filePath)
         {
-            return new ExcelReader(filePath);
+            return new ExcelReader(_environmentGetter, filePath);
         }
     }
 }

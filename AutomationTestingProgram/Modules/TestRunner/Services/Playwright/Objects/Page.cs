@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects
+namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
     public class Page
     {   
@@ -235,6 +235,13 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.
         {
             _logger.LogCritical(message);
             await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, message);
+        }
+
+        public async Task Flush(bool removeEntry = false, string message = "")
+        {
+            _logger.Flush(removeEntry, message);
+            if (!string.IsNullOrEmpty(message))
+                await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, message);
         }
 
         /// <summary>

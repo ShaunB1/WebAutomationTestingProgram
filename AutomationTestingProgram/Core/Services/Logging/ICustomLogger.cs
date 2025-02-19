@@ -8,7 +8,7 @@ public interface ICustomLogger : ILogger
 
     public new bool IsEnabled(LogLevel logLevel);
 
-    public void Flush();
+    public void Flush(bool removeEntry = true, string message = "");
 
     public new void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter);
 }

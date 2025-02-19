@@ -55,7 +55,7 @@ public class ExcelReader : IReader
     /// <summary>
     /// Initializes an instance of the reader class.
     /// </summary>
-    public ExcelReader(string FilePath)
+    public ExcelReader(CSVEnvironmentGetter environmentGetter, string FilePath)
     {
         
         _filePath = FilePath;
@@ -64,7 +64,7 @@ public class ExcelReader : IReader
             throw new Exception("File Reader initialized failed. File path invalid");
         }
 
-        TestRun = new TestRunObject(Path.GetFileNameWithoutExtension(_filePath));
+        TestRun = new TestRunObject(environmentGetter, Path.GetFileNameWithoutExtension(_filePath));
 
         using (var fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
         {

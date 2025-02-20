@@ -51,7 +51,7 @@
     "APP_TYPE": "EDCS"
   },
   {
-    "ENVIRONMENT": "EDCS-1-PR",
+    "ENVIRONMENT": "PR-1",
     "HOST": "cscgikdcdbora47.cihs.gov.on.ca",
     "PORT": "1521",
     "DB_NAME": "PR1",
@@ -85,7 +85,7 @@
     "APP_TYPE": "EDCS"
   },
   {
-    "ENVIRONMENT": "EDCS-3-PR",
+    "ENVIRONMENT": "PR-3",
     "HOST": "cscgikdcdbora47.cihs.gov.on.ca",
     "PORT": "1521",
     "DB_NAME": "PR3",
@@ -136,7 +136,7 @@
     "APP_TYPE": "EDCS"
   },
   {
-    "ENVIRONMENT": "EDCS-6-PR",
+    "ENVIRONMENT": "PR-6",
     "HOST": "cscgikdcdbora48.cihs.gov.on.ca",
     "PORT": "1521",
     "DB_NAME": "PR6",
@@ -170,7 +170,7 @@
     "APP_TYPE": "EDCS"
   },
   {
-    "ENVIRONMENT": "EDCS-7-PR",
+    "ENVIRONMENT": "PR-7",
     "HOST": "cscgikdcdbora47.cihs.gov.on.ca",
     "PORT": "1521",
     "DB_NAME": "PR7",
@@ -204,7 +204,7 @@
     "APP_TYPE": "EDCS"
   },
   {
-    "ENVIRONMENT": "EDCS-8-PR",
+    "ENVIRONMENT": "PR-8",
     "HOST": "cscgikdcdbora48.cihs.gov.on.ca",
     "PORT": "1521",
     "DB_NAME": "PR8",
@@ -238,7 +238,7 @@
     "APP_TYPE": "EDCS"
   },
   {
-    "ENVIRONMENT": "EDCS-9-PR",
+    "ENVIRONMENT": "PR-9",
     "HOST": "cscgikdcdbora47.cihs.gov.on.ca",
     "PORT": "1521",
     "DB_NAME": "PR9",
@@ -272,7 +272,7 @@
     "APP_TYPE": "EDCS"
   },
   {
-    "ENVIRONMENT": "EDCS-QA-PR",
+    "ENVIRONMENT": "PR-QA",
     "HOST": "cscgikdcdbora47.cihs.gov.on.ca",
     "PORT": "1521",
     "DB_NAME": "PR11",
@@ -306,7 +306,7 @@
     "APP_TYPE": "EDCS"
   },
   {
-    "ENVIRONMENT": "EDCS-UAT-PR",
+    "ENVIRONMENT": "PR-UAT",
     "HOST": "cscgikdcdbora48.cihs.gov.on.ca",
     "PORT": "1521",
     "DB_NAME": "PR12",

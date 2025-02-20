@@ -1,7 +1,7 @@
 import './App.css'
 import HomePage from "@modules/home/pages/HomePage.tsx";
 import NavBar from "@modules/core/components/NavBar/NavBar.tsx";
-import EnvPage from "@modules/environments/pages/EnvPage.tsx";
+import AutoLoginPage from "@modules/autoLogin/pages/AutoLoginPage";
 import RecorderPage from "@modules/testRecorder/pages/RecorderPage.tsx";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ToolsPage from "@modules/tools/pages/ToolsPage.tsx";
@@ -49,9 +49,9 @@ function App() {
                   <RecorderPage />
                 </AuthGuard>
               } />
-              <Route path="/environments" element={
+              <Route path="/autoLogin" element={
                 <AuthGuard>
-                  <EnvPage />
+                  <AutoLoginPage />
                 </AuthGuard>
               } />
               <Route path="/tools" element={

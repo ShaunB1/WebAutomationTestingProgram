@@ -5,6 +5,14 @@ export interface Constants {
     stepType: string,
 }
 
+export interface FilterModel {
+    env: string,
+    app: string,
+    role: string,
+    account: string,
+    org: string
+}
+
 export interface ActionDetails {
     [key: string]: any;
     caseName: string,

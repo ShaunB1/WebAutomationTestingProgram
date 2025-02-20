@@ -49,7 +49,7 @@ const NavBar = (props: any) => {
                 <AuthenticatedTemplate>
                     <Toolbar className="navbar">
                         <Button component={Link} to={"/"} color="inherit" className="button">TAP</Button>
-                        <Button component={Link} to={"/environments"} color="inherit" className="button">Environments</Button>
+                        <Button component={Link} to={"/autoLogin"} color="inherit" className="button">Auto Login</Button>
                         <Button component={Link} to={"/recorder"} color="inherit" className="button" >Test Recorder</Button>
                         <Button component={Link} to={"/tools"} color="inherit" className="button">Tools</Button>
                         <Box style={{ marginLeft: "auto" }} sx={{ flexGrow: 0 }}>

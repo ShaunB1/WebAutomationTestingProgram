@@ -38,16 +38,11 @@ steps:
     versionSource: 'spec'
     versionSpec: '22.x'
 
-- task: Cache@2
-  displayName: Cache npm dependencies
-  inputs:
-    key: 'npm | "$(Agent.OS)" | **/package-lock.json'
-    path: $(NPM_CONFIG_CACHE)
-
 - task: Npm@1
-  displayName: 'npm ci --prefer-offline --no-audit --progress=false'
+  displayName: 'npm ci'
   inputs:
-    command: 'ci'
+    command: 'custom'
+    customCommand: 'ci --prefer-offline --no-audit'
     workingDir: '$(frontendPath)'
 
 - task: Npm@1
@@ -57,23 +52,12 @@ steps:
     workingDir: '$(frontendPath)'
     customCommand: 'run build'
 
-- task: Cache@2
-  displayName: Cache NuGet packages
-  inputs:
-    key: 'nuget | "$(Agent.OS)" | **/project.assets.json'
-    path: $(NUGET_PACKAGES)
-
-- task: DotNetCoreCLI@2
-  displayName: 'dotnet restore'
-  inputs:
-    command: 'restore'
-
 - task: DotNetCoreCLI@2
   displayName: 'dotnet publish'
   inputs:
     command: 'publish'
     projects: '$(project)'
-    arguments: '--configuration Release --no-restore --output "$(build.artifactStagingDirectory)" /p:DeployIisAppPath="Default Web Site"'
+    arguments: '--configuration Release --output "$(build.artifactStagingDirectory)" /p:DeployIisAppPath="Default Web Site"'
 
 # - task: DotNetCoreCLI@2
 #   displayName: 'dotnet test'

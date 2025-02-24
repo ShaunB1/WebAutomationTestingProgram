@@ -1,4 +1,6 @@
 ﻿using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Core.Settings;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.Extensions.Options;
@@ -10,9 +12,9 @@ namespace AutomationTestingProgram.Actions
     public class RunPrSQLScriptDelete : WebAction
     {
         private readonly PathSettings _settings;
-        private readonly CSVEnvironmentGetter _csvEnvironmentGetter;
+        private readonly CsvEnvironmentGetter _csvEnvironmentGetter;
 
-        public RunPrSQLScriptDelete(IOptions<PathSettings> options, CSVEnvironmentGetter csvEnvironmentGetter)
+        public RunPrSQLScriptDelete(IOptions<PathSettings> options, CsvEnvironmentGetter csvEnvironmentGetter)
         {
             _settings = options.Value;
             _csvEnvironmentGetter = csvEnvironmentGetter;
@@ -39,7 +41,7 @@ namespace AutomationTestingProgram.Actions
 
             string Host = _csvEnvironmentGetter.GetHost(environment);
             string Port = _csvEnvironmentGetter.GetPort(environment);
-            string DBName = _csvEnvironmentGetter.GetDBName(environment);
+            string DBName = _csvEnvironmentGetter.GetDbName(environment);
             string Username = _csvEnvironmentGetter.GetUsername(environment);
             string Password = _csvEnvironmentGetter.GetPassword(environment);
 

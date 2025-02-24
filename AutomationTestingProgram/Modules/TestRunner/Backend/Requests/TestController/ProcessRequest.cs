@@ -1,11 +1,11 @@
-﻿
-using AutomationTestingProgram.Core;
-using Microsoft.AspNetCore.SignalR;
-using NPOI.POIFS.Properties;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
+using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Modules.TestRunner.Models.Requests;
+using AutomationTestingProgram.Modules.TestRunnerModule;
+using Microsoft.AspNetCore.SignalR;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule
+namespace AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController
 {
     /// <summary>
     /// Request to process a test file using playwright
@@ -63,8 +63,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
             this.Logger = provider.CreateLogger<ProcessRequest>(FolderPath);
             
             this.FileName = model.File.FileName;
-            this.BrowserType = model.Type;
-            this.BrowserVersion = model.Version;
+            this.BrowserType = model.Browser;
+            this.BrowserVersion = model.BrowserVersion;
             this.Environment = model.Environment;
             this.Delay = model.Delay;
 

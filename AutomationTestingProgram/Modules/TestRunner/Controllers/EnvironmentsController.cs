@@ -1,4 +1,6 @@
 ﻿using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Core.Settings;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

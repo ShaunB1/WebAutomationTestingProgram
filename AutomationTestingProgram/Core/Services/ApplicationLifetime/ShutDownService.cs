@@ -1,5 +1,5 @@
 ﻿
-namespace AutomationTestingProgram.Core;
+namespace AutomationTestingProgram.Core.Services.ApplicationLifetime;
 
 /// <summary>
 /// Service used to ensure GraceFul shutdown of application.

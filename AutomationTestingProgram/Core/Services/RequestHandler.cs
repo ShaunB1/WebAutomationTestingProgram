@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Options;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.Options;
 
-namespace AutomationTestingProgram.Core
+namespace AutomationTestingProgram.Core.Services
 {
     /// <summary>
     /// The Request Handler handles all incoming requests.

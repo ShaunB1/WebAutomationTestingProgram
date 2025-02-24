@@ -183,8 +183,8 @@ const TestRuns = (props: any) => {
 
         const formData = new FormData();
         formData.append("File", file);
-        formData.append("Type", browser.toLowerCase());
-        formData.append("Version", "113");
+        formData.append("Browser", browser.toLowerCase());
+        formData.append("BrowserVersion", "113");
         formData.append("Environment", env);
         formData.append("Delay", delay.toString());
 

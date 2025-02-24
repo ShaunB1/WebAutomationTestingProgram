@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using System.Collections.Concurrent;
+using AutomationTestingProgram.Core.Settings.Playwright;
+using AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {

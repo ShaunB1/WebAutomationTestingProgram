@@ -1,10 +1,11 @@
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController;
+using AutomationTestingProgram.Modules.TestRunner.Models.Requests;
 using AutomationTestingProgram.Modules.TestRunnerModule;
-using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using NPOI.POIFS.Properties;
 
 namespace AutomationTestingProgram.Modules.TestRunner.Controllers;
 
@@ -54,10 +55,10 @@ public class TestController : CoreController
     [HttpPost("run")] 
     public async Task<IActionResult> RunRequest([FromForm] ProcessRequestModel model)
     {
-        string guid = Guid.NewGuid().ToString();
-        ProcessRequest request = new ProcessRequest(_provider, _hubContext, _playwright, HttpContext.User, guid, model);
+        var guid = Guid.NewGuid().ToString();
+        var request = new ProcessRequest(_provider, _hubContext, _playwright, HttpContext.User, guid, model);
         await CopyFileToFolder(model.File, request.FolderPath);
-        string email = HttpContext.User.FindFirst("preferred_username")!.Value;
+        var email = HttpContext.User.FindFirst("preferred_username")!.Value;
         await _hubContext.Clients.All.SendAsync("NewRun", guid, $"User: {email} has created Test Run: {guid}");
 
         // Run test asynchronously. Don't await, so user can get the GUID for SignalR connection

@@ -3,6 +3,8 @@ using System.Text.RegularExpressions;
 using Autofac;
 using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Settings;
+using AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.AspNetCore.SignalR;
@@ -133,7 +135,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
         
         public static void InitializeStaticVariables(IComponentContext componentContext)
         {
-            string actionsFilePath = AppConfiguration.GetSection<PathSettings>("PATHS").ActionsPath;
+            string actionsFilePath = AppConfiguration.GetSection<PathSettings>("Paths").ActionsPath;
 
             if (!File.Exists(actionsFilePath))
             {

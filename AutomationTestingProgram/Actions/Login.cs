@@ -1,5 +1,6 @@
 using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Services;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.Graph.Reports.GetPrinterArchivedPrintJobsWithPrinterIdWithStartDateTimeWithEndDateTime;
@@ -11,9 +12,9 @@ public class Login : WebAction
 {
     private readonly PasswordResetService _passwordResetService;
     private readonly AzureKeyVaultService _azureKeyVaultService;
-    private readonly CSVEnvironmentGetter _csvEnvironmentGetter;
+    private readonly CsvEnvironmentGetter _csvEnvironmentGetter;
 
-    public Login(PasswordResetService passwordResetService, AzureKeyVaultService azureKeyVaultService, CSVEnvironmentGetter cSVEnvironmentGetter)
+    public Login(PasswordResetService passwordResetService, AzureKeyVaultService azureKeyVaultService, CsvEnvironmentGetter cSVEnvironmentGetter)
     {
         _azureKeyVaultService = azureKeyVaultService;
         _passwordResetService = passwordResetService;
@@ -59,7 +60,7 @@ public class Login : WebAction
             if (step.Object.Contains("ontario.ca"))
             {
                 await pageObject.LogInfo("Login via AAD.");
-                url = _csvEnvironmentGetter.GetAdURL(environment);
+                url = _csvEnvironmentGetter.GetAadUrl(environment);
                 try
                 {
                     await pageObject.RefreshAsync(url);
@@ -84,7 +85,7 @@ public class Login : WebAction
             else if (step.Object.Contains("ontarioemail.ca"))
             {
                 await pageObject.LogInfo("Login via OPS BPS.");
-                url = _csvEnvironmentGetter.GetOpsBpsURL(environment);
+                url = _csvEnvironmentGetter.GetOpsBpsUrl(environment);
                 try
                 {
                     await pageObject.RefreshAsync(url);

@@ -96,7 +96,7 @@ const RecorderPage: React.FC = () => {
         { field: "GOTOSTEP", editable: true, filter: true },
         { field: "CYCLEGROUP", editable: true, filter: true },
     ])
-    const [tabIndex, setTabIndex] = useState(0);
+    // const [tabIndex, setTabIndex] = useState(0);
 
     const testCaseRef = useRef(testCase);
     const recordingRef = useRef<AgGridReact>(null);

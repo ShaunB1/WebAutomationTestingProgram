@@ -1,38 +1,35 @@
-﻿namespace AutomationTestingProgram.Core;
-
+﻿using System.Text;
+using AutomationTestingProgram.Core.Settings;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
+
+namespace AutomationTestingProgram.Core.Services;
 
 /// <summary>
 /// Class to get environment information from environment_list.csv
 /// </summary>
-public class CSVEnvironmentGetter
+public class CsvEnvironmentGetter
 {
-    private const int ENVIRONMENT_NAME_COL = 0;
-    private const int HOST_COL = 1;
-    private const int PORT_COL = 2;
-    private const int DB_NAME_COL = 3;
-    private const int USERNAME_COL = 4;
-    private const int PASSWORD_COL = 5;
-    private const int URL_COL = 6;
-    private const int URL2_COL = 7;
-    private const int EMAIL_NOTIFICATION_FOLDER_COL = 8;
-    private const int APP_INETPUB_LOG_COL = 9;
-    private const int WEB_TIER_LOG_COL = 10;
-    private const int APP_SERVICE_LOG_COL = 11;
-    private const int IS_ENCRYPTED_COL = 12;
-    private const int DB_TYPE_COL = 13;
-    private const int APP_TYPE_COL = 14;
+    private const int EnvironmentNameCol = 0;
+    private const int HostCol = 1;
+    private const int PortCol = 2;
+    private const int DbNameCol = 3;
+    private const int UsernameCol = 4;
+    private const int PasswordCol = 5;
+    private const int UrlCol = 6;
+    private const int Url2Col = 7;
+    private const int EmailNotificationFolderCol = 8;
+    private const int AppInetpubLogCol = 9;
+    private const int WebTierLogCol = 10;
+    private const int AppServiceLogCol = 11;
+    private const int IsEncryptedCol = 12;
+    private const int DbTypeCol = 13;
+    private const int AppTypeCol = 14;
 
-    private readonly string fileName;
+    private readonly string _fileName;
 
-    public CSVEnvironmentGetter(IOptions<PathSettings> options)
+    public CsvEnvironmentGetter(IOptions<PathSettings> options)
     {
-        fileName = options.Value.EnvironmentsListPath;
+        _fileName = options.Value.EnvironmentsListPath;
     }
 
     /// <summary>
@@ -42,25 +39,55 @@ public class CSVEnvironmentGetter
     /// <returns></returns>
     public string GetEnvironmentName(string env)
     {
-        return GetColumnValue(env, ENVIRONMENT_NAME_COL);
+        if (string.IsNullOrWhiteSpace(env))
+        {
+            throw new Exception("Environment cannot be empty.");
+        }
+        
+        try
+        {
+            return GetColumnValue(env, EnvironmentNameCol).Trim();
+        }
+        catch
+        {
+            throw new Exception($"Failed to get environment name for '{env}'");
+        }
     }
 
     /// <summary>
     /// Tries to grab the OPS BPS Environment URL from the environment url csv file.
     /// </summary>
     /// <returns>The provided URL for the environment given.</returns>
-    public string GetOpsBpsURL(string env)
+    public string GetOpsBpsUrl(string env)
     {
-        return GetColumnValue(env, URL_COL);
+        var environmentName = GetEnvironmentName(env);
+        
+        try
+        {
+            return GetColumnValue(env, UrlCol).Trim();
+        }
+        catch
+        {
+            throw new Exception($"Failed to retrieve OPS BPS URL for environment '{environmentName}'");
+        }
     }
 
     /// <summary>
     /// Tries to grab the AAD Environment URL from the environment url csv file.
     /// </summary>
     /// <returns>The provided URL for the environment given.</returns>
-    public string GetAdURL(string env)
+    public string GetAadUrl(string env)
     {
-        return GetColumnValue(env, URL2_COL);
+        var environmentName = GetEnvironmentName(env);
+
+        try
+        {
+            return GetColumnValue(env, Url2Col);
+        }
+        catch
+        {
+            throw new Exception($"Failed to get AAD URL for environment '{environmentName}'");
+        }
     }
 
     /// <summary>
@@ -69,7 +96,16 @@ public class CSVEnvironmentGetter
     /// <returns>The provided password for the environment given.</returns>
     public string GetHost(string env)
     {
-        return GetColumnValue(env, HOST_COL);
+        var environmentName = GetEnvironmentName(env);
+        
+        try
+        {
+            return GetColumnValue(env, HostCol);
+        }
+        catch
+        {
+            throw new Exception($"Failed to retrieve host for environment '{environmentName}'");
+        }
     }
 
     /// <summary>
@@ -78,7 +114,16 @@ public class CSVEnvironmentGetter
     /// <returns>The provided password for the environment given.</returns>
     public string GetPort(string env)
     {
-        return GetColumnValue(env, PORT_COL);
+        var environmentName = GetEnvironmentName(env);
+        
+        try
+        {
+            return GetColumnValue(env, PortCol);
+        }
+        catch
+        {
+            throw new Exception($"Failed to retrieve port for environment '{environmentName}'");
+        }
     }
 
     /// <summary>
@@ -87,7 +132,16 @@ public class CSVEnvironmentGetter
     /// <returns>The provided password for the environment given.</returns>
     public string GetIsEncrypted(string env)
     {
-        return GetColumnValue(env, IS_ENCRYPTED_COL);
+        var environmentName = GetEnvironmentName(env);
+
+        try
+        {
+            return GetColumnValue(env, IsEncryptedCol);
+        }
+        catch
+        {
+            throw new Exception($"Failed to get encryption status for environment '{environmentName}'");
+        }
     }
 
     /// <summary>
@@ -96,69 +150,139 @@ public class CSVEnvironmentGetter
     /// <returns>The provided password for the environment given.</returns>
     public string GetUsername(string env)
     {
-        return GetColumnValue(env, USERNAME_COL);
+        var environmentName = GetEnvironmentName(env);
+        
+        try
+        {
+            return GetColumnValue(env, UsernameCol);
+        }
+        catch
+        {
+            throw new Exception($"Failed to retrieve username for environment '{environmentName}'");
+        }
     }
 
     /// <summary>
     /// Tries to grab the db name from the environment url csv file.
     /// </summary>
     /// <returns>The provided password for the environment given.</returns>
-    public string GetDBName(string env)
+    public string GetDbName(string env)
     {
-        return GetColumnValue(env, DB_NAME_COL);
+        var environmentName = GetEnvironmentName(env);
+        
+        try
+        {
+            return GetColumnValue(env, DbNameCol);
+        }
+        catch
+        {
+            throw new Exception($"Failed to get database name for environment '{environmentName}'");
+        }
     }
 
     /// <summary>
-    /// Tries to grab the passowrd from the environment url csv file.
+    /// Tries to grab the password from the environment url csv file.
     /// </summary>
     /// <returns>The provided password for the environment given.</returns>
     public string GetPassword(string env)
     {
-        return GetColumnValue(env, PASSWORD_COL);
+        var environmentName = GetEnvironmentName(env);
+        
+        try
+        {
+            return GetColumnValue(env, PasswordCol);
+        }
+        catch
+        {
+            throw new Exception($"Failed to retrieve password for environment '{environmentName}'");
+        }
     }
 
     /// <summary>
-    /// Tries to grab the passowrd from the environment url csv file.
+    /// TODO
     /// </summary>
     /// <returns>The provided password for the environment given.</returns>
     public string GetApplicationType(string env)
     {
-        return GetColumnValue(env, APP_TYPE_COL);
+        var environmentName = GetEnvironmentName(env);
+        
+        try
+        {
+            return GetColumnValue(env, AppTypeCol);
+        }
+        catch
+        {
+            throw new Exception($"Failed to retrieve application type for environment '{environmentName}'");
+        }
     }
 
+    public List<string> GetEnvironments()
+    {
+        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _fileName);
+
+        if (!File.Exists(filePath))
+        {
+            throw new Exception("environment_list.csv not found!");
+        }
+
+        var environments = new List<string>();
+
+        using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var reader = new StreamReader(fileStream, Encoding.UTF8);
+
+        while (!reader.EndOfStream)
+        {
+            var line = reader.ReadLine();
+            var values = line.Split(',').ToList();
+
+            if (values.Count > EnvironmentNameCol)
+            {
+                var environmentName = values[EnvironmentNameCol].Trim();
+                if (!string.IsNullOrEmpty(environmentName))
+                {
+                    environments.Add(environmentName);
+                }
+            }
+        }
+        
+        return environments;
+    }
+    
     /// <summary>
     /// Returns the column value for the given environment name and column.
     /// </summary>
     /// <returns>The provided column for the environment.</returns>
     private string GetColumnValue(string environment, int columnIndex)
     {
-        string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
+        if (columnIndex is < 0 or > AppTypeCol)
+        {
+            throw new Exception($"Column index is out of range [0-{AppTypeCol}].");
+        }
+        
+        var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _fileName);
 
         if (!File.Exists(filePath))
         {
-            throw new Exception("Environment_list.csv not found!");
+            throw new Exception("environment_list.csv not found!");
         }
 
-        using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-        using (StreamReader reader = new StreamReader(fileStream, Encoding.UTF8))
+        using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var reader = new StreamReader(fileStream, Encoding.UTF8);
+        
+        while (!reader.EndOfStream)
         {
-            while (!reader.EndOfStream)
-            {
-                var line = reader.ReadLine();
-                List<string> values = line.Split(',').ToList();
+            var line = reader.ReadLine();
+            var values = line.Split(',').ToList();
 
-                if (values.Count > columnIndex)
+            if (values.Count > columnIndex)
+            {
+                if (values[0].Trim().ToLowerInvariant() == environment.ToLowerInvariant())
                 {
-                    if (values[0].Trim() == environment)
-                    {
-                        // for debugging purposes
-                        // Logger.Info("Value at index " + values[columnIndex]);
-                        return values[columnIndex];
-                    }
+                    return values[columnIndex];
                 }
             }
         }
 
-        throw new Exception($"Value (ENV: {environment}, COL: {columnIndex}) not found in CSVEnvironmentGetter!");
+        throw new Exception($"Value (ENV: {environment}, COL: {columnIndex}) not found in CsvEnvironmentGetter!");
     }
 }

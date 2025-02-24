@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.EMMA;
+﻿using AutomationTestingProgram.Core.Services;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -57,7 +58,7 @@ public class CoreController : ControllerBase
     /// <param name="file">The provided file.</param>
     /// <param name="folderPath">The path of the folder. </param>
     /// <returns></returns>
-    protected async Task CopyFileToFolder(IFormFile file, string folderPath)
+    protected async Task CopyFileToFolder(IFormFile? file, string folderPath)
     {
         string filePath = Path.Combine(folderPath, file.FileName);
 

@@ -1,4 +1,6 @@
-﻿namespace AutomationTestingProgram.Core
+﻿using AutomationTestingProgram.Core.Services;
+
+namespace AutomationTestingProgram.Core.Middleware
 {
     /// <summary>
     /// Middleware used to limit total # of active requests
@@ -9,13 +11,7 @@
         private readonly RequestDelegate _next;
         private readonly ILogger<RequestMiddleware> _logger;
         private readonly RequestHandler _handler;
-
-        private static readonly List<string> RateLimitedControllers = new List<String>
-        {
-            "Test",
-            "Environments",
-            "Core",
-        };
+        private static readonly List<string> _rateLimitedControllers = ["Test", "Environments", "Core"];
 
         // Constructor to inject middleware
         public RequestMiddleware(RequestDelegate next, ILogger<RequestMiddleware> logger, RequestHandler handler)
@@ -30,10 +26,8 @@
         {
             var routeData = context.GetRouteData();
             var controller = routeData?.Values["controller"]?.ToString();
-
-            bool isRateLimited = !string.IsNullOrEmpty(controller) && RateLimitedControllers.Contains(controller);
-
-
+            var isRateLimited = !string.IsNullOrEmpty(controller) && _rateLimitedControllers.Contains(controller);
+            
             if (isRateLimited)
             {
                 if (!await _handler.TryAcquireSlotAsync(0)) // 5 min timeout?

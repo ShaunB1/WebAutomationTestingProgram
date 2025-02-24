@@ -1,6 +1,7 @@
 ﻿
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using AutomationTestingProgram.Core.Services;
 
 namespace AutomationTestingProgram.Core
 {

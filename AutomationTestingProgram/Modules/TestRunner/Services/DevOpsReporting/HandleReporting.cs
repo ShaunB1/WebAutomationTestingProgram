@@ -9,6 +9,11 @@ using System;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule.Services.DevOpsReporting;
 
+/// <summary>
+/// This is the main class used to report to devops.
+/// PlaywrightExecutor will call this class to perform various operations,
+/// such as reporting test step, case, run results.
+/// </summary>
 public class HandleReporting
 {
     private readonly HandleTestPlan _testPlanHandler;
@@ -17,6 +22,15 @@ public class HandleReporting
     private readonly HandleTestCase _testCaseHandler;
     private readonly HandleTestPoint _testPointHandler;
     private readonly HandleTestResult _testResultHandler;
+
+    /// <summary>
+    /// Used to limit concurrent operations on Test Plan. This includes:
+    /// - Creating Test Plan
+    /// - Creating Test Suites
+    /// - Linking Test Cases to Test Suites
+    /// - Creating Test Run
+    /// </summary>
+    private SemaphoreSlim _semaphore;
 
     public HandleReporting(
         HandleTestPlan planHandler,
@@ -35,38 +49,18 @@ public class HandleReporting
         _testResultHandler = resultHandler;
     }
 
-    /* TODO:
-     * 
-     * 
-     * 1. Add blocked. When a run fails or cancels, all the next test cases
-     *    should be marked as blocked
-     * 2. IMPORTANT: Reuse TestPlan, no deletion. Deleting a test plan deletes a test run,
-     *    we can't do this. Instead, we have to do either one of the following:
-     *    - Re-use test plans and test cases like Selenium Framework'
-     *    - Have one test plan for results. Attempt to move everything under that test plan.
-     * 3. Release pipeline. When starting azure devops, also create a release?? Optional
-     * 
-     * 1. Find Archive (or create it if not found) -> Save its id for quick searching
-     * 2. Create test suite per file name, with same test suites in it as before.
-     * 3. Add concurrent mechanism. Cannot use same test suite concurrently. Use a set.
-     *    throw error
-     * 4. If new test suite, create test cases as normal
-     * 5. If test suite already exists, traverse through same test suites as above, then
-     *    Find the test cases.
-     * 6. Compare test cases to current test cases. Test cases should have same name, step, etc.
-     *    Hardest step, lots of possiblites: 
-     *    Ex: - steps in devops case different from current. 
-     *        - case names are differnet, do I delete the test case??
-     *        
-     *        
-     *        
-     *        
-     *        
-     *    
-     * 
-     * 
-     */
-
+    /// <summary>
+    /// Sets up basic DevOps functionality. 
+    /// - Each machine will be assigned one Test Plan. 
+    ///   All test run executions within a machine will report to different 
+    ///   suites within this plan.
+    ///   This is done as you cannot make changes to the same test plan concurrently
+    /// 
+    /// </summary>
+    /// <param name="Log"></param>
+    /// <param name="testRunObject"></param>
+    /// <param name="request"></param>
+    /// <returns></returns>
     public async Task SetUpDevOps(Func<string, Task> Log, TestRunObject testRunObject, ProcessRequest request)
     {
         await Log("Setting up DevOps reporting...");

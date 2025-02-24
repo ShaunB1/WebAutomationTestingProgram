@@ -45,6 +45,14 @@ public class HandleTestPlan
         }
     }
 
+    /// <summary>
+    /// Locates the TestPlan by name.
+    /// Each machine has their own TestPlan.
+    /// </summary>
+    /// <param name="testPlanName"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    /// <exception cref="NoMatchFoundException"></exception>
     public async Task<TestPlan> GetTestPlanByNameAsync(string testPlanName)
     {
         string? continuationToken = null;

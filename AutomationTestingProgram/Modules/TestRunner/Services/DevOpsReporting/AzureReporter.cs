@@ -6,6 +6,9 @@ using System.Text;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule.Services.DevOpsReporting;
 
+/// <summary>
+/// This class sets up basic properties for reporting to devops.
+/// </summary>
 public class AzureReporter
 {
     public readonly string uri;

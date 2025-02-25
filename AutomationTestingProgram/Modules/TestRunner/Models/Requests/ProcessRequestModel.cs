@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using AutomationTestingProgram.Core.Models.Attributes;
 using AutomationTestingProgram.Modules.TestRunner.Models.Attributes;
 

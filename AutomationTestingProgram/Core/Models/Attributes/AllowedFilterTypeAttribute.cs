@@ -1,22 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using AutomationTestingProgram.Core.Requests;
 
-namespace AutomationTestingProgram.Core
+namespace AutomationTestingProgram.Core.Models.Attributes
 {
     public class AllowedFilterTypeAttribute : ValidationAttribute
     {
-        public AllowedFilterTypeAttribute() { }
-
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
-            if (value is string type)
-            {
-                if (!Enum.TryParse(type, out FilterType _))
-                {
-                    return new ValidationResult($"Filter Type '{value}' is not valid.");
-                }
-            }
-
-            return ValidationResult.Success;
+            if (value is not string type) return ValidationResult.Success;
+            return !Enum.TryParse(type, out FilterType _) ? new ValidationResult($"Filter Type '{value}' is not valid.") : ValidationResult.Success;
         }
     }
 }

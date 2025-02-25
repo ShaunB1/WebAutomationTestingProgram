@@ -1,4 +1,4 @@
-﻿using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Core.Services;
 
 namespace AutomationTestingProgram.Core.Middleware
 {

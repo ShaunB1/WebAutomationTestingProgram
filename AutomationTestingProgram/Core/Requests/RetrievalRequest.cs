@@ -1,13 +1,16 @@
 ﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Models.Requests;
 using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Core.Services.Logging;
 
-namespace AutomationTestingProgram.Core
+namespace AutomationTestingProgram.Core.Requests
 {
     /// <summary>
     /// Request to retrieve active requests (with various filters)
     /// </summary>
-    public class RetrievalRequest : NonCancellableClientRequest, IClientRequest
+    public class RetrievalRequest : NonCancellableClientRequest
     {
         [JsonIgnore]
         protected override ICustomLogger Logger { get; }
@@ -66,7 +69,7 @@ namespace AutomationTestingProgram.Core
              * - User has permission to access application section (requets sent from sections in the application)
              */
 
-            SetStatus(State.Validating, $"Validating Retrieval Request (ID: {ID})");
+            SetStatus(State.Validating, $"Validating Retrieval Request (ID: {Id})");
 
             // Validate permission to access application
             LogInfo($"Validating User Permissions - Application");
@@ -88,14 +91,14 @@ namespace AutomationTestingProgram.Core
              * 
              */
 
-            SetStatus(State.Processing, $"Processing Retrieval Request (ID: {ID})");
+            SetStatus(State.Processing, $"Processing Retrieval Request (ID: {Id})");
 
             switch (FilterType)
             {
                 case FilterType.None:
                     RetrievedRequests = _requestHandler.RetrieveRequests();
                     break;
-                case FilterType.ID:
+                case FilterType.Id:
                     RetrievedRequests.Add(_requestHandler.RetrieveRequest(FilterValue));
                     break;
                 case FilterType.Type:
@@ -103,7 +106,7 @@ namespace AutomationTestingProgram.Core
                     break;
             }
 
-            SetStatus(State.Completed, $"Retrieval Request (ID: {ID}) completed successfully.");
+            SetStatus(State.Completed, $"Retrieval Request (ID: {Id}) completed successfully.");
 
             return Task.CompletedTask;
         }
@@ -122,7 +125,7 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Looking for a specific request by ID
         /// </summary>
-        ID,
+        Id,
 
         /// <summary>
         /// Looking for a specific request by their Type.

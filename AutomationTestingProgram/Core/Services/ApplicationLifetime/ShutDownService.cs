@@ -1,4 +1,6 @@
 ﻿
+using AutomationTestingProgram.Core.Services.Logging;
+
 namespace AutomationTestingProgram.Core.Services.ApplicationLifetime;
 
 /// <summary>

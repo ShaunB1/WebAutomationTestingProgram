@@ -1,15 +1,17 @@
-﻿
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Models.Requests;
 using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Core.Services.Logging;
 
-namespace AutomationTestingProgram.Core
+namespace AutomationTestingProgram.Core.Requests
 {
     /// <summary>
     /// Request to cancel another request.
     /// NOTE: cannot cancel a CancellationRequest
     /// </summary>
-    public class CancellationRequest : NonCancellableClientRequest, IClientRequest
+    public class CancellationRequest : NonCancellableClientRequest
     {
         [JsonIgnore]
         protected override ICustomLogger Logger { get; }
@@ -17,7 +19,7 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// The unique identifier of the request to cancel
         /// </summary>
-        public string CancelRequestID { get; }
+        public string CancelRequestId { get; }
 
         /// <summary>
         /// The Request to Cancel
@@ -28,7 +30,6 @@ namespace AutomationTestingProgram.Core
         [JsonIgnore]
         private RequestHandler _requestHandler;
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="CancellationRequest"/> class.
         /// Instance is associated with the ID of the request to cancel.
@@ -38,9 +39,7 @@ namespace AutomationTestingProgram.Core
             : base(User)
         {
             Logger = provider.CreateLogger<CancellationRequest>(FolderPath);
-
-            CancelRequestID = model.ID;
-
+            CancelRequestId = model.ID;
             _requestHandler = requestHandler;
         }
 
@@ -62,7 +61,7 @@ namespace AutomationTestingProgram.Core
              *      -> If User: Request to Cancel must be within user's group, and own request
              */
 
-            SetStatus(State.Validating, $"Validating Cancellation Request (ID {ID}, CancelID {CancelRequestID})");
+            SetStatus(State.Validating, $"Validating Cancellation Request (ID {Id}, CancelID {CancelRequestId})");
 
             // Validate permission to access team
             LogInfo($"Validating User Permissions - Team");
@@ -80,12 +79,11 @@ namespace AutomationTestingProgram.Core
         /// </summary>
         private void ValidateRequest()
         {
-
-            IClientRequest request = _requestHandler.RetrieveRequest(CancelRequestID);
+            IClientRequest request = _requestHandler.RetrieveRequest(CancelRequestId);
 
             if (request is NonCancellableClientRequest)
             {
-                throw new Exception($"Request to cancel (ID: {CancelRequestID}) cannot be cancelled (invalid type).");
+                throw new Exception($"Request to cancel (ID: {CancelRequestId}) cannot be cancelled (invalid type).");
             }
             else
             {
@@ -109,28 +107,25 @@ namespace AutomationTestingProgram.Core
              *   for long periods of time (no processing)
              * 
              */
-
-
-            SetStatus(State.Processing, $"Processing Cancellation Request (ID {ID}, CancelID {CancelRequestID})");
-
+            SetStatus(State.Processing, $"Processing Cancellation Request (ID {Id}, CancelID {CancelRequestId})");
             CancelRequest!.Cancel();
-            LogInfo($"Sent Cancellation Request to Request (ID: {CancelRequestID})");
+            LogInfo($"Sent Cancellation Request to Request (ID: {CancelRequestId})");
 
             try
             {
                 await CancelRequest!.ResponseSource.Task;
 
                 // Request completed before cancellation received/processed
-                throw new Exception($"Request (ID: {CancelRequestID}) completed before cancellation received/processed");
+                throw new Exception($"Request (ID: {CancelRequestId}) completed before cancellation received/processed");
             }
             catch (OperationCanceledException) // Request successfully canceled
             {
-                SetStatus(State.Completed, $"Request (ID: {CancelRequestID}) cancelled successfully");
+                SetStatus(State.Completed, $"Request (ID: {CancelRequestId}) cancelled successfully");
             }
             catch (Exception)
             {
                 // Request failed before cancellation received/processed
-                throw new Exception($"Request (ID: {CancelRequestID}) failed before cancellation received/processed");
+                throw new Exception($"Request (ID: {CancelRequestId}) failed before cancellation received/processed");
             }
         }
     }

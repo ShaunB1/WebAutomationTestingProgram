@@ -1,11 +1,8 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using System.Collections.Concurrent;
-using System.Net.WebSockets;
+﻿using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 
-namespace AutomationTestingProgram.Core;
+namespace AutomationTestingProgram.Core.Hubs;
 
 [Authorize]
 public class TestHub : Hub
@@ -14,8 +11,7 @@ public class TestHub : Hub
     public static readonly ConcurrentDictionary<string, HashSet<string>> _userGroups = new ConcurrentDictionary<string, HashSet<string>>();
     // Email -> Connection ID
     public static readonly ConcurrentDictionary<string, string> _userConnections = new ConcurrentDictionary<string, string>();
-
-    // When user connects (or re-connects)
+    
     public override async Task OnConnectedAsync()
     {
         string email = Context.User!.FindFirst("preferred_username")!.Value;
@@ -32,8 +28,7 @@ public class TestHub : Hub
         await Clients.Caller.SendAsync("OnConnected", $"User: {email} has connected to SignalR");
         await base.OnConnectedAsync();
     }
-
-    // When user disconnects
+    
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         string email = Context.User!.FindFirst("preferred_username")!.Value;

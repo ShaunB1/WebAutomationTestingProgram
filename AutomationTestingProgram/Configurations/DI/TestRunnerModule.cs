@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Modules.TestRunner.Models.Factories;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 
 namespace AutomationTestingProgram.Configurations.DI;

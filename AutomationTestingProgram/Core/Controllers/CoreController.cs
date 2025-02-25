@@ -1,53 +1,58 @@
-﻿using AutomationTestingProgram.Core.Services;
-using DocumentFormat.OpenXml.EMMA;
+﻿using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Hubs;
+using AutomationTestingProgram.Core.Models.Requests;
+using AutomationTestingProgram.Core.Requests;
+using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Core.Services.Logging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.SignalR;
 
-namespace AutomationTestingProgram.Core;
+namespace AutomationTestingProgram.Core.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class CoreController : ControllerBase
 {
-    protected readonly ICustomLoggerProvider _provider;
-    protected readonly RequestHandler _requestHandler;
+    protected readonly ICustomLoggerProvider Provider;
+    protected readonly RequestHandler RequestHandler;
     private readonly ICustomLogger _logger;
     private readonly IHubContext<TestHub> _hubContext;
 
     public CoreController(ICustomLoggerProvider provider, RequestHandler handler, IHubContext<TestHub> hubContext)
     {
-        _provider = provider;
-        _logger = _provider.CreateLogger<CoreController>();
-        _requestHandler = handler;
+        Provider = provider;
+        _logger = Provider.CreateLogger<CoreController>();
+        RequestHandler = handler;
         _hubContext = hubContext;
     }
 
-    protected async Task<IActionResult> HandleRequest<TRequest, TReturn>(TRequest request, Func<TRequest, Task<TReturn>> getProperty) where TRequest : IClientRequest
+    protected async Task<IActionResult> HandleRequest<TRequest, TReturn>(
+        TRequest request, 
+        Func<TRequest, Task<TReturn>> getProperty) where TRequest : IClientRequest
     {
         try
         {
-            _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received.");
+            _logger.LogInformation($"{request.GetType().Name} (ID: {request.Id}) received.");
 
-            await _requestHandler.ProcessAsync(request);
+            await RequestHandler.ProcessAsync(request);
 
             var result = await getProperty(request);
 
             // If request succeeds
-            _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) successfully completed.");
+            _logger.LogInformation($"{request.GetType().Name} (ID: {request.Id}) successfully completed.");
             return Ok(new { Result = result });
         }
         catch (OperationCanceledException e)
         {
             // If request cancelled
-            _logger.LogWarning($"{request.GetType().Name} (ID: {request.ID}) cancelled.\nMessage: '{e.Message}'");
+            _logger.LogWarning($"{request.GetType().Name} (ID: {request.Id}) cancelled.\nMessage: '{e.Message}'");
             return StatusCode(500, new { Error = e.Message });
         }
         catch (Exception e)
         {
             // If request fails
-            _logger.LogError($"{request.GetType().Name} (ID: {request.ID}) failed.\nError: '{e.Message}'");
+            _logger.LogError($"{request.GetType().Name} (ID: {request.Id}) failed.\nError: '{e.Message}'");
             return StatusCode(500, new { Error = e.Message });
         }
     }
@@ -58,14 +63,12 @@ public class CoreController : ControllerBase
     /// <param name="file">The provided file.</param>
     /// <param name="folderPath">The path of the folder. </param>
     /// <returns></returns>
-    protected async Task CopyFileToFolder(IFormFile? file, string folderPath)
+    protected async Task CopyFileToFolder(IFormFile file, string folderPath)
     {
-        string filePath = Path.Combine(folderPath, file.FileName);
+        var filePath = Path.Combine(folderPath, file.FileName);
 
-        using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true))
-        {
-            await file.CopyToAsync(fileStream);
-        }
+        await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true);
+        await file.CopyToAsync(fileStream);
     }
 
     /* API Request Examples:
@@ -91,10 +94,10 @@ public class CoreController : ControllerBase
     [HttpPost("retrieve")]
     public async Task<IActionResult> GetActiveRequests([FromBody] RetrievalRequestModel model)
     {        
-        RetrievalRequest request = new RetrievalRequest(_provider, _requestHandler, HttpContext.User, model);
-        return await HandleRequest(request, async (req) =>
+        var request = new RetrievalRequest(Provider, RequestHandler, HttpContext.User, model);
+        return await HandleRequest(request, (req) =>
         {
-            return req.RetrievedRequests;
+            return Task.FromResult(req.RetrievedRequests);
         });
     }
 
@@ -151,12 +154,12 @@ public class CoreController : ControllerBase
     [HttpPost("stop")]
     public async Task<IActionResult> StopRequest([FromBody] CancellationRequestModel model)
     {
-        CancellationRequest request = new CancellationRequest(_provider, _requestHandler, HttpContext.User, model);
+        CancellationRequest request = new CancellationRequest(Provider, RequestHandler, HttpContext.User, model);
         string email = HttpContext.User.FindFirst("preferred_username")!.Value;
         await _hubContext.Clients.Groups(model.ID).SendAsync("RunStopped", model.ID, $"User: {email} has stopped Test Run: {model.ID}");
         return await HandleRequest(request, async (req) =>
         {
-            return $"Request {req.CancelRequestID} cancelled successfully";
+            return $"Request {req.CancelRequestId} cancelled successfully";
         });
     }
 }

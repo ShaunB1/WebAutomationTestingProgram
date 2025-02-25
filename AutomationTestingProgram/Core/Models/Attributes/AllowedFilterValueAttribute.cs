@@ -1,12 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Requests;
 
-namespace AutomationTestingProgram.Core
+namespace AutomationTestingProgram.Core.Models.Attributes
 {
     public class AllowedFilterValueAttribute : ValidationAttribute
     {
-        private static readonly string IDPattern = @"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
-
+        private const string IdPattern = @"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
         private readonly string _filterTypeProperty;
 
         public AllowedFilterValueAttribute(string filterTypeProperty)
@@ -16,49 +17,52 @@ namespace AutomationTestingProgram.Core
 
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
-            if (value is string val)
+            if (value is not string val) return new ValidationResult("invalid input. Input must be of type string.");
+            
+            var instance = validationContext.ObjectInstance;
+
+            var filterTypeProperty = instance.GetType().GetProperty(_filterTypeProperty);
+            if (filterTypeProperty == null)
             {
-                var instance = validationContext.ObjectInstance;
+                return new ValidationResult($"Property {_filterTypeProperty} not found.");
+            }
 
-                var filterTypeProperty = instance.GetType().GetProperty(_filterTypeProperty);
-                if (filterTypeProperty == null)
-                {
-                    return new ValidationResult($"Property {_filterTypeProperty} not found.");
-                }
+            var filterTypeAsString = filterTypeProperty.GetValue(instance) as string;
+            if (string.IsNullOrWhiteSpace(filterTypeAsString))
+            {
+                return new ValidationResult($"FilterType is required");
+            }
 
-                var filterTypeAsString = filterTypeProperty.GetValue(instance) as string;
-                if (string.IsNullOrEmpty(filterTypeAsString))
-                {
-                    return new ValidationResult($"FilterType is required");
-                }
+            if (!Enum.TryParse(filterTypeAsString, out FilterType filterType))
+            {
+                return new ValidationResult($"Filter Type {filterTypeAsString} is not valid.");
+            }
 
-                if (!Enum.TryParse(filterTypeAsString, out FilterType filterType))
-                {
-                    return new ValidationResult($"Filter Type {filterTypeAsString} is not valid.");
-                }
+            switch (filterType)
+            {
+                case FilterType.None:
+                    break;
+                case FilterType.Id:
+                    if (!Regex.IsMatch(val, IdPattern))
+                    {
+                        return new ValidationResult($"ID must be in correct format");
+                    }
+                    break;
+                case FilterType.Type:
+                    var valueType = Type.GetType(val);
+                    
+                    if (valueType == null)
+                    {
+                        return new ValidationResult($"Type Value Invalid - Not Found");
+                    }
 
-                switch (filterType)
-                {
-                    case FilterType.None:
-                        break;
-                    case FilterType.ID:
-                        if (!Regex.IsMatch(val, IDPattern))
-                        {
-                            return new ValidationResult($"ID must be in correct format");
-                        }
-                        break;
-                    case FilterType.Type:
-                        Type? valueType = Type.GetType(val);
-                        if (valueType == null)
-                        {
-                            return new ValidationResult($"Type Value Invalid - Not Found");
-                        }
-
-                        if (!valueType.IsClass || !typeof(IClientRequest).IsAssignableFrom(valueType)) {
-                            return new ValidationResult($"Type Value Invalid -- Not Proper Type");
-                        }
-                        break;
-                }
+                    if (!valueType.IsClass || !typeof(IClientRequest).IsAssignableFrom(valueType)) {
+                        return new ValidationResult($"Type Value Invalid -- Not Proper Type");
+                    }
+                    
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             return ValidationResult.Success;

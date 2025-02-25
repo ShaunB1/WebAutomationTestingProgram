@@ -1,4 +1,5 @@
 ﻿using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Services.Logging;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {

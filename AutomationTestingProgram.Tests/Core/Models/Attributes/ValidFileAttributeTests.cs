@@ -45,7 +45,7 @@ public class ValidFileAttributeTests
         var result = attribute.GetValidationResult(invalidInput, new ValidationContext(invalidInput));
         
         result.Should().NotBe(ValidationResult.Success);
-        result.ErrorMessage.Should().Be("Invalid input. Input must be an IFormFile.");
+        result.ErrorMessage.Should().Be("Invalid input. Input must be of type IFormFile.");
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class ValidFileAttributeTests
         var result = attribute.GetValidationResult(null, new ValidationContext(validationContext));
         
         result.Should().NotBe(ValidationResult.Success);
-        result.ErrorMessage.Should().Be("Invalid input. Input must be an IFormFile.");
+        result.ErrorMessage.Should().Be("Invalid input. Input must be of type IFormFile.");
     }
 
     [Fact]

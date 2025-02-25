@@ -3,6 +3,8 @@ using NPOI.SS.UserModel;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Services.Logging;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
@@ -47,7 +49,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
              * - User has permission to access application section (requets sent from sections in the application)
              */
 
-            this.SetStatus(State.Validating, $"Validating KeyChainRetrieval Request (ID: {ID})");
+            this.SetStatus(State.Validating, $"Validating KeyChainRetrieval Request (ID: {Id})");
 
             // Validate permission to access application
             LogInfo($"Validating User Permissions - Team");
@@ -66,7 +68,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         {
             try
             {
-                this.SetStatus(State.Processing, $"Processing KeyChainRetrieval Request (ID: {ID})");
+                this.SetStatus(State.Processing, $"Processing KeyChainRetrieval Request (ID: {Id})");
                 await IOManager.TryAquireSlotAsync();
 
 
@@ -99,7 +101,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 }
 
 
-                SetStatus(State.Completed, $"KeyChainRetrieval Request (ID: {ID}) completed successfully");
+                SetStatus(State.Completed, $"KeyChainRetrieval Request (ID: {Id}) completed successfully");
             }
             finally
             {

@@ -1,7 +1,9 @@
 ﻿using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Services.Logging;
+using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.Extensions.Options;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule
+namespace AutomationTestingProgram.Modules.TestRunner.Models.Factories
 {
     public interface IBrowserFactory
     {

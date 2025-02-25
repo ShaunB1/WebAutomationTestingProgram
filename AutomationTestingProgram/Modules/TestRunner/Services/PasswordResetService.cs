@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Globalization;
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Helpers;
 using Microsoft.Extensions.Options;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule

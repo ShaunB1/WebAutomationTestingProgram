@@ -1,9 +1,8 @@
 ﻿using System.Collections.Concurrent;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 
-namespace AutomationTestingProgram.Core;
+namespace AutomationTestingProgram.Core.Services.Logging;
 
 /// <summary>
 /// LogManager manages all logs RUN WIDE.

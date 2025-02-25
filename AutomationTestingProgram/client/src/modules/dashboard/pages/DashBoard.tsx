@@ -21,7 +21,7 @@ const DashBoard = (props: any) => {
 
                     const data = {
                         filterType: "Type",
-                        filterValue: "AutomationTestingProgram.Modules.TestRunnerModule.ProcessRequest"
+                        filterValue: "AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController.ProcessRequest"
                     }
                     const response = await fetch("/api/core/retrieve", {
                         method: "POST",

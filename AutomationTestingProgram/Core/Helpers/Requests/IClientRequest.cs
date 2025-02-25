@@ -1,8 +1,7 @@
-﻿using System.Reflection;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
 
-namespace AutomationTestingProgram.Core
+namespace AutomationTestingProgram.Core.Helpers.Requests
 {
     /// <summary>
     /// Interface used by all Request Classes
@@ -12,7 +11,7 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// The unique identifier of the request
         /// </summary>
-        string ID { get; }
+        string Id { get; }
 
         /// <summary>
         /// Reference to the User that sent the request
@@ -47,8 +46,7 @@ namespace AutomationTestingProgram.Core
         /// The folder path for the request. Folder includes all logs, files, directories, etc.
         /// </summary>
         string? FolderPath { get; }
-
-
+        
         /// <summary>
         /// Sets the status of the request, including its state and message. 
         /// Optionally, an exception can be provided, which will cause the task to be completed in a failed state.
@@ -104,9 +102,6 @@ namespace AutomationTestingProgram.Core
         /// <param name="message"></param>
         /// <returns></returns>
         Task Log(LogLevel level, string message);
-
-
-
     }
 
     /// <summary>

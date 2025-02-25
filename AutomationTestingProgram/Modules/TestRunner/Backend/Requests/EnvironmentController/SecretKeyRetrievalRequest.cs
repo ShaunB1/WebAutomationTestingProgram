@@ -1,6 +1,8 @@
 ﻿using AutomationTestingProgram.Core;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Services.Logging;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
@@ -52,7 +54,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
              * - User has permission to access application section (requets sent from sections in the application)
              */
 
-            SetStatus(State.Validating, $"Validating SecretKeyRetrieval Request (ID: {ID}, Email: {Email})");
+            SetStatus(State.Validating, $"Validating SecretKeyRetrieval Request (ID: {Id}, Email: {Email})");
 
             // Validate permission to access application
             LogInfo($"Validating User Permissions - Team");
@@ -71,13 +73,13 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         {
             try
             {
-                SetStatus(State.Processing, $"Processing SecretKeyRetrieval Request (ID: {ID}, Email: {Email})");
+                SetStatus(State.Processing, $"Processing SecretKeyRetrieval Request (ID: {Id}, Email: {Email})");
 
 
                 await IOManager.TryAquireSlotAsync();
                 SecretKey = await azureKeyVaultService.GetKvSecret(Log, Email);
 
-                SetStatus(State.Completed, $"SecretKeyRetrieval Request (ID: {ID}, Email: {Email}) completed successfully");
+                SetStatus(State.Completed, $"SecretKeyRetrieval Request (ID: {Id}, Email: {Email}) completed successfully");
             }
             finally
             {

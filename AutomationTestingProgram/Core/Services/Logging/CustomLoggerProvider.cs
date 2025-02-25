@@ -1,4 +1,6 @@
-﻿namespace AutomationTestingProgram.Core;
+﻿using AutomationTestingProgram.Core.Services.Logging;
+
+namespace AutomationTestingProgram.Core;
 
 public class CustomLoggerProvider : ICustomLoggerProvider
 {

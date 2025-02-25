@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using AutomationTestingProgram.Core.Services.Logging;
 
 namespace AutomationTestingProgram.Core;
 public class CustomLogger : ICustomLogger

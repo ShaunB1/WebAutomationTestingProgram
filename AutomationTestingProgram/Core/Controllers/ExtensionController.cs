@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace AutomationTestingProgram.Core;
+namespace AutomationTestingProgram.Core.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

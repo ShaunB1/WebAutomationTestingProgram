@@ -16,7 +16,7 @@ public class ValidFileAttribute : ValidationAttribute
     {
         if (value is not IFormFile file)
         {
-            return new ValidationResult("Invalid input. Input must be an IFormFile.");
+            return new ValidationResult("Invalid input. Input must be of type IFormFile.");
         }
         
         if (string.IsNullOrWhiteSpace(file.FileName))

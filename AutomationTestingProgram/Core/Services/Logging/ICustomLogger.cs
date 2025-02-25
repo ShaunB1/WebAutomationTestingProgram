@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace AutomationTestingProgram.Core;
+﻿namespace AutomationTestingProgram.Core.Services.Logging;
 
 public interface ICustomLogger : ILogger
 {

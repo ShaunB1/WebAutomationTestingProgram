@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Services.Logging;
 
 namespace AutomationTestingProgram.Modules.TestRunnerModule
 {
@@ -46,7 +48,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
              * - User has permission to access application section (requets sent from sections in the application)
              */
 
-            this.SetStatus(State.Validating, $"Validating PasswordReset Request (ID: {ID})");
+            this.SetStatus(State.Validating, $"Validating PasswordReset Request (ID: {Id})");
 
             // Validate permission to access application
             LogInfo($"Validating User Permissions - Team");
@@ -65,12 +67,12 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         {
             try
             {
-                this.SetStatus(State.Processing, $"Processing PasswordReset Request (ID: {ID}, Email: {Email})");
+                this.SetStatus(State.Processing, $"Processing PasswordReset Request (ID: {Id}, Email: {Email})");
 
                 await IOManager.TryAquireSlotAsync();
                 await passwordResetService.ResetPassword(Log, Email);
 
-                SetStatus(State.Completed, $"PasswordReset Request (ID: {ID}, Email: {Email}) completed successfully");
+                SetStatus(State.Completed, $"PasswordReset Request (ID: {Id}, Email: {Email}) completed successfully");
             }
             finally
             {

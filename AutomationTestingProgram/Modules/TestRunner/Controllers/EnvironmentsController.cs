@@ -1,5 +1,8 @@
 ﻿using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Controllers;
+using AutomationTestingProgram.Core.Hubs;
 using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Core.Services.Logging;
 using AutomationTestingProgram.Core.Settings;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.AspNetCore.Authorization;
@@ -43,7 +46,7 @@ public class EnvironmentsController : CoreController
     [ResponseCache(Duration = 14400, Location = ResponseCacheLocation.Client)] // Cached for four hours
     public async Task<IActionResult> GetKeychainAccounts()
     {
-        KeyChainRetrievalRequest request = new KeyChainRetrievalRequest(_provider, HttpContext.User, _keyChainFileName);
+        KeyChainRetrievalRequest request = new KeyChainRetrievalRequest(Provider, HttpContext.User, _keyChainFileName);
         return await HandleRequest(request, async (req) =>
         {
             return req.Accounts;
@@ -54,7 +57,7 @@ public class EnvironmentsController : CoreController
     [HttpGet("secretKey")]
     public async Task<IActionResult> GetSecretKey([FromQuery] SecretKeyRetrievalRequestModel model)
     {
-        SecretKeyRetrievalRequest request = new SecretKeyRetrievalRequest(_provider, _azureKeyVaultService, HttpContext.User, model);
+        SecretKeyRetrievalRequest request = new SecretKeyRetrievalRequest(Provider, _azureKeyVaultService, HttpContext.User, model);
         return await HandleRequest(request, async (req) =>
         {
             return req.SecretKey;
@@ -65,7 +68,7 @@ public class EnvironmentsController : CoreController
     [HttpPost("resetPassword")]
     public async Task<IActionResult> ResetPassword([FromForm] PasswordResetRequestModel model)
     {
-        PasswordResetRequest request = new PasswordResetRequest(_provider, _passwordResetService, HttpContext.User, model);
+        PasswordResetRequest request = new PasswordResetRequest(Provider, _passwordResetService, HttpContext.User, model);
         return await HandleRequest(request, async (req) =>
         {
             return req.Email;

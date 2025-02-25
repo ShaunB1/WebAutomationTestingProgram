@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Settings.Request;
 using Microsoft.Extensions.Options;
 
 namespace AutomationTestingProgram.Core.Services
@@ -27,7 +29,7 @@ namespace AutomationTestingProgram.Core.Services
         /// Token detecting whether the application is shutting down. Used to prevent new requests
         /// from being received.
         /// </summary>
-        private CancellationTokenSource _tokenSource;
+        private readonly CancellationTokenSource _tokenSource;
 
         public RequestHandler(IOptions<RequestSettings> options)
         {
@@ -40,15 +42,15 @@ namespace AutomationTestingProgram.Core.Services
         /// <summary>
         /// Processes a given request, and returns its result
         /// </summary>
-        /// <param name="request">The request to process</param>
+        /// <param name="request">The request to process. Can either be CancellableClientRequest or NonCancellableClientRequest</param>
         /// <returns>The result of the request</returns>
         public async Task ProcessAsync(IClientRequest request)
         {
             try
             {
-                _requests.TryAdd(request.ID, request);
+                _requests.TryAdd(request.Id, request);
 
-                request.SetStatus(State.Received, $"{request.GetType().Name} (ID: {request.ID}) received.");
+                request.SetStatus(State.Received, $"{request.GetType().Name} (ID: {request.Id}) received.");
 
                 await request.Process();
                 await request.ResponseSource.Task;
@@ -56,7 +58,7 @@ namespace AutomationTestingProgram.Core.Services
             }
             finally
             {
-                _requests.TryRemove(request.ID, out var value);
+                _requests.TryRemove(request.Id, out var value);
             }
         }
 

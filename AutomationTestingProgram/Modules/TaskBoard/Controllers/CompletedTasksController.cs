@@ -3,7 +3,7 @@ using AutomationTestingProgram.Modules.DBConnector.Models;
 using AutomationTestingProgram.Modules.DBConnector.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AutomationTestingProgram.Modules.DBConnector.Controllers;
+namespace AutomationTestingProgram.Modules.TaskBoard.Controllers;
 
 [Authorize]
 [ApiController]

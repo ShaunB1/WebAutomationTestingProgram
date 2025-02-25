@@ -1,5 +1,9 @@
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Controllers;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Hubs;
 using AutomationTestingProgram.Core.Services;
+using AutomationTestingProgram.Core.Services.Logging;
 using AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController;
 using AutomationTestingProgram.Modules.TestRunner.Models.Requests;
 using AutomationTestingProgram.Modules.TestRunnerModule;
@@ -40,7 +44,7 @@ public class TestController : CoreController
     [HttpPost("validate")] 
     public async Task<IActionResult> ValidateRequest([FromForm] ValidationRequestModel model)
     {
-        ValidationRequest request = new ValidationRequest(_provider, HttpContext.User);
+        ValidationRequest request = new ValidationRequest(Provider, HttpContext.User);
         await CopyFileToFolder(model.File, request.FolderPath);
         return await HandleRequest(request, async (req) =>
         {
@@ -56,9 +60,9 @@ public class TestController : CoreController
     public async Task<IActionResult> RunRequest([FromForm] ProcessRequestModel model)
     {
         var guid = Guid.NewGuid().ToString();
-        var request = new ProcessRequest(_provider, _hubContext, _playwright, HttpContext.User, guid, model);
+        var request = new ProcessRequest(Provider, _hubContext, _playwright, HttpContext.User, guid, model);
         await CopyFileToFolder(model.File, request.FolderPath);
-        var email = HttpContext.User.FindFirst("preferred_username")!.Value;
+        var email = HttpContext.User.FindFirst("preferred_username")?.Value;
         await _hubContext.Clients.All.SendAsync("NewRun", guid, $"User: {email} has created Test Run: {guid}");
 
         // Run test asynchronously. Don't await, so user can get the GUID for SignalR connection
@@ -76,7 +80,7 @@ public class TestController : CoreController
         string email = HttpContext.User.FindFirst("preferred_username")!.Value;
         try
         {
-            IClientRequest request = _requestHandler.RetrieveRequest(model.ID);
+            IClientRequest request = RequestHandler.RetrieveRequest(model.ID);
 
             if (request is ProcessRequest processRequest)
             {
@@ -105,7 +109,7 @@ public class TestController : CoreController
         string email = HttpContext.User.FindFirst("preferred_username")!.Value;
         try
         {
-            IClientRequest request = _requestHandler.RetrieveRequest(model.ID);
+            IClientRequest request = RequestHandler.RetrieveRequest(model.ID);
 
             if (request is ProcessRequest processRequest)
             {

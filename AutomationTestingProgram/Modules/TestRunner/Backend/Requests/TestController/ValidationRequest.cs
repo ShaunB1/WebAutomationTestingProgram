@@ -1,8 +1,10 @@
 ﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Services.Logging;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule
+namespace AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController
 {
     /// <summary>
     /// Request to validate a test file.
@@ -35,7 +37,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
              * - User has permission to access application team/group
              */
 
-            this.SetStatus(State.Validating, $"Validating Process Request (ID: {ID})");
+            this.SetStatus(State.Validating, $"Validating Process Request (ID: {Id})");
 
             // Validate permission to access team
             LogInfo($"Validating User Permissions - Team");
@@ -47,7 +49,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         protected override async Task Execute()
         {
-            this.SetStatus(State.Processing, $"Processing Validation Request (ID: {ID})");
+            this.SetStatus(State.Processing, $"Processing Validation Request (ID: {Id})");
 
             IsCancellationRequested();
 
@@ -57,7 +59,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
                 Logger.LogInformation($"{i}");
             }
 
-            this.SetStatus(State.Completed, $"Validation Request (ID: {ID}) completed successfully");
+            this.SetStatus(State.Completed, $"Validation Request (ID: {Id}) completed successfully");
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AutomationTestingProgram.Core
+namespace AutomationTestingProgram.Core.Models.Requests
 {
     /// <summary>
     /// Used by API Requests to create a CancellationRequest

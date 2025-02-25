@@ -1,14 +1,15 @@
 ﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
+using AutomationTestingProgram.Core.Services.Logging;
 
-namespace AutomationTestingProgram.Core
+namespace AutomationTestingProgram.Core.Helpers.Requests
 {   
     /// <summary>
     /// Abstract class defining all Cancellable Request Types
     /// </summary>
     public abstract class CancellableClientRequest : IClientRequest
     {
-        public string ID { get; }
+        public string Id { get; }
         [JsonIgnore]
         public ClaimsPrincipal User { get; }
         [JsonIgnore]
@@ -29,7 +30,7 @@ namespace AutomationTestingProgram.Core
         /// Lock used to prevent concurrency issues during state transitions
         /// </summary>
         [JsonIgnore]
-        private object _statelock;
+        private readonly object _stateLock;
 
         /// <summary>
         /// CancellationTokenSource associated with the request.
@@ -48,40 +49,23 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Initializes variables to be used for all Cancellable Request Types
         /// </summary>
-        public CancellableClientRequest(ClaimsPrincipal User, bool isLoggingEnabled = true, string id = "")
+        protected CancellableClientRequest(ClaimsPrincipal user, bool isLoggingEnabled = true, string id = "")
         {
-            if (!string.IsNullOrEmpty(id))
-            {
-                ID = id;
-            }
-            else
-            {
-                this.ID = Guid.NewGuid().ToString();
-            }
-                
-            this.User = User;
-            this.ResponseSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            this.State = State.Received;
-            this.CancelSource = new CancellationTokenSource();
-            this.CancelToken = CancelSource.Token;
-            this.Message = string.Empty;
-            this.StackTrace = string.Empty;
-
-            _statelock = new object();
-
-            if (isLoggingEnabled)
-            {
-                this.FolderPath = LogManager.CreateRequestFolder(ID);
-            }
-            else
-            {
-                this.FolderPath = string.Empty;
-            }
+            Id = !string.IsNullOrEmpty(id) ? id : Guid.NewGuid().ToString();
+            User = user;
+            ResponseSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            State = State.Received;
+            CancelSource = new CancellationTokenSource();
+            CancelToken = CancelSource.Token;
+            Message = string.Empty;
+            StackTrace = string.Empty;
+            _stateLock = new object();
+            FolderPath = isLoggingEnabled ? LogManager.CreateRequestFolder(Id) : string.Empty;
         }
 
         public void SetStatus(State responseType, string message = "", Exception? e = null)
         {
-            lock (_statelock)
+            lock (_stateLock)
             {
                 if (ResponseSource.Task.IsCompleted)
                     return; // Do nothing if already complete.
@@ -137,8 +121,7 @@ namespace AutomationTestingProgram.Core
         {
             CancelSource.Cancel();
         }
-
-
+        
         /// <summary>
         /// Checks whether request is flagged for cancellation.
         /// If so, OperationCanceledException is thrown.
@@ -158,16 +141,16 @@ namespace AutomationTestingProgram.Core
             try
             {
                 Validate();
-
+                
                 await Execute();
             }
             catch (OperationCanceledException e)
             {
-                this.SetStatus(State.Cancelled, e.Message);
+                SetStatus(State.Cancelled, e.Message);
             }
             catch (Exception e)
             {
-                this.SetStatus(State.Failure, $"Failure (State: {State})", e);
+                SetStatus(State.Failure, $"Failure (State: {State})", e);
             }
             finally
             {
@@ -190,26 +173,22 @@ namespace AutomationTestingProgram.Core
         
         public void LogInfo(string message)
         {
-            if (Logger != null)
-                Logger.LogInformation(message);
+            Logger?.LogInformation(message);
         }
 
         public void LogWarning(string message)
         {
-            if (Logger != null)
-                Logger.LogWarning(message);
+            Logger?.LogWarning(message);
         }
 
         public void LogError(string message)
         {
-            if (Logger != null)
-                Logger.LogError(message);
+            Logger?.LogError(message);
         }
 
         public void LogCritical(string message)
         {
-            if (Logger != null)
-                Logger.LogCritical(message);
+            Logger?.LogCritical(message);
         }
 
         public Task Log(LogLevel level, string message)
@@ -236,8 +215,7 @@ namespace AutomationTestingProgram.Core
         /// </summary>
         private void Flush()
         {
-            if (Logger != null)
-                Logger.Flush();
+            Logger?.Flush();
         }
     }
 }

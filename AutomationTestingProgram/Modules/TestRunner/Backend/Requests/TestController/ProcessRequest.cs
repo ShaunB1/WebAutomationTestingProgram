@@ -1,6 +1,9 @@
 ﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Hubs;
+using AutomationTestingProgram.Core.Services.Logging;
 using AutomationTestingProgram.Modules.TestRunner.Models.Requests;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.AspNetCore.SignalR;
@@ -10,7 +13,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestContr
     /// <summary>
     /// Request to process a test file using playwright
     /// </summary>
-    public class ProcessRequest : CancellableClientRequest, IClientRequest
+    public class ProcessRequest : CancellableClientRequest
     {
         [JsonIgnore]
         protected override ICustomLogger Logger { get; }
@@ -44,12 +47,11 @@ namespace AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestContr
         private readonly AsyncPauseControl _pauseControl;
 
         [JsonIgnore]
-        private PlaywrightObject playwright;
+        private readonly PlaywrightObject _playwright;
 
         [JsonIgnore]
         private readonly IHubContext<TestHub> _hubContext;
-
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessRequest"/> class.
         /// Instance is associated with a file and the specified browser type and version.
@@ -57,20 +59,22 @@ namespace AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestContr
         /// <param name="File">The file to be processed in the request.</param>
         /// <param name="Type">The type of the browser (e.g., "Chrome", "Firefox") that will handle the request.</param>
         /// <param name="Version">The version of the browser (e.g., "91", "93") that will be used to process the request.</param>
-        public ProcessRequest(ICustomLoggerProvider provider, IHubContext<TestHub> hubContext, PlaywrightObject playwright, ClaimsPrincipal User, string guid, ProcessRequestModel model)
-            : base(User, isLoggingEnabled:true, guid)
+        public ProcessRequest(
+            ICustomLoggerProvider provider,
+            IHubContext<TestHub> hubContext,
+            PlaywrightObject playwright,
+            ClaimsPrincipal User,
+            string guid,
+            ProcessRequestModel model) : base(User, isLoggingEnabled:true, guid)
         {            
-            this.Logger = provider.CreateLogger<ProcessRequest>(FolderPath);
-            
-            this.FileName = model.File.FileName;
-            this.BrowserType = model.Browser;
-            this.BrowserVersion = model.BrowserVersion;
-            this.Environment = model.Environment;
-            this.Delay = model.Delay;
-
-            this.playwright = playwright;
-            this._hubContext = hubContext;
-
+            Logger = provider.CreateLogger<ProcessRequest>(FolderPath);
+            FileName = model.File.FileName;
+            BrowserType = model.Browser;
+            BrowserVersion = model.BrowserVersion;
+            Environment = model.Environment;
+            Delay = model.Delay;
+            _playwright = playwright;
+            _hubContext = hubContext;
             _pauseControl = new AsyncPauseControl(Logger, CancelToken);
         }
 
@@ -86,7 +90,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestContr
              * - User has permission to access application team/group
              */
 
-            this.SetStatus(State.Validating, $"Validating Process Request (ID: {ID}, BrowserType: {BrowserType}," +
+            SetStatus(State.Validating, $"Validating Process Request (ID: {Id}, BrowserType: {BrowserType}," +
                     $" BrowserVersion: {BrowserVersion}, Environment: {Environment})");
 
             // Validate permission to access team
@@ -99,17 +103,17 @@ namespace AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestContr
         /// </summary>
         protected override async Task Execute()
         {
-            this.SetStatus(State.Processing, $"Processing Process Request (ID: {ID}, BrowserType: {BrowserType}," +
+            SetStatus(State.Processing, $"Processing Process Request (ID: {Id}, BrowserType: {BrowserType}," +
                     $" BrowserVersion: {BrowserVersion}, Environment: {Environment})");
 
             IsCancellationRequested();
 
-            await playwright.ProcessRequestAsync( this );
+            await _playwright.ProcessRequestAsync( this );
 
-            this.SetStatus(State.Completed, $"Process Request (ID: {ID}, BrowserType: {BrowserType}," +
+            SetStatus(State.Completed, $"Process Request (ID: {Id}, BrowserType: {BrowserType}," +
                 $" BrowserVersion: {BrowserVersion}, Environment: {Environment}) completed successfully");
 
-            await _hubContext.Clients.Group(ID).SendAsync("RunFinished", ID, $"Test Run: {ID} has completed successfully");
+            await _hubContext.Clients.Group(Id).SendAsync("RunFinished", Id, $"Test Run: {Id} has completed successfully");
         }
 
         /// <summary>

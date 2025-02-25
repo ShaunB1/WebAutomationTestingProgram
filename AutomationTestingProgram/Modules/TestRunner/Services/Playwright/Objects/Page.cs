@@ -1,4 +1,7 @@
 ﻿using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Hubs;
+using AutomationTestingProgram.Core.Services.Logging;
+using AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
@@ -217,28 +220,28 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.
         {
             _logger.LogInformation(message);
             string new_message = $"[{DateTime.Now.ToString("HH:mm:ss.fff")}] [INFO] [Page] " + message;
-            await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, new_message);
+            await _hubContext.Clients.Group(_parent.Request.Id).SendAsync("BroadcastLog", _parent.Request.Id, new_message);
         }
 
         public async Task LogWarning(string message)
         {
             _logger.LogWarning(message);
             string new_message = $"[{DateTime.Now.ToString("HH:mm:ss.fff")}] [WARN] [Page] " + message;
-            await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, new_message);
+            await _hubContext.Clients.Group(_parent.Request.Id).SendAsync("BroadcastLog", _parent.Request.Id, new_message);
         }
 
         public async Task LogError(string message)
         {
             _logger.LogError(message);
             string new_message = $"[{DateTime.Now.ToString("HH:mm:ss.fff")}] [ERROR] [Page] " + message;
-            await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, new_message);
+            await _hubContext.Clients.Group(_parent.Request.Id).SendAsync("BroadcastLog", _parent.Request.Id, new_message);
         }
 
         public async Task LogCritical(string message)
         {
             _logger.LogCritical(message);
             string new_message = $"[{DateTime.Now.ToString("HH:mm:ss.fff")}] [CRITICAL] [Page] " + message;
-            await _hubContext.Clients.Group(_parent.Request.ID).SendAsync("BroadcastLog", _parent.Request.ID, new_message);
+            await _hubContext.Clients.Group(_parent.Request.Id).SendAsync("BroadcastLog", _parent.Request.Id, new_message);
         }
 
         /// <summary>

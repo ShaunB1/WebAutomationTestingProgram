@@ -1,6 +1,7 @@
 using AutomationTestingProgram.Core;
 using Autofac.Extensions.DependencyInjection;
 using AutomationTestingProgram.Configurations;
+using AutomationTestingProgram.Core.Hubs;
 using AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Executor;
 
 var builder = WebApplication.CreateBuilder(args);

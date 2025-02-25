@@ -5,13 +5,6 @@ namespace AutomationTestingProgram.Modules.TestRunner.Models.Attributes
 {
     public class ValidEnvironmentAttribute : ValidationAttribute
     {
-        private readonly List<string> _environments;
-        
-        public ValidEnvironmentAttribute()
-        {
-            _environments = new List<string>();
-        }
-        
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
             if (value is not string environment)
@@ -21,22 +14,14 @@ namespace AutomationTestingProgram.Modules.TestRunner.Models.Attributes
 
             var environmentGetter = validationContext.GetService(typeof(CsvEnvironmentGetter)) as CsvEnvironmentGetter;
 
-            // _environments = environmentGetter.GetEnvironments();
-            
-            
-            // if (value is string environment)
-            // {
-            //     var csvEnvironmentGetter = (CSVEnvironmentGetter)validationContext.GetService(typeof(CSVEnvironmentGetter))!;
-            //
-            //     try
-            //     {
-            //         csvEnvironmentGetter.GetEnvironmentName(environment);
-            //     }
-            //     catch
-            //     {
-            //         return new ValidationResult($"Environment '{environment}' is not valid.");
-            //     }
-            // }
+            try
+            {
+                var envName = environmentGetter?.GetEnvironmentName(environment);
+            }
+            catch
+            {
+                return new ValidationResult($"Environment '{environment}' is not supported.");
+            }
 
             return ValidationResult.Success;
         }

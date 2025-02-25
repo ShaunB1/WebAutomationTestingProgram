@@ -2,6 +2,7 @@
 using AutomationTestingProgram.Core;
 using AutomationTestingProgram.Core.Services;
 using AutomationTestingProgram.Core.Services.ApplicationLifetime;
+using AutomationTestingProgram.Core.Services.Logging;
 
 namespace AutomationTestingProgram.Configurations.DI;
 

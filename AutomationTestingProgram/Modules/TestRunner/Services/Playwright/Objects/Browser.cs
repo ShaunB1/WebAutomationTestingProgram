@@ -1,7 +1,11 @@
 ﻿using Microsoft.Graph.Models;
 using Microsoft.Playwright;
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Helpers.Requests;
+using AutomationTestingProgram.Core.Services.Logging;
 using AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController;
+using AutomationTestingProgram.Modules.TestRunner.Models.Factories;
+using AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 
@@ -171,8 +175,8 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         /// </summary>
         public void IncrementRequestCount(IClientRequest request)
         {
-            int value = Interlocked.Increment(ref _requestCount); // Used to ensure value is unchanged
-            _logger.LogInformation($"{request.GetType().Name} (ID: {request.ID}) received. " +
+            var value = Interlocked.Increment(ref _requestCount); // Used to ensure value is unchanged
+            _logger.LogInformation($"{request.GetType().Name} (ID: {request.Id}) received. " +
                 $"-- Total Requests Active: '{value}'");
         }
 
@@ -183,7 +187,7 @@ namespace AutomationTestingProgram.Modules.TestRunnerModule
         public void DecrementRequestCount(IClientRequest request)
         {
             int value = Interlocked.Decrement(ref _requestCount);
-            _logger.LogInformation($"Terminating {request.GetType().Name} (ID: {request.ID}, Status: {request.State}). " +
+            _logger.LogInformation($"Terminating {request.GetType().Name} (ID: {request.Id}, Status: {request.State}). " +
                 $"-- Total Requests Active: '{value}'");
         }
 

@@ -1,6 +1,7 @@
 ﻿using AutomationTestingProgram.Core;
 using AutomationTestingProgram.Core.Settings;
 using AutomationTestingProgram.Core.Settings.Playwright;
+using AutomationTestingProgram.Core.Settings.Request;
 
 namespace AutomationTestingProgram.Configurations;
 

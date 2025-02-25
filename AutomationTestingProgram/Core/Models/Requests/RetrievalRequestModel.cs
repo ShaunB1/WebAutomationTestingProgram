@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using AutomationTestingProgram.Core.Models.Attributes;
 
-namespace AutomationTestingProgram.Core
+namespace AutomationTestingProgram.Core.Models.Requests
 {   
     /// <summary>
     /// Used by API requests to create a RetrievalRequest

@@ -1,6 +1,7 @@
-﻿using AutomationTestingProgram.Core;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
+namespace AutomationTestingProgram.Core.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

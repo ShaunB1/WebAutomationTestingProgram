@@ -1,8 +1,4 @@
-﻿using DocumentFormat.OpenXml.Bibliography;
-using NPOI.OpenXmlFormats.Dml;
-using System.Management.Automation.Language;
-
-namespace AutomationTestingProgram.Core
+﻿namespace AutomationTestingProgram.Core.Helpers
 {
     /// <summary>
     /// Class used to manage a lock dictionary with appropriate addition and deletion
@@ -17,12 +13,12 @@ namespace AutomationTestingProgram.Core
         /// <summary>
         /// Initialize a <see cref="LockManager{T}"/> class with a limit on total # of concurrent locks.
         /// </summary>
-        /// <param name="Limit"></param>
-        public LockManager(int Limit)
+        /// <param name="limit"></param>
+        public LockManager(int limit)
         {
             _bigLock = new object();
             _lockMap = new Dictionary<T, LockInfo>();
-            _limit = new SemaphoreSlim(Limit);
+            _limit = new SemaphoreSlim(limit);
         }
 
         /// <summary>

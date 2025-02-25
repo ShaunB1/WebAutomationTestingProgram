@@ -1,6 +1,6 @@
 ﻿using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule
+namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Executor
 {   
     /// <summary>
     /// The interface used to define executor types.

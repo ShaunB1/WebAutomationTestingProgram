@@ -1,9 +1,10 @@
-﻿using AutomationTestingProgram.Core;
+﻿using AutomationTestingProgram.Core.Hubs;
 using AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Executor;
+using AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using AutomationTestingProgram.Modules.TestRunnerModule;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Options;
 
-namespace AutomationTestingProgram.Modules.TestRunnerModule
+namespace AutomationTestingProgram.Modules.TestRunner.Models.Factories
 {
     public interface IPlaywrightExecutorFactory
     {

@@ -3,8 +3,10 @@ using System.Text.RegularExpressions;
 using Autofac;
 using AutomationTestingProgram.Actions;
 using AutomationTestingProgram.Core;
+using AutomationTestingProgram.Core.Hubs;
 using AutomationTestingProgram.Core.Settings;
 using AutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController;
+using AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
 using AutomationTestingProgram.Modules.TestRunnerModule;
 using AutomationTestingProgram.Modules.TestRunnerModule.Services.Playwright.Objects;
 using Microsoft.AspNetCore.SignalR;
@@ -216,7 +218,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                           .AppendLine("========================================================")
                           .AppendLine("                REQUEST INFORMATION                     ")
                           .AppendLine("========================================================")
-                          .AppendLine($"ID:               {_request.ID,-40}")
+                          .AppendLine($"ID:               {_request.Id,-40}")
                           .AppendLine($"BROWSER TYPE:     {_request.BrowserType,-40}")
                           .AppendLine($"BROWSER VERSION:  {_request.BrowserVersion,-40}")
                           .AppendLine("--------------------------------------------------------")
@@ -251,8 +253,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                 {
                     _request.IsCancellationRequested();
                     await _request.IsPauseRequested(page.LogInfo);
-
-
+                    
                     await Task.Delay(TimeSpan.FromSeconds(delay));
 
                     var data = _reader.GetNextTestStep();
@@ -410,7 +411,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                           .AppendLine("========================================================")
                           .AppendLine($"TEST EXECUTION CANCELLED => {e.Message, -40}           ")
                           .AppendLine("--------------------------------------------------------")
-                          .AppendLine($"ID:               {_request.ID,-40}")
+                          .AppendLine($"ID:               {_request.Id,-40}")
                           .AppendLine($"BROWSER TYPE:     {_request.BrowserType,-40}")
                           .AppendLine($"BROWSER VERSION:  {_request.BrowserVersion,-40}")
                           .AppendLine("--------------------------------------------------------")
@@ -431,7 +432,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                           .AppendLine("========================================================")
                           .AppendLine($"TEST EXECUTION FAILED                                  ")
                           .AppendLine("--------------------------------------------------------")
-                          .AppendLine($"ID:               {_request.ID,-40}")
+                          .AppendLine($"ID:               {_request.Id,-40}")
                           .AppendLine($"BROWSER TYPE:     {_request.BrowserType,-40}")
                           .AppendLine($"BROWSER VERSION:  {_request.BrowserVersion,-40}")
                           .AppendLine("--------------------------------------------------------")
@@ -479,7 +480,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
                           .AppendLine("========================================================")
                           .AppendLine($"TEST EXECUTION COMPLETE                                ")
                           .AppendLine("--------------------------------------------------------")
-                          .AppendLine($"ID:               {_request.ID,-40}")
+                          .AppendLine($"ID:               {_request.Id,-40}")
                           .AppendLine($"BROWSER TYPE:     {_request.BrowserType,-40}")
                           .AppendLine($"BROWSER VERSION:  {_request.BrowserVersion,-40}")
                           .AppendLine("--------------------------------------------------------")
@@ -577,7 +578,7 @@ namespace AutomationTestingProgram.Modules.TestRunner.Services.Playwright.Execut
 
                     if (actions.TryGetValue(ActionOnObject, out var action))
                     {
-                        await action.ExecuteAsync(page, _request.ID, step, _envVars, _parameters);
+                        await action.ExecuteAsync(page, _request.Id, step, _envVars, _parameters);
                     }
                     else
                     {

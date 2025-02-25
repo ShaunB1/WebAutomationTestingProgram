@@ -1,4 +1,4 @@
-﻿namespace AutomationTestingProgram.Core;
+﻿namespace AutomationTestingProgram.Core.Settings.Request;
 
 public class RequestSettings
 {

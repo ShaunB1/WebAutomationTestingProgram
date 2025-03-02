@@ -1,43 +1,37 @@
-﻿using System.Text.RegularExpressions;
-using Microsoft.Playwright;
-using Newtonsoft.Json;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+﻿using Microsoft.Playwright;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class UploadFile : WebAction
 {
-    public override async Task ExecuteAsync(Page pageObject,
-        string groupID,
-        TestStep step,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
-        IPage page = pageObject.Instance!;
-
-        await pageObject.LogInfo("Locating upload...");
-        
         var locator = step.Object;
         var locatorType = step.Comments;
         var element = await LocateElementAsync(page, locator, locatorType);
-
-        await pageObject.LogInfo("Upload successfully located");
-
         string filePath;
-
-        filePath = step.Value;
+        
+        if (step.Value.StartsWith("{") && step.Value.EndsWith("}"))
+        {
+            filePath = GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
+        }
+        else
+        {
+            filePath = step.Value;
+        }
 
         try
         {
-            await pageObject.LogInfo("Uploading...");
-
             await element.SetInputFilesAsync(filePath);
-            await pageObject.LogInfo("Upload successful");
+            return true;
         }
         catch (Exception e)
         {
-            throw;
+            Console.WriteLine(e);
+            return false;
         }
     }
 }

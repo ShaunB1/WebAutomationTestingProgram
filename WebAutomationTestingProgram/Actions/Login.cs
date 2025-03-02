@@ -1,38 +1,15 @@
-using WebAutomationTestingProgram.Actions;
-using WebAutomationTestingProgram.Core;
-using Microsoft.Graph.Reports.GetPrinterArchivedPrintJobsWithPrinterIdWithStartDateTimeWithEndDateTime;
 using Microsoft.Playwright;
-using WebAutomationTestingProgram.Core.Services;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Exceptions;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Services;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class Login : WebAction
 {
-    private readonly PasswordResetService _passwordResetService;
-    private readonly AzureKeyVaultService _azureKeyVaultService;
-    private readonly CsvEnvironmentGetter _csvEnvironmentGetter;
-
-    public Login(PasswordResetService passwordResetService, AzureKeyVaultService azureKeyVaultService, CsvEnvironmentGetter cSVEnvironmentGetter)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
-        _azureKeyVaultService = azureKeyVaultService;
-        _passwordResetService = passwordResetService;
-        _csvEnvironmentGetter = cSVEnvironmentGetter;
-    }
-    
-    public override async Task ExecuteAsync(Page pageObject,
-        string groupID,
-        TestStep step,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams)
-    {
-
-        Func<LogLevel, string, Task> Log = pageObject.Log;
-
-
         string username = step.Object;
         string password = step.Value;
 
@@ -40,7 +17,17 @@ public class Login : WebAction
         bool isHardcodedPassword = password != string.Empty && !password.StartsWith("##");
         if (!isHardcodedPassword)
         {
-            password = await _azureKeyVaultService.GetKvSecret(Log, username);
+            var result = await AzureKeyVaultService.GetKvSecret(username);
+            if (result.success)
+            {
+                Console.WriteLine($"Password for {username} successfully fetched from Azure Key Vault, proceeding with Login");
+                password = result.message;
+            }
+            else
+            {
+                Console.WriteLine("Login step failed - Password could not be fetched from Azure Key Vault");
+                return false;
+            }
         }
 
         try
@@ -49,30 +36,28 @@ public class Login : WebAction
             if (envVars.ContainsKey("environment"))
             {
                 environment = envVars["environment"];
-                await pageObject.LogInfo($"Testing in environment: {environment}");
+                Console.WriteLine($"Testing in environment: {environment}");
             }
             else
             {
-                throw new Exception($"Login failed - Could not find environment key in environment variable dictionary");
+                Console.WriteLine($"Login failed - Could not find environment key in environment variable dictionary");
+                return false;
             }
 
             string url;
-            IPage page;
 
             if (step.Object.Contains("ontario.ca"))
             {
-                await pageObject.LogInfo("Login via AAD.");
-                url = _csvEnvironmentGetter.GetAadUrl(environment);
+                Console.WriteLine("Login via AAD.");
+                url = CSVEnvironmentGetter.GetAdURL(environment);
                 try
                 {
-                    await pageObject.RefreshAsync(url);
+                    await page.GotoAsync(url);
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"Failed to navigate to url {url}: {ex.Message}");
+                    Console.WriteLine($"Failed to navigate to url {url}: {ex.Message}");
                 }
-
-                page = pageObject.Instance!;
 
                 ILocator usernameInput = page.Locator("//*[@id=\"i0116\"]");
                 ILocator passwordInput = page.Locator("//*[@id=\"i0118\"]");
@@ -86,18 +71,16 @@ public class Login : WebAction
             }
             else if (step.Object.Contains("ontarioemail.ca"))
             {
-                await pageObject.LogInfo("Login via OPS BPS.");
-                url = _csvEnvironmentGetter.GetOpsBpsUrl(environment);
+                Console.WriteLine("Login via OPS BPS.");
+                url = CSVEnvironmentGetter.GetOpsBpsURL(environment);
                 try
                 {
-                    await pageObject.RefreshAsync(url);
+                    await page.GotoAsync(url);
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"Failed to navigate to url {url}: {ex.Message}");
+                    Console.WriteLine($"Failed to navigate to url {url}: {ex.Message}");
                 }
-
-                page = pageObject.Instance!;
 
                 ILocator usernameInput = page.Locator("//*[@id=\"username\"]");
                 ILocator passwordInput = page.Locator("//*[@id=\"password\"]");
@@ -117,26 +100,33 @@ public class Login : WebAction
                 if (isInvalid || isExpired || isLocked)
                 {
                     // If password triggered any of the above, then called PasswordResetService
+                    var result = await PasswordResetService.ResetPassword(username);
+                    if (!result.success)
+                    {
+                        Console.WriteLine("Login failed - Attempted to reset password but failed");
+                        return false;
+                    }
                     
-                    try
-                    {
-                        await _passwordResetService.ResetPassword(Log, username);
-                    }
-                    catch (PasswordAlreadyResetException)
-                    {
-                        await pageObject.LogInfo("Password already reset today. Refetching..");
-                    }
-
                     // The new password is updated in Azure Key Vault, fetch it
-                    password = await _azureKeyVaultService.GetKvSecret(Log, username);
+                    result = await AzureKeyVaultService.GetKvSecret(username);
+                    if (result.success)
+                    {
+                        Console.WriteLine($"Password for {username} successfully fetched from Azure Key Vault, proceeding with Login");
+                        password = result.message;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Login step failed - Password could not be fetched from Azure Key Vault");
+                        return false;
+                    }
 
                     try
                     {
-                        await pageObject.RefreshAsync(url);
+                        await page.GotoAsync(url);
                     }
                     catch (Exception ex)
                     {
-                        throw new Exception($"Failed to navigate to url {url}: {ex.Message}");
+                        Console.WriteLine($"Failed to navigate to url {url}: {ex.Message}");
                     }
 
                     await usernameInput.FillAsync(username);
@@ -146,16 +136,18 @@ public class Login : WebAction
             }
             else
             {
-                throw new Exception($"Invalid email: {step.Object}");
+                Console.WriteLine($"Invalid email: {step.Object}");
+                return false;
             }
 
             // Hard wait for now, but we need to implement function that detects loading spinner completion
-            await pageObject.LogInfo("HARD WAIT FOR LOADING SPINNER - 30 Seconds");
-            Task.Delay(30000).Wait();
+            Task.Delay(10000).Wait();
+            return true;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            throw;
+            Console.WriteLine($"Something went wrong while logging in: {ex.Message}");
+            return false;
         }
     }
 }

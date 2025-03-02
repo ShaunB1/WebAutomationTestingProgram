@@ -1,40 +1,45 @@
 using System.Text.RegularExpressions;
-using Microsoft.Azure.Pipelines.WebApi;
 using Microsoft.Playwright;
-using Newtonsoft.Json;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class PopulateWebElement : WebAction
 {
-    public override async Task ExecuteAsync(Page pageObject,
-        string groupID,
-        TestStep step,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
-
-        await pageObject.LogInfo("Locating element...");
-
-        IPage page = pageObject.Instance!;
-
         var locator = step.Object;
         var locatorType = step.Comments;
         var state = step.Value.ToLower();
         var element = await LocateElementAsync(page, locator, locatorType);
-
-        await pageObject.LogInfo("Element successfully located");
-
         try
         {
-            await element.FillAsync(step.Value);
-            await pageObject.LogInfo("Element successfully filled");
+            Match match = Regex.Match(step.Value, @"^{(\d+)}$");
+            var datapoint = string.Empty;
+
+            if (match.Success)
+            {
+                var content = match.Groups[1].Value;
+                var index = int.Parse(content);
+            }
+
+            if (match.Success)
+            {
+                await element.FillAsync(datapoint);
+            }
+            else
+            {
+                await element.FillAsync(step.Value);                
+            }
+            
+            return true;
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed to populate text box {step.Object} with {step.Value}: {ex.Message}");
+            Console.WriteLine($"Failed to populate text box {step.Object} with {step.Value}: {ex.Message}");
+            return false;
         }
     }
 }

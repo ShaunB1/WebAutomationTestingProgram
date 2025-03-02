@@ -77,6 +77,7 @@ const TestRuns = (props: any) => {
             });
 
             props.connection.on('NewRun', (testRunId: any, message: any) => {
+                console.log("NEW RUN");
                 console.log(message)
                 setTestRuns(prevTestRuns => [...prevTestRuns, { id: testRunId }]);
             });
@@ -181,17 +182,25 @@ const TestRuns = (props: any) => {
             return;
         }
 
+        const testRunId = crypto.randomUUID();
+        
         const formData = new FormData();
-        formData.append("File", file);
-        formData.append("Browser", browser.toLowerCase());
-        formData.append("BrowserVersion", "113");
-        formData.append("Environment", env);
-        formData.append("Delay", delay.toString());
+        // formData.append("File", file);
+        // formData.append("Browser", browser.toLowerCase());
+        // formData.append("BrowserVersion", "113");
+        // formData.append("Environment", env);
+        // formData.append("Delay", delay.toString());
+        
+        formData.append("file", file);
+        formData.append('env', env);
+        formData.append('browser', browser.toLowerCase());
+        formData.append("delay", delay.toString());
 
         try {
             const token = await getToken(instance, accounts);
             const headers = new Headers();
             headers.append("Authorization", `Bearer ${token}`);
+            headers.append("TestRunId", testRunId);
 
             const response = await fetch("/api/test/run", {
                 method: "POST",

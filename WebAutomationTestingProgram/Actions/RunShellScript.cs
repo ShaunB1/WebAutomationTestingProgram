@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Microsoft.Playwright;
 using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
 using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
 
@@ -6,7 +7,8 @@ namespace WebAutomationTestingProgram.Actions;
 
 public class RunShellScript : WebAction
 {
-    public override async Task ExecuteAsync(Page page, string groupID, TestStep step, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, Modules.TestRunnerV1.Models.TestStep step, Dictionary<string, string> envVars, Dictionary<string, string> saveParams, Dictionary<string, List<Dictionary<string, string>>> cycleGroups,
+        int currentIteration, string cycleGroupName)
     {
         try
         {
@@ -31,17 +33,7 @@ public class RunShellScript : WebAction
             var error = process.StandardError.ReadToEnd();
             
             process.WaitForExit();
-
-            page.LogInfo($"Script Output: {output}");
-
-            if (!string.IsNullOrEmpty(error))
-            {
-                page.LogInfo($"Script Error: {error}");
-            }
-            else
-            {
-                page.LogInfo($"Script successfully executed.");
-            }
+            return true;
         }
         catch (Exception ex)
         {

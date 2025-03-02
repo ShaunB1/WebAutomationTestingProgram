@@ -1,16 +1,18 @@
-﻿using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
+﻿using Microsoft.Playwright;
+using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
 using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class CloseTab : WebAction
 {
-    public override async Task ExecuteAsync(Page page, string groupID, TestStep step, Dictionary<string, string> envVars, Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, Modules.TestRunnerV1.Models.TestStep step, Dictionary<string, string> envVars, Dictionary<string, string> saveParams, Dictionary<string, List<Dictionary<string, string>>> cycleGroups,
+        int currentIteration, string cycleGroupName)
     {
         try
         {
-            await page.CloseCurrentAsync();
-            await page.LogInfo("Successfully closed tab.");
+            await page.CloseAsync();
+            return true;
         }
         catch (Exception ex)
         {

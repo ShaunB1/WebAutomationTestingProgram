@@ -5,7 +5,6 @@ using Microsoft.Playwright;
 using Newtonsoft.Json;
 using WebAutomationTestingProgram.Actions;
 using WebAutomationTestingProgram.Core.Hubs;
-using WebAutomationTestingProgram.Core.Hubs.Services;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Services;
@@ -20,7 +19,7 @@ public class TestExecutor
     private readonly bool _recordVideo = false;
     private Dictionary<string, string> _envVars = new Dictionary<string, string>();
     private Dictionary<string, string> _saveParameters = new Dictionary<string, string>();
-    private readonly SignalRService _signalRService;
+    private readonly IHubContext<TestHub> _hubContext;
 
     private static Dictionary<string, string> actionAliases = new Dictionary<string, string>
         {
@@ -70,9 +69,9 @@ public class TestExecutor
             { "gotopage", "navigatetourl" },
         };
 
-    public TestExecutor(SignalRService signalRService, string testRunId)
+    public TestExecutor(IHubContext<TestHub> hubContext, string testRunId)
     {
-        _signalRService = signalRService;
+        _hubContext = hubContext;
         _testRunId = testRunId;
         
         var jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Core\\StaticFiles\\Public\\actions.json");
@@ -156,7 +155,7 @@ public class TestExecutor
                                 .AppendLine($"EXECUTING...")
                                 .AppendLine("========================================================")
                                 .ToString();
-                            await _signalRService.BroadcastLog(_testRunId, logMessage);
+                            await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, logMessage);
                             
                             if (_actions.TryGetValue(actionAlias, out var action))
                             {
@@ -168,7 +167,7 @@ public class TestExecutor
                                     .AppendLine()
                                     .ToString();
 
-                                await _signalRService.BroadcastLog(_testRunId, statusMessage);
+                                await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, statusMessage);
                             }
                             else
                             {
@@ -179,7 +178,7 @@ public class TestExecutor
                                     .AppendLine()
                                     .ToString();
 
-                                await _signalRService.BroadcastLog(_testRunId, statusMessage);
+                                await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, statusMessage);
                                 throw new Exception($"Unknown action '{loopStep.ActionOnObject}'");
                             }
                         }
@@ -210,7 +209,7 @@ public class TestExecutor
                         .AppendLine("========================================================")
                         .ToString();
 
-                    await _signalRService.BroadcastLog(_testRunId, logMessage);
+                    await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, logMessage);
                     
                     if (_actions.TryGetValue(actionAlias, out var action))
                     { 
@@ -222,7 +221,7 @@ public class TestExecutor
                             .AppendLine()
                             .ToString();
 
-                        await _signalRService.BroadcastLog(_testRunId, statusMessage);
+                        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, statusMessage);
                     }
                     else
                     {
@@ -233,7 +232,7 @@ public class TestExecutor
                             .AppendLine()
                         .ToString();
 
-                        await _signalRService.BroadcastLog(_testRunId, statusMessage);
+                        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, statusMessage);
                         throw new Exception($"Unknown action '{step.ActionOnObject}'");
                     }
                 }
@@ -334,7 +333,7 @@ public class TestExecutor
                     step.Object = InsertParams(step.Object);
                     step.Value = InsertParams(step.Value);
                     
-                    // await _signalRService.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
+                    await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"ACTION: {step.TestCaseName}, {step.StepNum}, {step.TestDescription}, {step.ActionOnObject}, {step.Object}");
 
                     var success = await RetryActionAsync(async () =>
                     {
@@ -367,7 +366,7 @@ public class TestExecutor
                     if (!success)
                     {
                         // _logger.LogInformation($"FAILED: {step.Object}");
-                        // await _signalRService.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"FAILED: {step.Object}");
+                        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"FAILED: {step.Object}");
                         step.Outcome = "Failed";
                         stepsFailed.Add((step.SequenceIndex, step.TestDescription));
                         failCount++;
@@ -383,7 +382,7 @@ public class TestExecutor
             catch (Exception e)
             {
                 // _logger.LogInformation(e.ToString());
-                await _signalRService.BroadcastLog(_testRunId, e.ToString());
+                await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, e.ToString());
                 var indexedStackTrace = new List<(int, string)>();
 
                 // return ("Failed", stepsFailed, new List<(int, string)>(index+1, e.StackTrace?.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)));
@@ -405,7 +404,7 @@ public class TestExecutor
                 catch (Exception e)
                 {
                     // _logger.LogInformation($"Attempt {attempt} failed with error: {e.Message}");
-                    await _signalRService.BroadcastLog(_testRunId, $"Attempt {attempt} failed with error: {e.Message}");
+                    await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Attempt {attempt} failed with error: {e.Message}");
                     await Task.Delay(1000);
                 }
             }

@@ -28,8 +28,8 @@ const LogDisplay = (props: any) => {
                         fontFamily: "Courier, monospace",
                         fontSize: "1rem",
                         margin: "0 20px",
-                        color: log.includes("TEST CASE COMPLETE") || log.includes("TEST STEP COMPLETE") ? "green" :
-                            log.includes("TEST CASE FAILURE") || log.includes("TEST STEP FAILURE") ? "red" : 
+                        color: log.includes("TEST CASE COMPLETE") || log.includes("TEST STEP COMPLETE") || log.includes("True") ? "green" :
+                            log.includes("TEST CASE FAILURE") || log.includes("TEST STEP FAILURE") || log.includes("False") ? "red" : 
                             log.includes("TEST CASE START") || log.includes("TEST STEP START") ? "yellow" : "white",
                     }}
                 >

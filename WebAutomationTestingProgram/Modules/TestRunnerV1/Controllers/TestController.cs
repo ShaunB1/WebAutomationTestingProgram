@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using WebAutomationTestingProgram.Actions;
 using WebAutomationTestingProgram.Core.Hubs;
+using WebAutomationTestingProgram.Core.Hubs.Services;
 using WebAutomationTestingProgram.Core.Settings.Azure;
 using WebAutomationTestingProgram.Modules.TestRunner.Services.File;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Services;
@@ -20,9 +21,9 @@ public class TestController : ControllerBase
     private readonly HandleTestCase _caseHandler;
     private readonly bool _reportToDevops;
     private readonly ILogger<TestController> _logger;
-    private readonly IHubContext<TestHub> _broadcaster;
+    private readonly SignalRService _broadcaster;
 
-    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, IHubContext<TestHub> broadcaster)
+    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, SignalRService broadcaster)
     {
         _azureDevOpsSettings = azureDevOpsSettings.Value;
         _planHandler = new HandleTestPlan();
@@ -47,6 +48,8 @@ public class TestController : ControllerBase
         {
             return BadRequest("File or TestRunId missing.");
         }
+        
+        _broadcaster.BroadcastLog(testRunId, "newrun");
         
         Console.WriteLine("Received test request");
         // Response.ContentType = "text/event-stream";

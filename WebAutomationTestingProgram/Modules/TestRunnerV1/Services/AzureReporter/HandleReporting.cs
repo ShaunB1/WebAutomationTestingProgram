@@ -2,6 +2,7 @@
 using Microsoft.Playwright;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using WebAutomationTestingProgram.Core.Hubs;
+using WebAutomationTestingProgram.Core.Hubs.Services;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Services;
 
@@ -17,9 +18,9 @@ public class HandleReporting
     private readonly HandleTestPoint _testPointHandler;
     private readonly HandleTestResult _testResultHandler;
     private readonly ILogger<TestController> _logger;
-    private readonly IHubContext<TestHub> _hubContext;
+    private readonly SignalRService _hubContext;
 
-    public HandleReporting(ILogger<TestController> logger, IHubContext<TestHub> hubContext, string testRunId)
+    public HandleReporting(ILogger<TestController> logger, SignalRService hubContext, string testRunId)
     {
         _testPlanHandler = new HandleTestPlan();
         _testRunHandler = new HandleTestRun();
@@ -64,7 +65,7 @@ public class HandleReporting
         }
         
         _logger.LogInformation($"Created {testCaseIds.Count} work items for {testCaseNames.Count} test cases.");
-        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Created {testCaseIds.Count} work items for {testCaseNames.Count} test cases.");
+        // await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Created {testCaseIds.Count} work items for {testCaseNames.Count} test cases.");
         
         foreach (var testCaseId in testCaseIds)
         {
@@ -77,20 +78,20 @@ public class HandleReporting
         }
         
         _logger.LogInformation($"Added {testCaseNames.Count} test cases to test suite '{testSuite.Id}'.");
-        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Added {testCaseNames.Count} test cases to test suite '{testSuite.Id}'.");
+        // await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Added {testCaseNames.Count} test cases to test suite '{testSuite.Id}'.");
 
         // add test steps to test case
         foreach (var (testCaseGroup, index) in testCases.Select((group, index) => (group, index)))
         {
             await _testCaseHandler.AddTestStepsToTestCaseAsync(testCaseIds[index], testCaseGroup.ToList());
             _logger.LogInformation($"Added {testCaseGroup.ToList().Count} test steps to test case '{testCaseGroup.Key}'");
-            await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Added {testCaseGroup.ToList().Count} test steps to test case '{testCaseGroup.Key}'");
+            // await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Added {testCaseGroup.ToList().Count} test steps to test case '{testCaseGroup.Key}'");
         }
         
         // create test run
         var testRun = await _testRunHandler.CreateTestRunAsync(testPlan.Id, testSuite.Id, environment, fileName);
         _logger.LogInformation($"Created Test Run '{testRun.Id}'");
-        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Created Test Run '{testRun.Id}'");
+        // await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Created Test Run '{testRun.Id}'");
 
         // execute test steps
         var context = await browser.NewContextAsync();
@@ -120,17 +121,17 @@ public class HandleReporting
             failedTests.Clear();
             
             _logger.LogInformation($"Test case '{testCase.Key}' execution completed with outcome: {testCaseResult}");
-            await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Test case '{testCase.Key}' execution completed with outcome: {testCaseResult}");
+            // await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Test case '{testCase.Key}' execution completed with outcome: {testCaseResult}");
         }
 
         // add test result to test run
         await _testResultHandler.UpdateTestResultsAsync(testResults, testRun.Id);
         _logger.LogInformation($"Updated test results in test run.");
-        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Updated test results in test run.");
+        // await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Updated test results in test run.");
         
         // complete test run
         await _testRunHandler.SetTestRunStateAsync(testRun.Id);
         _logger.LogInformation($"Completed test run {testRun.Id}");
-        await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Completed test run {testRun.Id}");
+        // await _hubContext.Clients.Group(_testRunId).SendAsync("BroadcastLog", _testRunId, $"Completed test run {testRun.Id}");
     }
 }

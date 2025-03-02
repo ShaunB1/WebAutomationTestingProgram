@@ -12,7 +12,6 @@ using Microsoft.Identity.Web;
 using Newtonsoft.Json;
 using Microsoft.OpenApi.Models;
 using WebAutomationTestingProgram.Core.Hubs;
-using WebAutomationTestingProgram.Core.Hubs.Services;
 using WebAutomationTestingProgram.Core.Settings.Azure;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Services;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
@@ -61,7 +60,6 @@ builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 31457280;
 });
-builder.Services.AddSingleton<SignalRService>();
 builder.Services.AddSingleton<WebSocketLogBroadcaster>();
 builder.Services.AddScoped<AzureKeyVaultService>();
 builder.Services.AddScoped<PasswordResetService>();

@@ -44,15 +44,15 @@ function App() {
                     await signalRConnection.start();
 
                     signalRConnection.on("OnConnected", (message: any) => {
+                        console.log("CONNECTED");
                         console.log(message);
                     });
 
                     signalRConnection.on("OnDisconnected", (message: any) => {
+                        console.log("DISCONNECTED");
                         console.log(message);
                     });
                     setConnection(signalRConnection);
-
-
                 } catch (err) {
                     console.error(err)
                 }

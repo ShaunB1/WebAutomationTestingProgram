@@ -11,7 +11,7 @@ using WebAutomationTestingProgram.Core.Services.Logging;
 namespace WebAutomationTestingProgram.Core.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/test")]
 public class CoreController : ControllerBase
 {
     protected readonly ICustomLoggerProvider Provider;
@@ -70,23 +70,7 @@ public class CoreController : ControllerBase
         await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true);
         await file.CopyToAsync(fileStream);
     }
-
-    /* API Request Examples:
-     * - STOP
-     * curl -X POST -H "Content-Type: application/json" -d "{\"ID\": \"f76d4bdd-bccf-4a42-bd91-2c5a1d5c81b8\"}" https://localhost:7117/api/core/stop
-     * - GETACTIVEREQUESTS
-     * 
-     * TYPE: curl -X POST -H "Content-Type: application/json" -d "{\"FilterType\": \"Type\", \"FilterValue\": \"WebAutomationTestingProgram.Core.RetrievalRequest\"}" https://localhost:7117/api/core/retrieve
-     * ID: curl -X POST -H "Content-Type: application/json" -d "{\"FilterType\": \"ID\", \"FilterValue\": \"dfe82f6d-c5e2-4a44-acfd-a726dda2ae5f\"}" https://localhost:7117/api/core/retrieve
-     * NONE: curl -X POST -H "Content-Type: application/json" -d "{\"FilterType\": \"None\", \"FilterValue\": \"asdasd\"}" https://localhost:7117/api/core/retrieve
-     * 
-     * - GETLOGFILES
-     * 
-     * Test commands:
-     * for /l %i in (1,1,10) do start /b curl -X POST -H "Content-Type: application/json" http://localhost:5223/api/core/retrieve
-     * 
-     */
-
+    
     /// <summary>
     /// Receives api requests to retrieve all active requests.
     /// </summary>

@@ -1,30 +1,20 @@
 ﻿using System.Collections.ObjectModel;
 using System.Management.Automation;
-using System.Text.RegularExpressions;
-using WebAutomationTestingProgram.Actions;
 using Microsoft.Playwright;
-using Microsoft.PowerShell.Commands;
-using Newtonsoft.Json;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 using Console = System.Console;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class RunSQLScript : WebAction
 {
-    public override async Task ExecuteAsync(Page pageObject,
-        string groupID,
-        TestStep step,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
-        await pageObject.LogInfo($"Changing # of attempts to 1. Executing SQL Script.");
-
-
         var rootPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", ".."));
-        var scriptPath = step.Object;
-
+        var scriptPath = GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
+        
         try
         {
             var sqlExecutor = Path.Combine(rootPath, "Actions", "execute_sql.ps1");
@@ -50,25 +40,29 @@ public class RunSQLScript : WebAction
             
                 Console.WriteLine("Executing SQL script...");
                 Collection<PSObject> results = ps.Invoke();
+                Console.WriteLine(results);
 
                 if (ps.HadErrors)
                 {
                     foreach (var error in ps.Streams.Error)
                     {
-                        await pageObject.LogError("Error: " + error.ToString());
+                        Console.WriteLine("Error: " + error.ToString());
                     }
 
-                    throw new Exception("Errors encountered");
+                    return false;
                 }
 
                 foreach (var result in results)
                 {
-                    await pageObject.LogInfo(result.ToString());
+                    Console.WriteLine(result.ToString());
                 }
+
+                return true;
             }
         }
         catch (Exception e)
         {
+            Console.WriteLine(e);
             throw;
         }
     }

@@ -1,31 +1,18 @@
-using System.Text.RegularExpressions;
 using Microsoft.Playwright;
-using Newtonsoft.Json;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class SelectDDL : WebAction
 {
-    public override async Task ExecuteAsync(Page pageObject,
-        string groupID,
-        TestStep step,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
-        IPage page = pageObject.Instance!;
-
-        await pageObject.LogInfo("Locating DDL...");
-
         var locator = step.Object;
         var locatorType = step.Comments;
         var element = await LocateElementAsync(page, locator, locatorType);
-
-        await pageObject.LogInfo("DDL successfully located");
-
-
-        var option = step.Value;
+        var option = GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
         
         try
         {
@@ -37,13 +24,13 @@ public class SelectDDL : WebAction
             {
                 await element.SelectOptionAsync(new SelectOptionValue { Index = 1 });
             }
-
-            await pageObject.LogInfo("DDL selected option successfully");
+            
+            return true;
         }
         catch (Exception e)
         {
-            await pageObject.LogError($"Error while selecting option {option}: {e.Message}");
-            throw;
+            Console.WriteLine($"Error while selecting option {option}: {e.Message}");
+            return false;
         }
     }
 }

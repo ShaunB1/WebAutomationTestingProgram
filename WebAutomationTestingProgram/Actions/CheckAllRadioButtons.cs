@@ -1,28 +1,18 @@
 ﻿using Microsoft.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class CheckAllRadioButtons : WebAction
 {
-    public override async Task ExecuteAsync(Page pageObject,
-        string groupID,
-        TestStep step,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
         try
         {
-
-            IPage page = pageObject.Instance!;
-
-            await pageObject.LogInfo("Locating all radiobuttons...");
-
             var radioButtons = await page.QuerySelectorAllAsync("input[type='radio']");
             var selectedGroups = new HashSet<string>();
-
-            await pageObject.LogInfo($"Radiobuttons successfully located: {radioButtons.Count}");
 
             foreach (var radioButton in radioButtons)
             {
@@ -44,11 +34,12 @@ public class CheckAllRadioButtons : WebAction
                 }
             }
 
-            await pageObject.LogInfo($"One radiobutton in each group is checked. Total # of Groups: {selectedGroups.Count}");
+            return true;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            throw;
+            Console.WriteLine(e);
+            return false;
         }
     }
 }

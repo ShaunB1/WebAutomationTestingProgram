@@ -1,28 +1,17 @@
-﻿using WebAutomationTestingProgram.Core;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+﻿using Microsoft.Playwright;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class CheckAllBoxes : WebAction
 {
-    public override async Task ExecuteAsync(Page pageObject,
-        string groupID,
-        TestStep step,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
         try
         {
-            IPage page = pageObject.Instance!;
-
-            await pageObject.LogInfo("Locating all checkboxes...");
-
             var checkboxes = await page.QuerySelectorAllAsync("input[type='checkbox']");
-
-            await pageObject.LogInfo($"Checkboxes successfully located: {checkboxes.Count}");
 
             foreach (var checkbox in checkboxes)
             {
@@ -40,11 +29,12 @@ public class CheckAllBoxes : WebAction
                 }
             }
 
-            await pageObject.LogInfo("All checkboxes are checked");
+            return true;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            throw;
+            Console.WriteLine(e);
+            return false;
         }
     }
 }

@@ -1,28 +1,18 @@
 using Microsoft.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class VerifyWebElementAvailability : WebAction
 {
-    public override async Task ExecuteAsync(Page pageObject,
-        string groupID,
-        TestStep step,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
-
-        IPage page = pageObject.Instance!;
-
-        await pageObject.LogInfo("Locating element...");
-
         var locator = step.Object;
         var locatorType = step.Comments;
         var element = await LocateElementAsync(page, locator, locatorType);
-
-        await pageObject.LogInfo("Element found.");
-
+        
         var state = step.Value.ToLower();
 
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -32,38 +22,36 @@ public class VerifyWebElementAvailability : WebAction
             case "exist":
                 if (await element.IsVisibleAsync())
                 {
-                    await pageObject.LogInfo("Element exists.");
-                    return;
+                    return true;
                 }
+
                 break;
             case "does not exist":
                 if (!(await element.IsVisibleAsync()))
                 {
-                    await pageObject.LogInfo("Element does exist");
-                    return;
+                    return true;
                 }
-                break;
 
+                break;
             case "enabled":
                 if (await element.IsEnabledAsync())
                 {
-                    await pageObject.LogInfo("Element enabled");
-                    return;
+                    return true;
                 }
 
                 break;
             case "disabled":
                 if (await element.IsDisabledAsync() || await element.GetAttributeAsync("readonly") != null)
                 {
-                    await pageObject.LogInfo("Element disabled");
-                    return;
+                    return true;
                 }
 
                 break;
             default:
-                 throw new Exception($"Unknown state: {state}");
+                Console.WriteLine($"Unknown state: {state}");
+                return false;
         }
 
-        throw new Exception($"Element is not in state: '{state}'");
+        return false;
     }
 }

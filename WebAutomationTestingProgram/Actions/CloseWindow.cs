@@ -1,22 +1,16 @@
 ﻿using Microsoft.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 namespace WebAutomationTestingProgram.Actions;
 
 public class CloseWindow : WebAction
 {
-    public override async Task ExecuteAsync(Page pageObject,
-        string groupID,
-        TestStep step,
-        Dictionary<string, string> envVars,
-        Dictionary<string, string> saveParams)
+    public override async Task<bool> ExecuteAsync(IPage page, TestStep step,
+        Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
-        await pageObject.LogInfo("Closing current Window...");
-
-        await pageObject.CloseCurrentAsync();
-
-        await pageObject.LogInfo("Successfully closed current Window.");
-
+        await page.CloseAsync();
+        
+        return true;
     }
 }

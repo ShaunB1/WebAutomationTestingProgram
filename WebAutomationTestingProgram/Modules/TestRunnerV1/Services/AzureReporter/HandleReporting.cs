@@ -1,12 +1,13 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.Playwright;
+﻿using Microsoft.Playwright;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
-using WebAutomationTestingProgram.Core.Hubs;
+using WebAutomationTestingProgram.Actions;
 using WebAutomationTestingProgram.Core.Hubs.Services;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Controllers;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
-using WebAutomationTestingProgram.Modules.TestRunnerV1.Services;
+using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
+using TestSuite = Microsoft.TeamFoundation;
 
-namespace WebAutomationTestingProgram.Actions;
+namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
 
 public class HandleReporting
 {
@@ -19,6 +20,10 @@ public class HandleReporting
     private readonly HandleTestResult _testResultHandler;
     private readonly ILogger<TestController> _logger;
     private readonly SignalRService _hubContext;
+    private TestPlan _testPlan;
+    private Microsoft.TeamFoundation.TestManagement.WebApi.TestSuite _testSuite;
+    private string _planName;
+    private string _environment;
 
     public HandleReporting(ILogger<TestController> logger, SignalRService hubContext, string testRunId)
     {
@@ -31,6 +36,62 @@ public class HandleReporting
         _logger = logger;
         _hubContext = hubContext;
         _testRunId = testRunId;
+        _planName = "Test Environment";
+        _environment = "TEST_ENVIRONMENT";
+    }
+
+    public async Task DeleteTestCasesAsync()
+    {
+        await _testCaseHandler.DeleteTestCasesAsync("Shaun Bautista");
+    }
+
+    public async Task DeleteTestPlanAsync()
+    {
+        await _testPlanHandler.DeleteTestPlan(_planName);
+    }
+
+    public async Task<(List<int>, int, int)> InitializeTestPlanAsync(List<TestStep> testSteps)
+    {
+        var (testPlan, testSuite) = await _testPlanHandler.InitializeTestPlanAsync(_planName);
+        _testPlan = testPlan;
+        _testSuite = testSuite;
+        var testCases = testSteps.GroupBy(s => s.TestCaseName);
+        var testCaseIds = new List<int>();
+        var testCaseNames = new List<string>();
+        var testPoints = new List<TestPoint>();
+
+        foreach (var testCase in testCases)
+        {
+            if (string.IsNullOrEmpty(testCase.Key))
+            {
+                throw new Exception();
+            }
+            var testCaseId = await _testCaseHandler.CreateTestCaseAsync(testCase.Key);
+            testCaseIds.Add(testCaseId);
+            testCaseNames.Add(testCase.Key);
+        }
+
+        foreach (var testCaseId in testCaseIds)
+        {
+            await _testSuiteHandler.AddTestCaseToTestSuite(_testPlan.Id, _testSuite.Id, testCaseId);
+            
+            var testPoint = await _testPointHandler.GetTestPointFromTestCaseIdAsync(_testPlan.Id, _testSuite.Id, testCaseId);
+            testPoints.Add(testPoint);
+        }
+
+        foreach (var (testCaseGroup, index) in testCases.Select((group, index) => (group, index)))
+        {
+            // add test steps to test case
+            await _testCaseHandler.AddTestStepsToTestCaseAsync(testCaseIds[index], testCaseGroup.ToList());
+        }
+        
+        return (testCaseIds, _testPlan.Id, _testSuite.Id);
+    }
+
+    public async Task<int> CreateTestRunAsync()
+    {
+        var testRun = await _testRunHandler.CreateTestRunAsync(_testPlan.Id, _testSuite.Id, _environment, _planName);
+        return testRun.Id;
     }
     
     public async Task ReportToDevOps(IBrowser browser, List<TestStep> testSteps, string environment, string fileName,

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Attributes;
 using FluentAssertions;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Attributes;
 
 namespace WebAutomationTestingProgram.Tests.Modules.TestRunner.Models.Attributes;
 

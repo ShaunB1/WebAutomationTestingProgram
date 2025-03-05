@@ -17,7 +17,7 @@ public class RunSQLScript : WebAction
         
         try
         {
-            var sqlExecutor = Path.Combine(rootPath, "Actions", "execute_sql.ps1");
+            var sqlExecutor = Path.Combine(rootPath, "Core", "StaticFiles", "Private", "Scripts", "execute_sql.ps1");
             var username = "OPS_WRITE";
             var password = "qateamrw1#";
             var hostname = "cscgikdcdbora47.cihs.gov.on.ca";

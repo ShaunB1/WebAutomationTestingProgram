@@ -12,13 +12,14 @@ public class ClickWebElement : WebAction
         var locator = step.Object;
         var locatorType = step.Comments;
         var element = await LocateElementAsync(page, locator, locatorType);
-
+        
         try
         {
             var variableName = "ORG";
             var pattern = $@"{{{variableName}}}";
-
-            Console.WriteLine($"CONTAINS PATTERN: {locator.Contains(pattern)}, {pattern}");
+            
+            if (locator.Contains("Continue")) {}
+            
             if (locator.Contains(pattern))
             {
                 var newElement = step.Comments == "html id"

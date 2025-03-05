@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Attributes
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Attributes
 {
     public class ValidBrowserAttribute : ValidationAttribute
     {

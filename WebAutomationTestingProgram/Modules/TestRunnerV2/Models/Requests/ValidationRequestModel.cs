@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using WebAutomationTestingProgram.Core.Models.Attributes;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Requests
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Requests
 {
     /// <summary>
     /// Used by API Requests to create a ValidationRequest

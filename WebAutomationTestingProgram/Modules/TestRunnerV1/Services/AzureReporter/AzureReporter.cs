@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 
-namespace AutomationTestingProgram.Actions;
+namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
 
 public class AzureReporter
 {

@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 using WebAutomationTestingProgram.Core.Helpers;
 using WebAutomationTestingProgram.Core.Helpers.Requests;
 using WebAutomationTestingProgram.Core.Services.Logging;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Requests;
-using WebAutomationTestingProgram.Modules.TestRunner.Services;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Requests;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Backend.Requests.EnvironmentController
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Requests.EnvironmentController
 {
     /// <summary>
     /// Request to reset password for an email

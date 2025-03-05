@@ -1,4 +1,4 @@
-﻿namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright
+﻿namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Playwright
 {
     /// <summary>
     /// Represents a TestCase for automated tests.

@@ -1,4 +1,4 @@
-﻿namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Exceptions
+﻿namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Exceptions
 {
     public class PasswordAlreadyResetException : Exception
     {

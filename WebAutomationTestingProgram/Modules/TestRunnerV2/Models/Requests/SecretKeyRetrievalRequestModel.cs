@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Requests
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Requests
 {
     public class SecretKeyRetrievalRequestModel
     {

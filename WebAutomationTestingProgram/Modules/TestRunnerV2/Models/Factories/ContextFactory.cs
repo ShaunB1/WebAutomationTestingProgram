@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Options;
-using WebAutomationTestingProgram.Core;
 using WebAutomationTestingProgram.Core.Services.Logging;
 using WebAutomationTestingProgram.Core.Settings.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController;
-using WebAutomationTestingProgram.Modules.TestRunner.Requests.TestController;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Requests.TestController;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Objects;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Factories
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Factories
 {
     public interface IContextFactory
     {

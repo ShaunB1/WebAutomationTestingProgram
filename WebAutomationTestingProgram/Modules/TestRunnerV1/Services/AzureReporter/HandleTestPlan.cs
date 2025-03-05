@@ -1,8 +1,7 @@
-using AutomationTestingProgram.Actions;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
 
-namespace WebAutomationTestingProgram.Actions;
+namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
 
 public class HandleTestPlan : AzureReporter
 {

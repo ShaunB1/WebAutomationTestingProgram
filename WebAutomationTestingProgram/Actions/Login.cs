@@ -141,7 +141,6 @@ public class Login : WebAction
             }
 
             // Hard wait for now, but we need to implement function that detects loading spinner completion
-            Task.Delay(10000).Wait();
             return true;
         }
         catch (Exception ex)

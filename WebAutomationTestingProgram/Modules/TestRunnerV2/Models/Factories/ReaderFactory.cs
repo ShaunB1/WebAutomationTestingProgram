@@ -1,6 +1,6 @@
-﻿using WebAutomationTestingProgram.Modules.TestRunner.Services.File;
+﻿using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.File;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Factories
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Factories
 {
     public interface IReaderFactory
     {

@@ -6,10 +6,9 @@ using WebAutomationTestingProgram.Core.Helpers.Requests;
 using WebAutomationTestingProgram.Core.Hubs;
 using WebAutomationTestingProgram.Core.Services;
 using WebAutomationTestingProgram.Core.Services.Logging;
-using WebAutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Requests;
-using WebAutomationTestingProgram.Modules.TestRunner.Requests.TestController;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Requests;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Requests.TestController;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Objects;
 
 namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Controllers;
 

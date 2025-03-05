@@ -26,4 +26,32 @@ public class TestStep
     public int SequenceIndex { get; set; }
     public bool RunSuccessful { get; set; }
     public string Actual { get; set; }
+
+    public TestStep() { }
+    public TestStep(TestStep other) {
+        TestCaseName = other.TestCaseName;
+        TestDescription = other.TestDescription;
+        StepNum = other.StepNum;
+        ActionOnObject = other.ActionOnObject;
+        Object = other.Object;
+        Value = other.Value;
+        Comments = other.Comments;
+        Release = other.Release;
+        LocalAttempts = other.LocalAttempts;
+        LocalTimeout = other.LocalTimeout;
+        Control = other.Control;
+        Collection = other.Collection;
+        TestStepType = other.TestStepType;
+        GoToStep = other.GoToStep;
+        CycleGroup = other.CycleGroup;
+        Outcome = other.Outcome;
+        StartedDate = other.StartedDate;
+        CompletedDate = other.CompletedDate;
+        Comment = other.Comment;
+        Actual = other.Actual;
+        ErrorMessage = other.ErrorMessage;
+        StackTrace = other.StackTrace;
+        SequenceIndex = other.SequenceIndex;
+        RunSuccessful = other.RunSuccessful;
+    }
 }

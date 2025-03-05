@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Newtonsoft.Json.Linq;
+using WebAutomationTestingProgram.Core.Helpers;
+using WebAutomationTestingProgram.Core.Hubs.Services;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 namespace WebAutomationTestingProgram.Actions;
@@ -33,6 +35,20 @@ public abstract class WebAction
         if (cycleGroups.TryGetValue(cycleGroupName, out var iterations))
         {
             var iterationData = iterations[currentIteration];
+            
+            if (step.TestCaseName.Contains("{") && step.TestCaseName.Contains("}"))
+            {
+                var pattern = @"\{(.*?)\}";
+                                
+                MatchCollection matches = Regex.Matches(step.TestCaseName, pattern);
+                var placeholder = matches[0].Groups[1].Value;
+                
+                if (iterationData.TryGetValue(placeholder, out var name))
+                {
+                    step.TestCaseName = step.TestCaseName.Replace("{" + placeholder + "}", name);
+                }
+            }
+            
             string variableName;
             if (step.Value.StartsWith("{") && step.Value.EndsWith("}"))
             {
@@ -58,131 +74,150 @@ public abstract class WebAction
         var types = new List<string> { "htmlid", "xpath", "innertext" };
         locatorType = locatorType.ToLower().Replace(" ", "");
         
-        if (types.Contains(locatorType))
+        for (int j = 0; j < 2; j++)
         {
-            if (locatorType == "innertext")
+            if (types.Contains(locatorType))
             {
-                var elements = page.Locator($":has-text('{locator}')");
-                var count = await elements.CountAsync();
-
-                for (int i = 0; i < count; i++)
+                if (locatorType == "innertext")
                 {
-                    var element = elements.Nth(i);
-                    var isVisible = await element.IsVisibleAsync();
-                    if (isVisible)
+                    var elements = page.Locator($"//*[contains(text(), '{locator}')]");
+                    var count = await elements.CountAsync();
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        var element = elements.Nth(i);
+                        var isVisible = await element.IsVisibleAsync();
+                        if (isVisible)
+                        {
+                            var elementHandle = await element.ElementHandleAsync();
+                            return elementHandle;
+                        }
+                    }
+                }
+                else if (locatorType == "htmlid")
+                {
+                    var element = page.Locator($"#{locator}");
+                    try
                     {
                         var elementHandle = await element.ElementHandleAsync();
                         return elementHandle;
                     }
-                }
-            }
-            else if (locatorType == "htmlid")
-            {
-                var element = page.Locator($"#{locator}");
-                var elementHandle = await element.ElementHandleAsync();
-                return elementHandle;
-            }
-            else if (locatorType == "xpath")
-            {
-                var elementHandle = await page.QuerySelectorAsync(locator);
-                var isVisible = await elementHandle.IsVisibleAsync();
-                if (isVisible)
-                {
-                    return elementHandle;
-                }
-            }
-        } 
-        else if (locatorType.ToLower() == "eldict")
-        {
-                    JObject elDictObj = JObject.Parse(locator);
-        ElDict obj = new ElDict
-        {
-            IFrame = int.TryParse(elDictObj["iframe"]?.ToString(), out var iframe) ? iframe : 0,
-            Tag = elDictObj["tag"]?.ToString() ?? string.Empty,
-            Text = elDictObj["text"]?.ToString() ?? string.Empty,
-            Attributes = elDictObj["attributes"]?.ToObject<Dictionary<string, object>>() ?? new Dictionary<string, object>(),
-        };
-        
-        var elements = await page.QuerySelectorAllAsync(obj.Tag);
-        var iframes = await GetAllIFramesFromTopAsync(page); // takes forever
-        IElementHandle bestMatch = null;
-        var highestScore = -1;
-        var maxScore = 0;
-
-        if (obj.Text != "")
-        {
-            maxScore += 2;
-        }
-
-        if (obj.IFrame != -1)
-        {
-            maxScore += 2;
-        }
-
-        maxScore += obj.Attributes.Count;
-
-        try
-        {
-            foreach (var el in elements)
-            {
-                var score = 0;
-                var iframeIndex = await GetIFrameIndexAsync(iframes, el);
-
-                if (iframeIndex == obj.IFrame || iframeIndex == -1)
-                {
-                    foreach (var kvp in obj.Attributes)
+                    catch (Exception ex)
                     {
-                        var key = kvp.Key;
-                        var value =  kvp.Value is JArray ? string.Join(" ", (kvp.Value as JArray).Select(token => token.ToString())) : kvp.Value.ToString();
-                        var attrValue = await el.GetAttributeAsync(key);
-                        if (attrValue != null)
+                        throw new Exception($"Unable to locate element '{locator}'", ex);
+                    }
+                }
+                else if (locatorType == "xpath")
+                {
+                    var elementHandle = await page.QuerySelectorAsync(locator);
+
+                    if (elementHandle == null)
+                    {
+                        await Task.Delay(30000);
+                        continue;
+                    }
+                    
+                    var isVisible = await elementHandle.IsVisibleAsync();
+                    if (isVisible)
+                    {
+                        return elementHandle;
+                    }
+                }
+            } 
+            else if (locatorType.ToLower() == "eldict")
+            {
+                JObject elDictObj = JObject.Parse(locator);
+                ElDict obj = new ElDict
+                {
+                    IFrame = int.TryParse(elDictObj["iframe"]?.ToString(), out var iframe) ? iframe : 0,
+                    Tag = elDictObj["tag"]?.ToString() ?? string.Empty,
+                    Text = elDictObj["text"]?.ToString() ?? string.Empty,
+                    Attributes = elDictObj["attributes"]?.ToObject<Dictionary<string, object>>() ?? new Dictionary<string, object>(),
+                };
+                
+                var elements = await page.QuerySelectorAllAsync(obj.Tag);
+                var iframes = await GetAllIFramesFromTopAsync(page); // takes forever
+                IElementHandle bestMatch = null;
+                var highestScore = -1;
+                var maxScore = 0;
+
+                if (obj.Text != "")
+                {
+                    maxScore += 2;
+                }
+
+                if (obj.IFrame != -1)
+                {
+                    maxScore += 2;
+                }
+
+                maxScore += obj.Attributes.Count;
+
+                try
+                {
+                    foreach (var el in elements)
+                    {
+                        var score = 0;
+                        var iframeIndex = await GetIFrameIndexAsync(iframes, el);
+
+                        if (iframeIndex == obj.IFrame || iframeIndex == -1)
                         {
-                            attrValue = Regex.Replace(attrValue, @"\s+", " ").Trim();
-                            if (attrValue == value)
+                            foreach (var kvp in obj.Attributes)
+                            {
+                                var key = kvp.Key;
+                                var value =  kvp.Value is JArray ? string.Join(" ", (kvp.Value as JArray).Select(token => token.ToString())) : kvp.Value.ToString();
+                                var attrValue = await el.GetAttributeAsync(key);
+                                if (attrValue != null)
+                                {
+                                    attrValue = Regex.Replace(attrValue, @"\s+", " ").Trim();
+                                    if (attrValue == value)
+                                    {
+                                        score += 2;
+                                    }
+                                    else if (attrValue.Contains(value))
+                                    {
+                                        score += 1;
+                                    }
+                                }
+                            }
+
+                            var elText = await GetTextContent(el);
+
+                            if (elText == obj.Text)
                             {
                                 score += 2;
                             }
-                            else if (attrValue.Contains(value))
+                            else if (elText.Contains(obj.Text))
                             {
                                 score += 1;
                             }
+
+                            if (score > highestScore)
+                            {
+                                var isVisible = await el.IsVisibleAsync();
+                                if (isVisible)
+                                {
+                                    highestScore = score;
+                                    bestMatch = el;                            
+                                }
+                            }
                         }
-                    }
-
-                    var elText = await GetTextContent(el);
-
-                    if (elText == obj.Text)
-                    {
-                        score += 2;
-                    }
-                    else if (elText.Contains(obj.Text))
-                    {
-                        score += 1;
-                    }
-
-                    if (score > highestScore)
-                    {
-                        var isVisible = await el.IsVisibleAsync();
-                        if (isVisible)
+                        else
                         {
-                            highestScore = score;
-                            bestMatch = el;                            
+                            Console.WriteLine($"NOT IN FRAME. EXPECTED: {iframe} ACTUAL: {iframeIndex}");
                         }
                     }
                 }
-                else
+                catch (Exception e)
                 {
-                    Console.WriteLine($"NOT IN FRAME. EXPECTED: {iframe} ACTUAL: {iframeIndex}");
+                    Console.WriteLine(e);
+                    throw;
                 }
+                
+                return maxScore != 0 && highestScore / maxScore >= 0.66 ? bestMatch : null;
             }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-        
-        return maxScore != 0 && highestScore / maxScore >= 0.66 ? bestMatch : null;
+
+            await Task.Delay(30000);
         }
 
         return null;

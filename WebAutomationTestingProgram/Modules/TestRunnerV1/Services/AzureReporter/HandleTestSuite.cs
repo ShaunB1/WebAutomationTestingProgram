@@ -1,11 +1,8 @@
-using AutomationTestingProgram.Actions;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
-using TestCase = Microsoft.TeamFoundation.Test.WebApi.TestCase;
-using TestPlan = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestPlan;
 using TestSuite = Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi.TestSuite;
 
-namespace WebAutomationTestingProgram.Actions;
+namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
 
 public class HandleTestSuite : AzureReporter
 {

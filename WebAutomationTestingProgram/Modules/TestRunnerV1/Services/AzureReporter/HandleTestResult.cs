@@ -1,8 +1,7 @@
-﻿using AutomationTestingProgram.Actions;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
+﻿using Microsoft.TeamFoundation.TestManagement.WebApi;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
-namespace WebAutomationTestingProgram.Actions;
+namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
 
 public class HandleTestResult : AzureReporter
 {

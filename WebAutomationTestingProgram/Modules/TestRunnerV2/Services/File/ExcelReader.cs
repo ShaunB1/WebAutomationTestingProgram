@@ -1,6 +1,8 @@
 using ClosedXML.Excel;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Services.File;
+
 public class ExcelReader
 {
     public (List<TestStep>, Dictionary<string, List<Dictionary<string, string>>>) ReadTestSteps(IFormFile file)

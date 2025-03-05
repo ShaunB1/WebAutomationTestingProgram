@@ -5,9 +5,9 @@ using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Options;
 using WebAutomationTestingProgram.Core.Settings.Azure;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Exceptions;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Exceptions;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Services;
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Services;
 
 public class AzureKeyVaultService
 {

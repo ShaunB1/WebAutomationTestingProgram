@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.SignalR;
 using WebAutomationTestingProgram.Core.Helpers.Requests;
 using WebAutomationTestingProgram.Core.Hubs;
 using WebAutomationTestingProgram.Core.Services.Logging;
-using WebAutomationTestingProgram.Modules.TestRunner.Backend.Helpers;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Requests;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Helpers;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Requests;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Objects;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Requests.TestController
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Requests.TestController
 {
     /// <summary>
     /// ProcessRequest is used to configure the request's log paths and test execution.

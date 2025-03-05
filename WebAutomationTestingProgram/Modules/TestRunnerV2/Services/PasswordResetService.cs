@@ -8,7 +8,7 @@ using Microsoft.Graph;
 using WebAutomationTestingProgram.Core.Helpers;
 using WebAutomationTestingProgram.Core.Settings.MicrosoftGraph;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Services
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Services
 {
     public class PasswordResetService
     {

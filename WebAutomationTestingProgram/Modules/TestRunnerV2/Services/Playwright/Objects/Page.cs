@@ -4,9 +4,9 @@ using Microsoft.Playwright;
 using WebAutomationTestingProgram.Core.Hubs;
 using WebAutomationTestingProgram.Core.Services.Logging;
 using WebAutomationTestingProgram.Core.Settings.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Exceptions;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Exceptions;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Objects
 {
     public class Page
     {   

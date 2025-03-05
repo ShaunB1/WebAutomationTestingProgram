@@ -1,8 +1,8 @@
 ﻿using Autofac;
 using WebAutomationTestingProgram.Core.Services;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Factories;
-using WebAutomationTestingProgram.Modules.TestRunner.Services;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Factories;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Objects;
 
 namespace WebAutomationTestingProgram.Configurations.DI;
 

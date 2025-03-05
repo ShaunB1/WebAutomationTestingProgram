@@ -1,6 +1,6 @@
-﻿using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+﻿using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Objects;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Executor
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Executor
 {   
     /// <summary>
     /// The interface used to define executor types.

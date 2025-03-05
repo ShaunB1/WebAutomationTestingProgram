@@ -1,6 +1,6 @@
-﻿using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
+﻿using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Playwright;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Services.File
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Services.File
 {
     public interface IReader
     {

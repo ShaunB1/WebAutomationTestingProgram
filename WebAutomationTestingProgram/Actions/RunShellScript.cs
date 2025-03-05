@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
 using Microsoft.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
 
 namespace WebAutomationTestingProgram.Actions;
 

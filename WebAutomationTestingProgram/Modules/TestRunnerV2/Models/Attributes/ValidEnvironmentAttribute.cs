@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using WebAutomationTestingProgram.Core.Services;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Attributes
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Attributes
 {
     public class ValidEnvironmentAttribute : ValidationAttribute
     {

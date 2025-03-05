@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using WebAutomationTestingProgram.Core.Hubs;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Executor;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Executor;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Objects;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Factories
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Factories
 {
     public interface IPlaywrightExecutorFactory
     {

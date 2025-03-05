@@ -1,6 +1,4 @@
-﻿using WebAutomationTestingProgram.Modules.TestRunner.Models.Attributes;
-
-namespace WebAutomationTestingProgram.Tests.Modules.TestRunner.Models.Attributes;
+﻿namespace WebAutomationTestingProgram.Tests.Modules.TestRunner.Models.Attributes;
 
 public class ValidEnvironmentAttributeTests
 {

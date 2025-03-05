@@ -1,7 +1,7 @@
 using System.Text;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
-namespace WebAutomationTestingProgram.Actions;
+namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
 
 public class Helpers
 {

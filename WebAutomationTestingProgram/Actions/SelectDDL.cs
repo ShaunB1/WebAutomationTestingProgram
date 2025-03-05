@@ -12,7 +12,13 @@ public class SelectDDL : WebAction
         var locator = step.Object;
         var locatorType = step.Comments;
         var element = await LocateElementAsync(page, locator, locatorType);
+        var options = await element.QuerySelectorAllAsync("option");
         var option = GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
+        
+        if (string.IsNullOrWhiteSpace(option))
+        {
+            option = step.Value;
+        }
         
         try
         {

@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 using WebAutomationTestingProgram.Actions;
-using WebAutomationTestingProgram.Core.Hubs;
+using WebAutomationTestingProgram.Core.Hubs.Services;
 using WebAutomationTestingProgram.Core.Settings.Azure;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.File;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Services;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.File;
+
+namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Controllers;
 
 [Authorize]
 [ApiController]
@@ -20,14 +21,14 @@ public class TestController : ControllerBase
     private readonly HandleTestCase _caseHandler;
     private readonly bool _reportToDevops;
     private readonly ILogger<TestController> _logger;
-    private readonly IHubContext<TestHub> _broadcaster;
+    private readonly SignalRService _broadcaster;
 
-    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, IHubContext<TestHub> broadcaster)
+    public TestController(IOptions<AzureDevOpsSettings> azureDevOpsSettings, ILogger<TestController> logger, SignalRService broadcaster)
     {
         _azureDevOpsSettings = azureDevOpsSettings.Value;
         _planHandler = new HandleTestPlan();
         _caseHandler = new HandleTestCase();
-        _reportToDevops = false;
+        _reportToDevops = true;
         _logger = logger;
         _broadcaster = broadcaster;
     }
@@ -47,6 +48,8 @@ public class TestController : ControllerBase
         {
             return BadRequest("File or TestRunId missing.");
         }
+        
+        _broadcaster.BroadcastLog(testRunId, "newrun");
         
         Console.WriteLine("Received test request");
         // Response.ContentType = "text/event-stream";
@@ -86,15 +89,17 @@ public class TestController : ControllerBase
             var fileName = Path.GetFileNameWithoutExtension(file.Name);
             var reportHandler = new HandleReporting(_logger, _broadcaster, testRunId);
 
-            if (_reportToDevops)
-            {
-                await reportHandler.ReportToDevOps(browserInstance, testSteps, env, fileName, Response, cycleGroups);
-            }
-            else
-            {
-                await executor.ExecuteTestFileAsync(browserInstance, testSteps, env, fileName, cycleGroups, int.Parse(delay));
-            }
+            await executor.ExecuteTestFileAsync(browserInstance, testSteps, env, fileName, cycleGroups, int.Parse(delay), _reportToDevops, reportHandler);
             
+            // if (_reportToDevops)
+            // {
+            //     await reportHandler.ReportToDevOps(browserInstance, testSteps, env, fileName, Response, cycleGroups);
+            // }
+            // else
+            // {
+            //     await executor.ExecuteTestFileAsync(browserInstance, testSteps, env, fileName, cycleGroups, int.Parse(delay), _reportToDevops);
+            // }
+            //
             return Ok("Tests executed successfully.");
         }
         catch (Exception e)

@@ -1,10 +1,9 @@
 ﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
-using WebAutomationTestingProgram.Core;
 using WebAutomationTestingProgram.Core.Helpers.Requests;
 using WebAutomationTestingProgram.Core.Services.Logging;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Requests.TestController
 {
     /// <summary>
     /// Request to validate a test file.

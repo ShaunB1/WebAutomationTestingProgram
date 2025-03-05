@@ -1,5 +1,4 @@
-﻿using WebAutomationTestingProgram.Core;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
@@ -8,11 +7,11 @@ using WebAutomationTestingProgram.Core.Hubs;
 using WebAutomationTestingProgram.Core.Services;
 using WebAutomationTestingProgram.Core.Services.Logging;
 using WebAutomationTestingProgram.Core.Settings;
-using WebAutomationTestingProgram.Modules.TestRunner.Backend.Requests.EnvironmentController;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Requests;
-using WebAutomationTestingProgram.Modules.TestRunner.Services;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Requests;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Requests.EnvironmentController;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Controllers;
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

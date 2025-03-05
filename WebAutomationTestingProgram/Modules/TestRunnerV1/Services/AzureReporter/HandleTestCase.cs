@@ -1,18 +1,18 @@
-using AutomationTestingProgram.Actions;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.VisualStudio.Services.TestManagement.TestPlanning.WebApi;
 using Microsoft.VisualStudio.Services.WebApi.Patch;
 using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
-namespace WebAutomationTestingProgram.Actions;
+namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
 
 public class HandleTestCase : AzureReporter
 {
     public async Task<int> CreateTestCaseAsync(string testCaseName, string testCaseDescription="{DESCRIPTION}")
     {
+        if (string.IsNullOrWhiteSpace(testCaseName))
+        {
+            throw new ArgumentNullException(nameof(testCaseName));
+        }
         var patchDocument = new JsonPatchDocument
         {
             new JsonPatchOperation

@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
-using WebAutomationTestingProgram.Core;
 using WebAutomationTestingProgram.Core.Hubs;
 using WebAutomationTestingProgram.Core.Services.Logging;
 using WebAutomationTestingProgram.Core.Settings.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Objects;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Models.Factories
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Factories
 {
     public interface IPageFactory
     {

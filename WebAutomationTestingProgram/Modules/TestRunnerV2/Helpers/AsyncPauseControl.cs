@@ -1,6 +1,6 @@
 ﻿using WebAutomationTestingProgram.Core.Services.Logging;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Backend.Helpers
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Helpers
 {
     /// <summary>
     /// Custom semaphore used for Pause Control

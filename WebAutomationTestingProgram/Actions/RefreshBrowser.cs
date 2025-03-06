@@ -9,6 +9,7 @@ public class RefreshBrowser : WebAction
     {
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             await page.ReloadAsync();
             return true;
         }

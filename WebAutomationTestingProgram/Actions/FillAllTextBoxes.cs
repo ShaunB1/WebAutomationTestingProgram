@@ -11,6 +11,7 @@ public class FillAllTextBoxes : WebAction
     {
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             var inputElements = await page.QuerySelectorAllAsync("input");
             var text = step.Value;
 

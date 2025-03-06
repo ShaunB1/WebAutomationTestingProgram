@@ -11,6 +11,7 @@ public class RunJavaScript : WebAction
         
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             await page.EvaluateAsync<string>(jsCmd);
             return true;
         }

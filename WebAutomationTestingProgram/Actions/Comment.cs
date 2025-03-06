@@ -8,6 +8,7 @@ public class Comment : WebAction
         Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
         Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
+        GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
         return true;
     }
 }

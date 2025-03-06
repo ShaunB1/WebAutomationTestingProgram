@@ -15,7 +15,7 @@ public class CheckBox : WebAction
         
         var state = step.Value.ToLower();
         var isChecked = await element.IsCheckedAsync();
-
+        GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
         switch (state)
         {
             case "on" when !isChecked:

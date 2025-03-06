@@ -12,6 +12,7 @@ public class ClickWebElement : WebAction
         var locator = step.Object;
         var locatorType = step.Comments;
         var element = await LocateElementAsync(page, locator, locatorType);
+        GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
         
         try
         {

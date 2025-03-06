@@ -11,6 +11,7 @@ public class NavigateToURL : WebAction
     {
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             await page.GotoAsync(step.Value);
             return true;
         }

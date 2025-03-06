@@ -17,6 +17,7 @@ public class RunSQLScript : WebAction
         
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             var sqlExecutor = Path.Combine(rootPath, "Core", "StaticFiles", "Private", "Scripts", "execute_sql.ps1");
             var username = "OPS_WRITE";
             var password = "qateamrw1#";

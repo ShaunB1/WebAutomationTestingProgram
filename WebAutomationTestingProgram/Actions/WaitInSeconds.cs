@@ -10,6 +10,7 @@ public class WaitInSeconds : WebAction
         Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
         Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
+        GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
         var delay = step.Value;
 
         if (int.TryParse(delay, out var delayInt))

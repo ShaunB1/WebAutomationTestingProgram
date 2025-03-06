@@ -12,7 +12,7 @@ public class ChooseAllDDL : WebAction
         try
         {
             var selectElements = await page.QuerySelectorAllAsync("select");
-
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             foreach (var selectElement in selectElements)
             {
                 var isVisible = await selectElement.IsVisibleAsync();

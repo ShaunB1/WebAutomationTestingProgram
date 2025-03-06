@@ -10,6 +10,7 @@ namespace WebAutomationTestingProgram.Actions
             Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration,
             string cycleGroupName)
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             string value = step.Value;
             string obj = step.Object;
 

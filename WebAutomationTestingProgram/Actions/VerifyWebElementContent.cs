@@ -21,6 +21,7 @@ namespace WebAutomationTestingProgram.Actions
 
             try
             {
+                GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
                 // Locate the element using XPath and verify its text content
                 var locator = step.Object;
                 var locatorType = step.Comments;

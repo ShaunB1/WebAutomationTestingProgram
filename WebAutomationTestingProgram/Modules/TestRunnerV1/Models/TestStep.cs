@@ -3,6 +3,7 @@
 public class TestStep
 {
     public string TestCaseName { get; set; }
+    public string LoopTestCaseName { get; set; }
     public string TestDescription { get; set; }
     public int StepNum { get; set; }
     public string ActionOnObject { get; set; }

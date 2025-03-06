@@ -28,7 +28,7 @@ public class TestController : ControllerBase
         _azureDevOpsSettings = azureDevOpsSettings.Value;
         _planHandler = new HandleTestPlan();
         _caseHandler = new HandleTestCase();
-        _reportToDevops = true;
+        _reportToDevops = false;
         _logger = logger;
         _broadcaster = broadcaster;
     }

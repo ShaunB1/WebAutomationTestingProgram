@@ -16,7 +16,7 @@ public class AzureReporter
     protected readonly TestPlanHttpClient _planClient;
     protected readonly TestManagementHttpClient _managementClient;
 
-    public AzureReporter(string uri=@"https://dev.azure.com/csc-ddsb/", string pat="q4cmr4iwi6mrv6ji2w6lvnjdii4462j565bohzkccqxf73i7yd7a", string projectName="AutomationAndAccessibility")
+    public AzureReporter(string uri=@"https://dev.azure.com/csc-ddsb/", string pat="7AwIg1OmQkccZm3tzdX6LOoiSkLPbYpVBgYbtj71lzmzTrbLVy2AJQQJ99BCACAAAAAqq63JAAASAZDO3eel", string projectName="AutomationAndAccessibility")
     {
         _uri = uri;
         _pat = pat;

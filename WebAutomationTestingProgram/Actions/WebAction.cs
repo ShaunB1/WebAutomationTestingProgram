@@ -41,23 +41,24 @@ public abstract class WebAction
                 var pattern = @"\{(.*?)\}";
                                 
                 MatchCollection matches = Regex.Matches(step.TestCaseName, pattern);
-                List<string> extractedValues = new List<string>();
+                var extractedValues = "";
 
                 foreach (Match match in matches)
                 {
-                    extractedValues.Add(match.Groups[1].Value);
+                    extractedValues = match.Groups[1].Value;
                 }
 
                 var identifier = "";
-                foreach (var extractedValue in extractedValues)
+                var splitValues = extractedValues.Split(", ");
+                foreach (var splitValue in splitValues)
                 {
-                    if (iterationData.TryGetValue(extractedValue, out var name))
+                    if (iterationData.TryGetValue(splitValue, out var name))
                     {
                         identifier += $" {name}";
                     }
                 }
 
-                step.TestCaseName = Regex.Replace(step.TestCaseName, pattern, $" -{identifier}");
+                step.TestCaseName = Regex.Replace(step.TestCaseName, pattern, $"{identifier}");
             }
             
             string variableName;

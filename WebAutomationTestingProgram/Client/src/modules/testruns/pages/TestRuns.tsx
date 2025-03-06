@@ -60,12 +60,14 @@ const TestRuns = (props: any) => {
             props.connection.on("BroadcastLog", (testRunId: any, message: any) => {
                 const normalizedLog = message.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
                 setTestRunLogs(prevTestRunLogs =>
-                    prevTestRunLogs.map(testRunLog =>
-                        testRunLog.id === testRunId
+                    prevTestRunLogs.map(testRunLog => {
+                        return testRunLog.id === testRunId
                             ? { ...testRunLog, logs: [...testRunLog.logs, ...normalizedLog.split('\n')] }
-                            : testRunLog
-                    )
+                            : { ...testRunLog, id: "1", logs: ["test"] }
+                    })
                 );
+
+
             });
 
             props.connection.on('AddClient', (testRunId: any, message: any) => {
@@ -77,9 +79,8 @@ const TestRuns = (props: any) => {
             });
 
             props.connection.on('NewRun', (testRunId: any, message: any) => {
-                console.log("NEW RUN");
-                console.log(message)
                 setTestRuns(prevTestRuns => [...prevTestRuns, { id: testRunId }]);
+                setTestRunLogs(prevTestRuns => [...prevTestRuns, { id: testRunId, logs:[] }])
             });
 
             props.connection.on('RunFinished', (testRunId: any, message: any) => {
@@ -183,14 +184,14 @@ const TestRuns = (props: any) => {
         }
 
         const testRunId = crypto.randomUUID();
-        
+
         const formData = new FormData();
         // formData.append("File", file);
         // formData.append("Browser", browser.toLowerCase());
         // formData.append("BrowserVersion", "113");
         // formData.append("Environment", env);
         // formData.append("Delay", delay.toString());
-        
+
         formData.append("file", file);
         formData.append('env', env);
         formData.append('browser', browser.toLowerCase());
@@ -446,12 +447,12 @@ const TestRuns = (props: any) => {
                                             />
                                         </Button>
                                         <Typography variant={"body2"} color={"textSecondary"}
-                                            sx={{
-                                                maxWidth: '125px',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
+                                                    sx={{
+                                                        maxWidth: '125px',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
                                         >
                                             {file ? file.name : "No file chosen"}
                                         </Typography>

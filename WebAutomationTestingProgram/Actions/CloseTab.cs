@@ -9,6 +9,7 @@ public class CloseTab : WebAction
     {
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             await page.CloseAsync();
             return true;
         }

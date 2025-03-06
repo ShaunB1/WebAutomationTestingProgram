@@ -13,7 +13,7 @@ public class CheckAllRadioButtons : WebAction
         {
             var radioButtons = await page.QuerySelectorAllAsync("input[type='radio']");
             var selectedGroups = new HashSet<string>();
-
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             foreach (var radioButton in radioButtons)
             {
                 var isVisible = await radioButton.IsVisibleAsync();

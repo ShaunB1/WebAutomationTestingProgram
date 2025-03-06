@@ -123,8 +123,8 @@ public class TestExecutor
     {
         try
         {
-            
             var stepsCopy = new List<TestStep>(steps);
+            var updatedSteps = new List<TestStep>();
             for (var i = 0; i < stepsCopy.Count; i++)
             {
                 if (page.IsClosed)
@@ -156,7 +156,8 @@ public class TestExecutor
                     {
                         foreach (var loopStep in loopSteps)
                         {
-                            var stepAction = loopStep.ActionOnObject.Replace(" ", "").ToLower();
+                            var tempStep = new TestStep(loopStep);
+                            var stepAction = tempStep.ActionOnObject.Replace(" ", "").ToLower();
                             var actionAlias = GetAlias(stepAction);
 
                             if (page.IsClosed)
@@ -166,25 +167,27 @@ public class TestExecutor
                                 page = await context.NewPageAsync();
                             }
                             
-                            var logMessage = LogMessageHelper.GenerateTestExecutionLog(loopStep);
+                            var logMessage = LogMessageHelper.GenerateTestExecutionLog(tempStep);
                             await _signalRService.BroadcastLog(_testRunId, logMessage);
                             
                             if (_actions.TryGetValue(actionAlias, out var action))
                             {
-                                var result = await action.ExecuteAsync(page, loopStep, _envVars, _saveParameters, cycleGroups, j, cycleGroup);
-                                loopStep.RunSuccessful = result;
+                                var result = await action.ExecuteAsync(page, tempStep, _envVars, _saveParameters, cycleGroups, j, cycleGroup);
+                                tempStep.RunSuccessful = result;
+                                updatedSteps.Add(tempStep);
 
-                                var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(loopStep);
+                                var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(tempStep);
 
                                 await _signalRService.BroadcastLog(_testRunId, statusMessage);
                             }
                             else
                             {
-                                loopStep.RunSuccessful = false;
-                                var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(loopStep);
+                                tempStep.RunSuccessful = false;
+                                updatedSteps.Add(tempStep);
+                                var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(tempStep);
 
                                 await _signalRService.BroadcastLog(_testRunId, statusMessage);
-                                throw new Exception($"Unknown action '{loopStep.ActionOnObject}'");
+                                throw new Exception($"Unknown action '{tempStep.ActionOnObject}'");
                             }
                             
                             await Task.Delay(TimeSpan.FromSeconds(delay));
@@ -208,7 +211,8 @@ public class TestExecutor
                     { 
                         var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
                         step.RunSuccessful = result;
-
+                        updatedSteps.Add(step);
+                        
                         var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(step);
 
                         await _signalRService.BroadcastLog(_testRunId, statusMessage);
@@ -216,6 +220,7 @@ public class TestExecutor
                     else
                     {
                         step.RunSuccessful = false;
+                        updatedSteps.Add(step);
                         var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(step);
 
                         await _signalRService.BroadcastLog(_testRunId, statusMessage);
@@ -225,7 +230,7 @@ public class TestExecutor
             }
 
             var testResults = new List<TestCaseResultParams>();
-            var testCases = steps
+            var testCases = updatedSteps
                 .GroupBy(s => s.TestCaseName)
                 .Select(g => new TestCase
                 {
@@ -239,7 +244,7 @@ public class TestExecutor
             {
                 await reportHandler.DeleteTestCasesAsync();
                 await reportHandler.DeleteTestPlanAsync();
-                (_testCaseIds, _testPlanId, _testSuiteId) = await reportHandler.InitializeTestPlanAsync(steps);
+                (_testCaseIds, _testPlanId, _testSuiteId) = await reportHandler.InitializeTestPlanAsync(updatedSteps);
                 _devopsRunId = await reportHandler.CreateTestRunAsync();
             }
             

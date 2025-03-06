@@ -10,6 +10,7 @@ public class RunShellScript : WebAction
     {
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             var scriptPath = step.Value;
 
             Process process = new Process

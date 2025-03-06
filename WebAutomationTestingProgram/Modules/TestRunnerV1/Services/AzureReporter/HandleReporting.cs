@@ -50,6 +50,11 @@ public class HandleReporting
         await _testPlanHandler.DeleteTestPlan(_planName);
     }
 
+    public async Task EndTestRunAsync(int testRunId)
+    {
+        await _testRunHandler.SetTestRunStateAsync(testRunId);
+    }
+
     public async Task<(List<int>, int, int)> InitializeTestPlanAsync(List<TestStep> testSteps)
     {
         var (testPlan, testSuite) = await _testPlanHandler.InitializeTestPlanAsync(_planName);

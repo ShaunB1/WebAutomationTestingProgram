@@ -1,4 +1,6 @@
-﻿namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
+﻿using Microsoft.TeamFoundation.TestManagement.WebApi;
+
+namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
 
 public class TestCaseResultParams
 {
@@ -13,4 +15,5 @@ public class TestCaseResultParams
     public string stackTrace { get; set; }
     public int testPointId { get; set; }
     public int testCaseRevision { get; set; }
+    public TestIterationDetailsModel testIterationDetails { get; set; }
 }

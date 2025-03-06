@@ -1,6 +1,4 @@
 ﻿using Microsoft.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
 
 namespace WebAutomationTestingProgram.Actions;
 
@@ -11,6 +9,7 @@ public class CloseTab : WebAction
     {
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             await page.CloseAsync();
             return true;
         }

@@ -11,6 +11,7 @@ public class ExitCondition : WebAction
     {
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             var exitCondition = step.Value;
             var locator = step.Object;
 

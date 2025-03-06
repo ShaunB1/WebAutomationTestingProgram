@@ -12,7 +12,7 @@ public class CheckAllBoxes : WebAction
         try
         {
             var checkboxes = await page.QuerySelectorAllAsync("input[type='checkbox']");
-
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             foreach (var checkbox in checkboxes)
             {
                 var isVisible = await checkbox.IsVisibleAsync();

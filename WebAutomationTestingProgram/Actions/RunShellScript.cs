@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
 using Microsoft.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects;
 
 namespace WebAutomationTestingProgram.Actions;
 
@@ -12,6 +10,7 @@ public class RunShellScript : WebAction
     {
         try
         {
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             var scriptPath = step.Value;
 
             Process process = new Process

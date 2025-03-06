@@ -10,6 +10,7 @@ public class Login : WebAction
         Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
         Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
+        GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
         string username = step.Object;
         string password = step.Value;
 
@@ -141,7 +142,6 @@ public class Login : WebAction
             }
 
             // Hard wait for now, but we need to implement function that detects loading spinner completion
-            Task.Delay(10000).Wait();
             return true;
         }
         catch (Exception ex)

@@ -16,7 +16,7 @@ namespace WebAutomationTestingProgram.Actions
             string cycleGroupName)
         {
             //base.Execute();
-
+            GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
             string expectedURL = step.Value.ToLower();
 
             try

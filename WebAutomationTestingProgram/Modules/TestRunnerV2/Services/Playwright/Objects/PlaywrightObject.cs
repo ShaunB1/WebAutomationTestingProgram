@@ -5,12 +5,11 @@ using WebAutomationTestingProgram.Core.Helpers;
 using WebAutomationTestingProgram.Core.Helpers.Requests;
 using WebAutomationTestingProgram.Core.Services.Logging;
 using WebAutomationTestingProgram.Core.Settings.Playwright;
-using WebAutomationTestingProgram.Modules.TestRunner.Backend.Requests.TestController;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Exceptions;
-using WebAutomationTestingProgram.Modules.TestRunner.Models.Factories;
-using WebAutomationTestingProgram.Modules.TestRunner.Requests.TestController;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Exceptions;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Models.Factories;
+using WebAutomationTestingProgram.Modules.TestRunnerV2.Requests.TestController;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Services.Playwright.Objects
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Services.Playwright.Objects
 {
     /// <summary>
     /// Represents an instance of Playwright.

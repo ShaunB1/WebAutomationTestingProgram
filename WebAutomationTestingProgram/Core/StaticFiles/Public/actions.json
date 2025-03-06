@@ -3,6 +3,7 @@
   "populatewebelement": "WebAutomationTestingProgram.Actions.PopulateWebElement",
   "navigatetourl": "WebAutomationTestingProgram.Actions.NavigateToURL",
   "verifywebelementavailability": "WebAutomationTestingProgram.Actions.VerifyWebElementAvailability",
+  "verifywebelementcontent": "WebAutomationTestingProgram.Actions.VerifyWebElementContent",
   "checkbox": "WebAutomationTestingProgram.Actions.CheckBox",
   "login": "WebAutomationTestingProgram.Actions.Login",
   "presskey": "WebAutomationTestingProgram.Actions.PressKey",

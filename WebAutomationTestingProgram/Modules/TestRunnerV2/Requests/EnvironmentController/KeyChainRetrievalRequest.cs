@@ -6,7 +6,7 @@ using WebAutomationTestingProgram.Core.Helpers;
 using WebAutomationTestingProgram.Core.Helpers.Requests;
 using WebAutomationTestingProgram.Core.Services.Logging;
 
-namespace WebAutomationTestingProgram.Modules.TestRunner.Backend.Requests.EnvironmentController
+namespace WebAutomationTestingProgram.Modules.TestRunnerV2.Requests.EnvironmentController
 {
     /// <summary>
     /// Request to retrieve keychain accounts

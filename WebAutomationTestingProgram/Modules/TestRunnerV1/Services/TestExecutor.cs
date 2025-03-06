@@ -1,12 +1,17 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Playwright;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
 using Newtonsoft.Json;
 using WebAutomationTestingProgram.Actions;
+using WebAutomationTestingProgram.Core.Helpers;
 using WebAutomationTestingProgram.Core.Hubs;
 using WebAutomationTestingProgram.Core.Hubs.Services;
 using WebAutomationTestingProgram.Modules.TestRunnerV1.Models;
+using WebAutomationTestingProgram.Modules.TestRunnerV1.Services.AzureReporter;
+using Exception = System.Exception;
 
 namespace WebAutomationTestingProgram.Modules.TestRunnerV1.Services;
 
@@ -21,6 +26,10 @@ public class TestExecutor
     private Dictionary<string, string> _envVars = new Dictionary<string, string>();
     private Dictionary<string, string> _saveParameters = new Dictionary<string, string>();
     private readonly SignalRService _signalRService;
+    private List<int> _testCaseIds = new List<int>();
+    private int _testPlanId;
+    private int _testSuiteId;
+    private int _devopsRunId;
 
     private static Dictionary<string, string> actionAliases = new Dictionary<string, string>
         {
@@ -97,7 +106,8 @@ public class TestExecutor
         List<TestStep> testSteps,
         string environment,
         string fileName,
-        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int delay)
+        Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int delay, bool reportToDevops,
+        HandleReporting reportHandler)
     {
         _envVars["environment"] = environment;
         var context = await browser.NewContextAsync();
@@ -105,20 +115,29 @@ public class TestExecutor
         var iterationStack = new Stack<int>();
         var currentIteration = 0;
         
-        await ExecuteNestedLoopsAsync(page, testSteps, cycleGroups, iterationStack, currentIteration, delay);
+        await ExecuteNestedLoopsAsync(page, testSteps, cycleGroups, iterationStack, currentIteration, delay, context, reportToDevops, reportHandler);
     }
 
     public async Task ExecuteNestedLoopsAsync(IPage page, List<TestStep> steps,
         Dictionary<string, List<Dictionary<string, string>>> cycleGroups, Stack<int> iterationStack,
-        int currentIteration, int delay)
+        int currentIteration, int delay, IBrowserContext context, bool reportToDevops, HandleReporting reportHandler)
     {
         try
         {
-            for (var i = 0; i < steps.Count; i++)
+            var stepsCopy = new List<TestStep>(steps);
+            var updatedSteps = new List<TestStep>();
+            for (var i = 0; i < stepsCopy.Count; i++)
             {
+                if (page.IsClosed)
+                {
+                    await context.ClearCookiesAsync();
+                    await context.AddInitScriptAsync("window.localStorage.clear(); window.sessionStorage.clear();");
+                    page = await context.NewPageAsync();
+                }
+                
                 await Task.Delay(delay * 1000);
                 
-                var step = steps[i];
+                var step = stepsCopy[i];
                 var parts = step.CycleGroup.Split(",");
                 var cycleGroup = parts.Length > 1 ? parts[0].Trim() : string.Empty;
                 var state = parts.Length > 1 ? parts[1].Trim().ToLower() : string.Empty;
@@ -133,82 +152,59 @@ public class TestExecutor
                 
                 if (state == "start")
                 {
-                    loopSteps = GetLoopSteps(steps);
-
+                    loopSteps = GetLoopSteps(stepsCopy);
                     for (var j = 0; j < iterations; j++)
                     {
                         foreach (var loopStep in loopSteps)
                         {
-                            var stepAction = loopStep.ActionOnObject.Replace(" ", "").ToLower();
+                            var tempStep = new TestStep(loopStep);
+                            var stepAction = tempStep.ActionOnObject.Replace(" ", "").ToLower();
                             var actionAlias = GetAlias(stepAction);
+
+                            if (page.IsClosed)
+                            {
+                                await context.ClearCookiesAsync();
+                                await context.AddInitScriptAsync("window.localStorage.clear(); window.sessionStorage.clear();");
+                                page = await context.NewPageAsync();
+                            }
                             
-                            var logMessage = new StringBuilder()
-                                .AppendLine("========================================================")
-                                .AppendLine("                TEST EXECUTION LOG                      ")
-                                .AppendLine("========================================================")
-                                .AppendLine($"TEST CASE:     {loopStep.TestCaseName,-40}")
-                                .AppendLine($"DESCRIPTION:   {loopStep.TestDescription,-40}")
-                                .AppendLine("--------------------------------------------------------")
-                                .AppendLine($"ACTION:        {loopStep.ActionOnObject,-40}")
-                                .AppendLine($"OBJECT:        {loopStep.Object,-40}")
-                                .AppendLine($"VALUE:         {loopStep.Value,-40}")
-                                .AppendLine("--------------------------------------------------------")
-                                .AppendLine($"EXECUTING...")
-                                .AppendLine("========================================================")
-                                .ToString();
+                            var logMessage = LogMessageHelper.GenerateTestExecutionLog(tempStep);
                             await _signalRService.BroadcastLog(_testRunId, logMessage);
                             
                             if (_actions.TryGetValue(actionAlias, out var action))
                             {
-                                var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
-                                loopStep.RunSuccessful = result;
+                                var result = await action.ExecuteAsync(page, tempStep, _envVars, _saveParameters, cycleGroups, j, cycleGroup);
+                                tempStep.RunSuccessful = result;
+                                updatedSteps.Add(tempStep);
 
-                                var statusMessage = new StringBuilder()
-                                    .AppendLine($"STATUS: {loopStep.RunSuccessful}")
-                                    .AppendLine()
-                                    .ToString();
+                                var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(tempStep);
 
                                 await _signalRService.BroadcastLog(_testRunId, statusMessage);
                             }
                             else
                             {
-                                loopStep.RunSuccessful = false;
-                                var statusMessage = new StringBuilder()
-                                    .AppendLine($"STATUS: {step.RunSuccessful}")
-                                    .AppendLine($"Unknown action: {step.ActionOnObject,-40}")
-                                    .AppendLine()
-                                    .ToString();
+                                tempStep.RunSuccessful = false;
+                                updatedSteps.Add(tempStep);
+                                var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(tempStep);
 
                                 await _signalRService.BroadcastLog(_testRunId, statusMessage);
-                                throw new Exception($"Unknown action '{loopStep.ActionOnObject}'");
+                                throw new Exception($"Unknown action '{tempStep.ActionOnObject}'");
                             }
+                            
+                            await Task.Delay(TimeSpan.FromSeconds(delay));
                         }
                     }
 
-                    var startIndex = steps.IndexOf(loopSteps.First());
-                    var endIndex = steps.IndexOf(loopSteps.Last());
-                    steps = steps.Take(startIndex).Concat(steps.Skip(endIndex + 1)).ToList();
+                    var startIndex = stepsCopy.IndexOf(loopSteps.First());
+                    var endIndex = stepsCopy.IndexOf(loopSteps.Last());
+                    stepsCopy = stepsCopy.Take(startIndex).Concat(stepsCopy.Skip(endIndex + 1)).ToList();
                     i = startIndex - 1;
                 }
                 else
                 {
                     var stepAction = step.ActionOnObject.Replace(" ", "").ToLower();
                     var actionAlias = GetAlias(stepAction);
-
-                    var logMessage = new StringBuilder()
-                        .AppendLine("========================================================")
-                        .AppendLine("                TEST EXECUTION LOG                      ")
-                        .AppendLine("========================================================")
-                        .AppendLine($"TEST CASE:     {step.TestCaseName,-40}")
-                        .AppendLine($"DESCRIPTION:   {step.TestDescription,-40}")
-                        .AppendLine("--------------------------------------------------------")
-                        .AppendLine($"ACTION:        {step.ActionOnObject,-40}")
-                        .AppendLine($"OBJECT:        {step.Object,-40}")
-                        .AppendLine($"VALUE:         {step.Value,-40}")
-                        .AppendLine("--------------------------------------------------------")
-                        .AppendLine($"EXECUTING...")
-                        .AppendLine("========================================================")
-                        .ToString();
+                    var logMessage = LogMessageHelper.GenerateTestExecutionLog(step);
 
                     await _signalRService.BroadcastLog(_testRunId, logMessage);
                     
@@ -216,28 +212,91 @@ public class TestExecutor
                     { 
                         var result = await action.ExecuteAsync(page, step, _envVars, _saveParameters, cycleGroups, currentIteration, cycleGroup);
                         step.RunSuccessful = result;
-
-                        var statusMessage = new StringBuilder()
-                            .AppendLine($"STATUS: {step.RunSuccessful}")
-                            .AppendLine()
-                            .ToString();
+                        updatedSteps.Add(step);
+                        
+                        var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(step);
 
                         await _signalRService.BroadcastLog(_testRunId, statusMessage);
                     }
                     else
                     {
                         step.RunSuccessful = false;
-                        var statusMessage = new StringBuilder()
-                            .AppendLine($"STATUS: {step.RunSuccessful}")
-                            .AppendLine($"Unknown action: {step.ActionOnObject,-40}")
-                            .AppendLine()
-                        .ToString();
+                        updatedSteps.Add(step);
+                        var statusMessage = LogMessageHelper.GenerateTestStepStatusLog(step);
 
                         await _signalRService.BroadcastLog(_testRunId, statusMessage);
                         throw new Exception($"Unknown action '{step.ActionOnObject}'");
                     }
                 }
             }
+
+            var testResults = new List<TestCaseResultParams>();
+            var testCases = updatedSteps
+                .GroupBy(s => s.TestCaseName)
+                .Select(g => new TestCase
+                {
+                    TestCaseName = g.Key,
+                    TestSteps = g.ToList(),
+                    Result = g.Any(step => !step.RunSuccessful) ? "Failed" : "Passed"
+                })
+                .ToList();
+            
+            if (reportToDevops)
+            {
+                await reportHandler.DeleteTestCasesAsync();
+                await reportHandler.DeleteTestPlanAsync();
+                (_testCaseIds, _testPlanId, _testSuiteId) = await reportHandler.InitializeTestPlanAsync(updatedSteps);
+                _devopsRunId = await reportHandler.CreateTestRunAsync();
+            }
+            
+            foreach (var (testCase, index) in testCases.Select((tc, index) => (tc, index)))
+            {
+                try
+                {
+                    var testResultObj = new TestCaseResultParams();
+                    testResultObj.testCaseId = _testCaseIds[index];
+                    testResultObj.testCaseName = testCase.TestCaseName;
+                    testResultObj.startedDate = DateTime.UtcNow;
+
+                    var testPointHandler = new HandleTestPoint();
+                    var testPoint =
+                        await testPointHandler.GetTestPointFromTestCaseIdAsync(_testPlanId, _testSuiteId,
+                            _testCaseIds[index]);
+
+                    testResultObj.testPointId = testPoint.Id;
+                    testResultObj.completedDate = DateTime.UtcNow;
+                    testResultObj.outcome = testCase.Result;
+                    testResultObj.state = "Completed";
+                    testResultObj.duration =
+                        Convert.ToInt32((testResultObj.completedDate - testResultObj.startedDate).TotalMilliseconds);
+                    testResultObj.testIterationDetails = new TestIterationDetailsModel
+                    {
+                        Id = 1,
+                        Comment = "Automated Test Results generated by the Automation Testing Program, for questions regarding the framework contact QA Regression",
+                        ActionResults = new List<TestActionResultModel>
+                        {
+                            new TestActionResultModel
+                            {
+                                ActionPath = "1",
+                                Outcome = "Passed",
+                                ErrorMessage = null,
+                            }
+                        }
+                    };
+                    // testResultObj.errorMsg = testResultObj.outcome == "Failed" ? $"[{failedTests.Count()} STEPS FAILED]\n{string.Join("\n", failedTests.Select(ft => $" {ft.Item1}: {ft.Item2}"))}" : null;
+                    // testResultObj.stackTrace = testResultObj.outcome == "Failed" ? $"{string.Join("\n", stackTrace.Select(st => $"{st.Item1}: {st.Item2}"))}" : null;
+
+                    testResults.Add(testResultObj);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception(ex.Message);
+                }
+            }
+
+            var testResultHandler = new HandleTestResult();
+            await testResultHandler.UpdateTestResultsAsync(testResults, _devopsRunId);
+            await reportHandler.EndTestRunAsync(_devopsRunId);
         }
         catch (Exception e)
         {
@@ -285,7 +344,7 @@ public class TestExecutor
             throw new InvalidOperationException("Invalid start or stop state.");
         }
         
-        return steps.Skip(startIndex).Take(endIndex - startIndex + 1).ToList();
+        return steps.GetRange(startIndex, endIndex - startIndex + 1);
     }
     
     // Replace parameters between "{" and "}" with the Saved Parameters. To be used with Object or Value string. 
@@ -413,4 +472,11 @@ public class TestExecutor
             return false;
         }
     }
+}
+
+class TestCase
+{
+    public string TestCaseName { get; set; }
+    public List<TestStep> TestSteps { get; set; }
+    public string Result { get; set; }
 }

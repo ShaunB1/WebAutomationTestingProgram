@@ -10,6 +10,7 @@ public class VerifyTxtFile : WebAction
         Dictionary<string, string> envVars, Dictionary<string, string> saveParams,
         Dictionary<string, List<Dictionary<string, string>>> cycleGroups, int currentIteration, string cycleGroupName)
     {
+        GetIterationData(step, cycleGroups, currentIteration, cycleGroupName);
         string option = step.Comments;
         switch (option.ToLower())
         {

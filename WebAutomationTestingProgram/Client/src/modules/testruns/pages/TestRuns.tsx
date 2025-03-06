@@ -56,24 +56,16 @@ const TestRuns = (props: any) => {
     }, [instance, accounts]);
 
     useEffect(() => {
-        console.log("TEST RUNS: ", testRuns);
-    }, [testRuns]);
-    
-    useEffect(() => {
         if (props.connection) {
             props.connection.on("BroadcastLog", (testRunId: any, message: any) => {
                 const normalizedLog = message.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-                console.log("TEST RUN LOGS: ", testRunLogs);
                 setTestRunLogs(prevTestRunLogs =>
-                    prevTestRunLogs.map(testRunLog => {
-                        console.log("COMPARE IDS: ", testRunLog.id, testRunId);
-                        return testRunLog.id === testRunId
+                    prevTestRunLogs.map(testRunLog =>
+                        testRunLog.id === testRunId
                             ? { ...testRunLog, logs: [...testRunLog.logs, ...normalizedLog.split('\n')] }
-                            : { ...testRunLog, id: "1", logs: ["test"] }
-                    })
+                            : testRunLog
+                    )
                 );
-                
-                
             });
 
             props.connection.on('AddClient', (testRunId: any, message: any) => {
@@ -85,8 +77,9 @@ const TestRuns = (props: any) => {
             });
 
             props.connection.on('NewRun', (testRunId: any, message: any) => {
+                console.log("NEW RUN");
+                console.log(message)
                 setTestRuns(prevTestRuns => [...prevTestRuns, { id: testRunId }]);
-                setTestRunLogs(prevTestRuns => [...prevTestRuns, { id: testRunId, logs:[] }])
             });
 
             props.connection.on('RunFinished', (testRunId: any, message: any) => {
